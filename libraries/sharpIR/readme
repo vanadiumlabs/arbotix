@@ -1,3 +1,4 @@
+*******************************************************************************
 SharpIR Library for the Arduino/Sanguino
 Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
@@ -15,10 +16,12 @@ Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+*******************************************************************************
 Installation:
 Copy files into <arduino>/hardware/libraries/sharpIR/ as you would any other 
 Arduino library.
 
+*******************************************************************************
 Documentation:
     This library will take a reading from an analog port which a Sharp IR ranging 
 sensor is connected to and convert it into centimeters. It supports three 
@@ -31,6 +34,7 @@ where analog pin is 0-7 for the Sanguino, and type is one of the names listed
 above.
     To get a reading, call getData() on your SharpIR object. 
 
+*******************************************************************************
 Example code:
 
 // This is a simple example of how to use the SharpIR library
