@@ -28,6 +28,12 @@
 BioloidController bioloid = BioloidController(1000000);
 Motors2 guns = Motors2();
 
+// servo numbers
+#define RIGHT_FRONT     5
+#define LEFT_FRONT      6
+#define RIGHT_REAR      11
+#define LEFT_REAR       12
+
 // we use a register based write algorithm, similar to the Dynamixel bus. 
 #define REG_FORWARD     0x10
 #define REG_TURN        0x11    // -128..128    
@@ -142,44 +148,44 @@ void loop(){
         if((rstep != 0) || (lstep != 0)){    // do nothing if we are stopped
         if(walkMode == 0){
             bioloid.loadPose(walk0);
-            bioloid.setNextPose(5,bioloid.getCurPose(5) - rstep);
-            bioloid.setNextPose(6,bioloid.getCurPose(6) - lstep);
-            bioloid.setNextPose(11,bioloid.getCurPose(11) + rstep);
-            bioloid.setNextPose(12,bioloid.getCurPose(12) + lstep);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT) - rstep);
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT) - lstep);
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR) + rstep);
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR) + lstep);
             walkMode = 1;
             bioloid.interpolateSetup(75);   
         }else if(walkMode == 1){
             bioloid.loadPose(walkend);
-            bioloid.setNextPose(5,bioloid.getCurPose(5));
-            bioloid.setNextPose(6,bioloid.getCurPose(6));
-            bioloid.setNextPose(11,bioloid.getCurPose(11));
-            bioloid.setNextPose(12,bioloid.getCurPose(12));
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT));
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT));
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR));
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
             walkMode = 2;
             bioloid.interpolateSetup(30);   
         }else if(walkMode == 2){
             bioloid.loadPose(walk1);
-            bioloid.setNextPose(5,bioloid.getCurPose(5) + rstep);
-            bioloid.setNextPose(6,bioloid.getCurPose(6) + lstep);
-            bioloid.setNextPose(11,bioloid.getCurPose(11) - rstep);
-            bioloid.setNextPose(12,bioloid.getCurPose(12) - lstep);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT) + rstep);
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT) + lstep);
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR) - rstep);
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR) - lstep);
             walkMode = 3;
             bioloid.interpolateSetup(75);   
         }else{
             bioloid.loadPose(walkend);  
-            bioloid.setNextPose(5,bioloid.getCurPose(5));
-            bioloid.setNextPose(6,bioloid.getCurPose(6));
-            bioloid.setNextPose(11,bioloid.getCurPose(11));
-            bioloid.setNextPose(12,bioloid.getCurPose(12));
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT));
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT));
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR));
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
             walkMode = 0;
             bioloid.interpolateSetup(30);   
         }
         }else{
             // stopped! put feet down!
             bioloid.loadPose(walkend);  
-            bioloid.setNextPose(5,bioloid.getCurPose(5));
-            bioloid.setNextPose(6,bioloid.getCurPose(6));
-            bioloid.setNextPose(11,bioloid.getCurPose(11));
-            bioloid.setNextPose(12,bioloid.getCurPose(12));
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT));
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT));
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR));
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
             bioloid.interpolateSetup(30);   
         }   
     }
