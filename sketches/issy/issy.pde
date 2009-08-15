@@ -28,11 +28,14 @@
 BioloidController bioloid = BioloidController(1000000);
 Motors2 guns = Motors2();
 
+#define VOLTAGE_READ    7
+
 // servo numbers
 #define RIGHT_FRONT     5
 #define LEFT_FRONT      6
 #define RIGHT_REAR      11
 #define LEFT_REAR       12
+#define TILT_SERVO      13
 
 // we use a register based write algorithm, similar to the Dynamixel bus. 
 #define REG_FORWARD     0x10
@@ -60,8 +63,12 @@ unsigned char data;
 /* Movement parameters */
 int rstep, lstep;
 int pan, tilt;
-int walkMode;
+int walkMode; // where are we in our step sequence of 0-3, -1 = relaxed
 
+/* Power variables */
+int vmain = 1200;
+unsigned long vtime = 0; // last time we sent out voltages
+    
 void setup(){
     int i;
     Serial.begin(38400);    
@@ -69,7 +76,7 @@ void setup(){
     delay(1000);
     
     // stand up slowly
-    bioloid.loadPose(stand);
+    bioloid.loadPose(walkend);
     bioloid.readPose();    
     bioloid.interpolateSetup(1500); // from current position to standing in 1.5 seconds
     while(bioloid.interpolating > 0){
@@ -112,23 +119,38 @@ void loop(){
             if(iter == count){
                 // process request
                 if((checksum%256) != 255){ 
-                    //Print("Packet Error\n");
+                    Serial.println("Packet Error");
                 }else{
-                    lstep = nForward+nTurn;
-                    rstep = nForward-nTurn;
-                    pan = nPan;
-                    tilt = nTilt;
-                    if(nFire > 0) guns.right(170);
-                        else guns.right(0);
+                    // deal with status/relax updates
                     if(nStatus > 0){
-                        bioloid.loadPose(walkend);//stand);
+                        bioloid.loadPose(walkend); //stand);
                         bioloid.writePose();
-                    }else{
+                        nStatus = 0;
+                    }else if(nStatus < 0){
                         bioloid.interpolating = 0;
                         for(data=0;data<12;data++)
                             Relax(data);
                         lstep=0;rstep=0;
-                    }           
+                        nStatus = 0;
+                    }else{  //  if not paused, or just standing, lets update stuff
+                        lstep = nForward+nTurn;
+                        rstep = nForward-nTurn;
+                        // issy has no pan servo, instead we shift the body
+                        if(nPan != 0){ // note that shifting only works when not walking. 
+                            bioloid.loadPose(walkend);
+                            // left front back, rightfront forward
+                            bioloid.setNextPose(LEFT_FRONT, bioloid.getNextPose(LEFT_FRONT) + nPan);
+                            bioloid.setNextPose(RIGHT_FRONT, bioloid.getNextPose(RIGHT_FRONT) + nPan);
+                            // left rear back, right rear back
+                            bioloid.setNextPose(LEFT_REAR, bioloid.getNextPose(LEFT_REAR) + nPan);
+                            bioloid.setNextPose(RIGHT_REAR, bioloid.getNextPose(RIGHT_REAR) + nPan);
+                            bioloid.writePose();                            
+                        }                        
+                        SetPosition(TILT_SERVO, 512 + nTilt*2);
+                    }
+                    // fire guns, or stop firing
+                    if(nFire > 0) guns.right(170);
+                        else guns.right(0);
                 }
                 mode = 0;
             }else{
@@ -136,8 +158,8 @@ void loop(){
                 else if(addr == REG_TURN) nTurn = (int) (data-128);
                 else if(addr == REG_PAN) nPan = (int) (data-128);                        
                 else if(addr == REG_TILT) nTilt = (int) (data-128);
-                else if(addr == REG_FIRE) nFire = (int) data;
-                else if(addr == REG_STATUS) nStatus = data;
+                else if(addr == REG_FIRE) nFire = (int) (data-128);
+                else if(addr == REG_STATUS) nStatus = (int) (data-128);
             }                  
             iter++;addr++;
         }
@@ -148,10 +170,10 @@ void loop(){
         if((rstep != 0) || (lstep != 0)){    // do nothing if we are stopped
         if(walkMode == 0){
             bioloid.loadPose(walk0);
-            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT) - rstep);
-            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT) - lstep);
-            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR) + rstep);
-            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR) + lstep);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getNextPose(RIGHT_FRONT) - rstep);
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getNextPose(LEFT_FRONT) - lstep);
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getNextPose(RIGHT_REAR) + rstep);
+            bioloid.setNextPose(LEFT_REAR,bioloid.getNextPose(LEFT_REAR) + lstep);
             walkMode = 1;
             bioloid.interpolateSetup(75);   
         }else if(walkMode == 1){
@@ -164,10 +186,10 @@ void loop(){
             bioloid.interpolateSetup(30);   
         }else if(walkMode == 2){
             bioloid.loadPose(walk1);
-            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT) + rstep);
-            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT) + lstep);
-            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR) - rstep);
-            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR) - lstep);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getNextPose(RIGHT_FRONT) + rstep);
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getNextPose(LEFT_FRONT) + lstep);
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getNextPose(RIGHT_REAR) - rstep);
+            bioloid.setNextPose(LEFT_REAR,bioloid.getNextPose(LEFT_REAR) - lstep);
             walkMode = 3;
             bioloid.interpolateSetup(75);   
         }else{
@@ -188,6 +210,33 @@ void loop(){
             bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
             bioloid.interpolateSetup(30);   
         }   
+    }
+    
+    // voltage monitoring loop
+    if((millis() - vtime) > 3000){
+        int v = analogRead(VOLTAGE_READ);
+        // convert V to voltage (since it is scaled), and then add to running average
+        vmain = ((vmain * 5)/10) + ((((v * 14)/10) * 5)/10);
+        if(vmain < 980){ // 9.8V is fairly conservative, but shutdown!
+            Serial.println("Battery Expired!");
+            guns.right(0); // kill guns
+            for(mode=0;mode<13;mode++) // kill servos
+                Relax(mode);
+            while(1);
+        }else{ // print out voltage
+            float x = vmain/100;
+            Serial.print("Voltage:");
+            Serial.println(x);
+            vtime = millis();
+        }
+        // handle temp readback
+        for(v=1;v<13;v++){    
+            int data = ax12GetRegister(v, AX_PRESENT_TEMPERATURE, 1);                
+            Serial.print("S");
+            Serial.print(v);
+            Serial.print("TEMP:");
+            Serial.print(data);
+        }
     }
     
     // update joints
