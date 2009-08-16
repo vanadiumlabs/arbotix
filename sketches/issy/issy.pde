@@ -223,7 +223,7 @@ void loop(){
             for(mode=0;mode<13;mode++) // kill servos
                 Relax(mode);
             while(1);
-        }else{ // print out voltage
+        }else{ // print out voltage 
             float x = vmain/100;
             Serial.print("Voltage:");
             Serial.println(x);
@@ -233,9 +233,13 @@ void loop(){
         for(v=1;v<13;v++){    
             int data = ax12GetRegister(v, AX_PRESENT_TEMPERATURE, 1);                
             Serial.print("S");
-            Serial.print(v);
+            Serial.print((v/100));
+            Serial.print((v/10)%10);
+            Serial.print(v%10);
             Serial.print("TEMP:");
-            Serial.print(data);
+            Serial.print((data/100));
+            Serial.print((data/10)%10);
+            Serial.println(data%10);
         }
     }
     
