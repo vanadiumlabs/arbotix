@@ -74,14 +74,14 @@ void Motors2::right(int pwm){
 		digitalWrite(M2_RIGHT_DIR,LOW);
 		TCCR2A &= ~((1<<COM2A1) | (1<<COM2A0));
 	}else{
-    	if (pwm >= 0){
+    	if (pwm >= 0){   
+    		digitalWrite(M2_RIGHT_DIR,HIGH);
+			TCCR2A |= ((1<<COM2A1) | (1<<COM2A0)); 
+    	}else{
 			digitalWrite(M2_RIGHT_DIR,LOW);
 			TCCR2A |= (1<<COM2A1);
-			TCCR2A &= ~(1<<COM2A0);    
-    	}else{
-			digitalWrite(M2_RIGHT_DIR,HIGH);
-			TCCR2A |= ((1<<COM2A1) | (1<<COM2A0));
-      		pwm = -pwm;
+			TCCR2A &= ~(1<<COM2A0);
+			pwm = -pwm;
     	}
     	if (pwm > 255)
       		pwm = 255;
