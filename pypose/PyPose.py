@@ -47,7 +47,7 @@ from ax12 import *
 #                getReg(id, start_addr, length)
 #                syncWrite(regstart, ((id1, val1, val2..), (id2, val1, val2...), ..) )
 import arbotix
-#import direct
+import direct
 
 
 ###############################################################################
@@ -252,6 +252,8 @@ class poseEditor(Tk):
         robotmenu.add_command(label="save", command=self.saveFile) # if name unknown, ask, otherwise save
         robotmenu.add_command(label="save as",command=self.saveFileAs) # ask for name, save
         robotmenu.add_separator()
+        robotmenu.add_command(label="set min/max",command=self.minMax) # dialog to walk through min/max
+        robotmenu.add_separator()
         robotmenu.add_command(label="exit",command=sys.exit)
         menubar.add_cascade(label="robot",menu=robotmenu)
         posemenu = Menu(menubar, tearoff=0)
@@ -385,7 +387,6 @@ class poseEditor(Tk):
             if errors != "Could not read servos: ":
                 # message box with errors
                 Dialog(self,"Capture Errors",errors[0:-2])
-            
 
     def setPose(self):
         """ Write a pose out to the robot. """
@@ -411,6 +412,31 @@ class poseEditor(Tk):
             remPoseDialog(self,"Confirm Remove Pose")
         else:
             Dialog(self,"Error","Please select a pose first.")
+
+    # TODO: handle cancel?
+    def minMax(self):
+        """ Get the min/max of each servo. """
+        self.relax()
+        self.mins = list()
+        self.maxs = list()
+        for i in range(self.servo_count):
+            Dialog(self,"Capture Min/Max","Please move servo ID " + str(i+1) + " to an extreme of it's range.")
+            x = 0 #self.port.getReg(i+1,P_PRESENT_POSITION_L,2)
+            Dialog(self,"Capture Min/Max","Please move servo ID " + str(i+1) + " to the other extreme.")
+            y = 0 #self.port.getReg(i+1,P_PRESENT_POSITION_L,2) 
+            if x != -1 and y != -1:
+                #x = x[0] + x[1]<<8
+                #y = y[0] + y[1]<<8
+                if x < y:
+                    self.mins.append(x)
+                    self.maxs.append(y)
+                else:       
+                    self.mins.append(y)
+                    self.maxs.append(x)
+            else:
+                Dialog(self,"Capture Error","Could not read servo: " + str(i+1))
+                self.mins.append(-1)
+                self.maxs.append(1024)                                        
 
     ###########################################################################
     # Export functionality

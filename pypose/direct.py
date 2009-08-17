@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """ 
-  PyPose: Serial driver for connection to arbotiX board.
+  PyPose: Serial driver for direct connection via USBDynamixel
+
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -17,27 +18,16 @@
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-packet: ff ff id length ins params checksum
-    same as ax-12 table, except, we define new instructions for Arbotix
-
-ID = 253 for these special commands!
-Pose Size = 7, followed by single param: size of pose
-Load Pose = 8, followed by pose positions (# of param = 2*pose_size)
-Play Pose = 9, followed by 2-byte param: #ms to interpolate
-Moving = 10, returns whether we are interpolating or not
 """
 
-import serial
-import time
-import sys
+import serial, time, sys
 from binascii import b2a_hex
 from ax12 import *
 
 class ax12:
-    """ Class to open a serial port and control AX-12 servos 
-    through an arbotiX board. """
-    def __init__(self, port="/dev/ttyUSB0",baud=38400):
+    """ Class to open a serial port and control AX-12 servos, 
+    typically through a HUV servo board. """
+    def __init__(self, port="COM4",baud=1000000):
         try:
             self.ser = serial.Serial()
             self.ser.baudrate = baud
@@ -132,4 +122,22 @@ class ax12:
         if rlength == 1:
             return vals[0]
         return vals
+
+    def syncWrite(self, regstart, vals):
+        """ Set the value of registers. Should be called as such:
+        ax12.syncWrite(reg, ((id1, val1, val2), (id2, val1, val2))) """ 
+        self.ser.flushInput()
+        length = 4
+        valsum = 0
+        for i in vals:
+            length = length + len(i)    
+            valsum = valsum + sum(i)
+        checksum = 255 - ((254 + length + AX_SYNC_WRITE + regstart + len(vals[0]) - 1 + valsum)%256)
+        # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
+        self.ser.write(chr(0xFF)+chr(0xFF)+chr(0xFE)+chr(length)+chr(AX_SYNC_WRITE)+chr(regstart)+chr(len(vals[0])-1))
+        for servo in vals:
+            for value in servo:
+                self.ser.write(chr(value))
+        self.ser.write(chr(checksum))
+        # no return info...
 
