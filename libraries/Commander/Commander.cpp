@@ -1,0 +1,70 @@
+/*
+  Commander.cpp - Library for interfacing with arbotiX Commander
+  Copyright (c) 2009 Michael E. Ferguson.  All right reserved.
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
+#include <wiring.h>
+#include <HardwareSerial.h>
+#include "Commander.h"
+
+/* Constructor */
+Commander::Commander(){
+    Serial.begin(38400);
+    index = -1;
+}
+
+/* process messages coming from Commander 
+ *  format = 0xFF WALK_H WALK_V REG_LOOK_H LOOK_V BUTTONS EXTRA CHECKSUM */
+void Commander::ReadMsgs(){
+    while(Serial.available() > 0){
+        if(index == -1){         // looking for new packet
+            if(Serial.read() == 0xff){
+                index = 0;
+                checksum = 0;
+                //digitalWrite(0,HIGH-digitalRead(0));
+            }
+        }else if(index == 0){
+            vals[index] = (unsigned char) Serial.read();
+            if(vals[index] != 0xff){            
+                checksum += (int) vals[index];
+                index++;
+            }
+        }else{
+            vals[index] = (unsigned char) Serial.read();
+            checksum += (int) vals[index];
+            index++;
+            if(index == 7){ // packet complete
+                if(checksum%256 != 255){
+                    // packet error!
+                    digitalWrite(0,HIGH-digitalRead(0));
+                }else{
+                    walkV = (signed char)( (int)vals[0]-128 );
+                    walkH = (signed char)( (int)vals[1]-128 );
+                    lookV = (signed char)( (int)vals[2]-128 );
+                    lookH = (signed char)( (int)vals[3]-128 );
+                    buttons = vals[4];
+                    extra = vals[5];
+                    if(buttons & WALK_2)
+                        walkZ++;
+                    if(buttons & WALK_3)
+                        walkZ--;
+                }
+                index = -1;
+            }
+        }
+    }
+}

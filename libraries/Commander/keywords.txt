@@ -1,0 +1,6 @@
+Commander	KEYWORD1
+walkV	KEYWORD2
+walkH	KEYWORD2
+lookV	KEYWORD2
+lookH	KEYWORD2
+buttons	KEYWORD2
