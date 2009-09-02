@@ -191,6 +191,7 @@ class portDialog(Dialog):
 
     def apply(self):
         """ Opens the port. """
+        print "Opening port: " + self.e1.get() + " @ " + self.e2.get()
         self.parent.port = arbotix.ax12(self.e1.get(),int(self.e2.get()))
         
 ###############################################################################
@@ -464,6 +465,7 @@ class poseEditor(Tk):
         portDialog(self, "Port Settings")
 
 if __name__ == "__main__":
+    print "PyPose starting... "
     window = poseEditor()
     window.mainloop()
 
