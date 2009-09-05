@@ -46,7 +46,7 @@ class ax12:
             self.ser.open()
         except:
             print "Cannot open port" + str(sys.exc_info()[0])
-            sys.exit(0)
+            #sys.exit(0)
 
     def setReg(self, index, regstart, values):
         """ Set the value of registers. Should be called as such:

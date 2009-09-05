@@ -42,6 +42,7 @@ class pose(list):
 
     def __str__(self):
         #data = "Pose=" + self[0] + ": "
+        data = " "        
         for position in self: #[1:]:
             data = data + str(position) + ", "
         return data[0:-2]
@@ -77,7 +78,7 @@ class sequence(list):
 class robot:
     def __init__(self):
         self.name = ""
-        self.count = 0
+        self.count = 18
         self.poses = dict()
         self.sequences = dict()    
 
@@ -126,7 +127,7 @@ class robot:
         for p in self.poses.keys():
             print>>posefile, "PROGMEM prog_uint16_t " + p + "[] = {0x0C,",
             p = self.poses[p]
-            for x in p[1:-1]:
+            for x in p[0:-1]:
                 print>>posefile, str(x) + ",",
             print>>posefile, str(p[-1]) + "};"
             print>>posefile, ""
