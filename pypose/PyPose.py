@@ -31,33 +31,26 @@ from ax12 import *
 import arbotix
 import direct
 
-from dialog import *
 from robot import *
 
-VERSION = "PyPose V0.91"
-
-ID_NEW=101
-ID_OPEN=102
-ID_SAVE=103
-ID_SAVE_AS=104
-ID_EXIT=106
-ID_RELAX=107
-ID_CAPTURE=108
-ID_SET=109
-ID_EXPORT=110
-ID_POSE=111
-ID_POSE_ADD=115
-ID_POSE_REM=116
-ID_SEQ=112
-ID_NUKE=113
-ID_PORT=114
-ID_MOVE_UP=117
-ID_MOVE_DN=118
+VERSION = "PyPose v0.91"
 
 ###############################################################################
 # Main editor window
 class editor(wx.Frame):
     """ Implements the main window. """
+    ID_NEW=101
+    ID_OPEN=102
+    ID_SAVE=103
+    ID_SAVE_AS=104
+    ID_EXIT=106
+    ID_POSE=107
+    ID_SEQ=108
+    ID_EXPORT=109
+    ID_RELAX=110
+    ID_PORT=111
+    ID_ABOUT=112
+
     def __init__(self):
         """ Creates pose editor window. """
         wx.Frame.__init__(self, None, -1, VERSION)     
@@ -73,39 +66,45 @@ class editor(wx.Frame):
         # build our menu bar  
         menubar = wx.MenuBar()
         robotmenu = wx.Menu()
-        robotmenu.Append(ID_NEW, "new") # dialog with name, # of servos
-        robotmenu.Append(ID_OPEN, "open") # open file dialog
-        robotmenu.Append(ID_SAVE,"save") # if name unknown, ask, otherwise save
-        robotmenu.Append(ID_SAVE_AS,"save as") # ask for name, save
+        robotmenu.Append(self.ID_NEW, "new") # dialog with name, # of servos
+        robotmenu.Append(self.ID_OPEN, "open") # open file dialog
+        robotmenu.Append(self.ID_SAVE,"save") # if name unknown, ask, otherwise save
+        robotmenu.Append(self.ID_SAVE_AS,"save as") # ask for name, save
         robotmenu.AppendSeparator()
-        robotmenu.Append(ID_EXIT,"exit") 
+        robotmenu.Append(self.ID_EXIT,"exit") 
         menubar.Append(robotmenu, "robot")
 
         toolsmenu = wx.Menu()
-        toolsmenu.Append(ID_POSE,"pose editor") # do pose creation
-        toolsmenu.Append(ID_SEQ,"sequence editor") # do sequencing
-        #toolsmenu.Append(ID_NUKE,"NUKE") # do IK
-        toolsmenu.Append(ID_EXPORT,"export to AVR") # save as dialog
+        toolsmenu.Append(self.ID_POSE,"pose editor") # do pose creation
+        toolsmenu.Append(self.ID_SEQ,"sequence editor") # do sequencing
+        #toolsmenu.Append(self.ID_NUKE,"NUKE") # do IK
+        toolsmenu.Append(self.ID_EXPORT,"export to AVR") # save as dialog
         menubar.Append(toolsmenu,"tools")
 
         configmenu = wx.Menu()
-        configmenu.Append(ID_PORT,"port") # dialog box: arbotix/thru, speed, port
+        configmenu.Append(self.ID_PORT,"port") # dialog box: arbotix/thru, speed, port
         menubar.Append(configmenu, "config")    
-        self.SetMenuBar(menubar)
+
+        helpmenu = wx.Menu()
+        helpmenu.Append(self.ID_ABOUT,"about")
+        menubar.Append(helpmenu,"help")
+
+        self.SetMenuBar(menubar)    
 
         # configure events
-        wx.EVT_MENU(self, ID_NEW, self.newFile)
-        wx.EVT_MENU(self, ID_OPEN, self.openFile)
-        wx.EVT_MENU(self, ID_SAVE, self.saveFile)
-        wx.EVT_MENU(self, ID_SAVE_AS, self.saveFileAs)
-        wx.EVT_MENU(self, ID_EXIT, sys.exit)
+        wx.EVT_MENU(self, self.ID_NEW, self.newFile)
+        wx.EVT_MENU(self, self.ID_OPEN, self.openFile)
+        wx.EVT_MENU(self, self.ID_SAVE, self.saveFile)
+        wx.EVT_MENU(self, self.ID_SAVE_AS, self.saveFileAs)
+        wx.EVT_MENU(self, self.ID_EXIT, sys.exit)
     
-        wx.EVT_MENU(self, ID_POSE, self.loadPosePane)
-        wx.EVT_MENU(self, ID_SEQ, self.loadSeqPane)
-        wx.EVT_MENU(self, ID_EXPORT, self.export)     
+        wx.EVT_MENU(self, self.ID_POSE, self.loadPosePane)
+        wx.EVT_MENU(self, self.ID_SEQ, self.loadSeqPane)
+        wx.EVT_MENU(self, self.ID_EXPORT, self.export)     
 
-        wx.EVT_MENU(self, ID_RELAX, self.relax)   
-        wx.EVT_MENU(self, ID_PORT, self.doPort)
+        wx.EVT_MENU(self, self.ID_RELAX, self.doRelax)   
+        wx.EVT_MENU(self, self.ID_PORT, self.doPort)
+        wx.EVT_MENU(self, self.ID_ABOUT, self.doAbout)
 
         # editor area       
         self.sb = self.CreateStatusBar(2)
@@ -123,13 +122,14 @@ class editor(wx.Frame):
     def loadPosePane(self, e=None):
         if self.posePane != None:
             self.posePane.Destroy()
+            self.posePane = None
         if self.seqPane != None:
             self.seqPane.Destroy()
             self.seqPane = None
         self.ClearBackground()
         self.posePane = poseEditor(self)
         self.sizer=wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.posePane,0,wx.EXPAND)
+        self.sizer.Add(self.posePane,1,wx.EXPAND|wx.ALL,10)
         self.SetSizer(self.sizer)
         self.SetAutoLayout(1)
         self.sizer.Fit(self)
@@ -140,10 +140,11 @@ class editor(wx.Frame):
             self.posePane = None
         if self.seqPane != None:
             self.seqPane.Destroy()
+            self.seqPane = None
         self.ClearBackground()
         self.seqPane = seqEditor(self)
         self.sizer=wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.seqPane,0,wx.EXPAND)
+        self.sizer.Add(self.seqPane,1,wx.EXPAND|wx.ALL,10)
         self.SetSizer(self.sizer)
         self.SetAutoLayout(1)
         self.sizer.Fit(self)    
@@ -151,13 +152,13 @@ class editor(wx.Frame):
     ###########################################################################
     # file handling                
     def newFile(self, e):  
-        """ Open a dialog that asks for robot name and servo count. """
-        #TODO:n = newFileDialog(self, "New Robot File Settings")  
-        #if n.result == None:    
-        #    return
-        #self.robot.new(n.result[0], int(n.result[1])) 
-        #self.title(VERSION+": " + n.result[0])   
-        self.loadPosePane()      
+        """ Open a dialog that asks for robot name and servo count. """ 
+        dlg = NewRobot(self, -1, "Create New Robot")
+        if dlg.ShowModal() == wx.ID_OK:
+            self.robot.new(dlg.name.GetValue(), dlg.count.GetValue())
+            self.loadPosePane()      
+            self.sb.SetStatusText('created new robot ' + self.robot.name)
+        dlg.Destroy()
 
     def openFile(self, e):
         """ Loads a robot file into the GUI. """ 
@@ -216,12 +217,37 @@ class editor(wx.Frame):
                 self.sb.SetStatusText('not connected',1)
             dlg.Destroy()
 
-    def relax(self, e=None):
+    def doRelax(self, e=None):
         """ Relax servos so you can pose them. """
         if self.port != None:
             for servo in range(self.robot.count):
                 self.port.setReg(servo+1,P_TORQUE_ENABLE, [0,])    
-        print "PyPose: relaxing servos..."        
+        print "PyPose: relaxing servos..."      
+
+    def doAbout(self, e=None):
+        license= """This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
+"""
+        info = wx.AboutDialogInfo()
+        info.SetName(VERSION)
+        #info.SetVersion("0.91")
+        info.SetDescription("A lightweight pose and capture software for the arbotiX robocontroller")
+        info.SetCopyright("Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.")
+        info.SetLicense(license)
+        info.SetWebSite("http://www.vanadiumlabs.com")
+        wx.AboutBox(info)
+        #AddDeveloper(string developer)	add a developer to the developer's list
 
 ###############################################################################
 # pose editor window
@@ -235,7 +261,7 @@ class poseEditor(wx.Panel):
     ID_POSE_BOX = 105
 
     def __init__(self, parent):
-        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL)#|wx.SUNKEN_BORDER)
         self.parent = parent  
         self.curpose = "" 
 
@@ -287,7 +313,7 @@ class poseEditor(wx.Panel):
         self.posebar.SetSizer(posebarsizer)
         sizer.Add(self.posebar, (self.parent.robot.count/2,2))
    
-        wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.relax)    
+        wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
         wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose)    
         wx.EVT_BUTTON(self, self.BT_SET, self.setPose) 
         wx.EVT_BUTTON(self, self.BT_POSE_ADD, self.addPose)   
@@ -371,8 +397,17 @@ class poseEditor(wx.Panel):
 ###############################################################################
 # Sequence editor window
 class seqEditor(wx.Panel):
+    """ editor for the creation of sequences. """
+    BT_MOVE_UP = 101
+    BT_MOVE_DN = 102
+    BT_RELAX = 103
+    BT_RUN = 104
+    BT_HALT = 105 
+    BT_POSE_ADD = 106
+    BT_POSE_REM = 107
+
     def __init__(self, parent):
-        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL) #|wx.SUNKEN_BORDER)
         self.parent = parent        
         self.curseq = ""
 
@@ -401,18 +436,18 @@ class seqEditor(wx.Panel):
         sizer.Add(wx.StaticText(self, -1, "delta-T:"), (3,1))
         self.tranTime = wx.SpinCtrl(self, -1, '1000', min=1, max=2500)
         sizer.Add(self.tranTime, (3,2))
-        sizer.Add(wx.Button(self, ID_MOVE_UP, 'move up'), (4,1))
-        sizer.Add(wx.Button(self, ID_MOVE_DN, 'move down'), (4,2))
+        sizer.Add(wx.Button(self, self.BT_MOVE_UP, 'move up'), (4,1))
+        sizer.Add(wx.Button(self, self.BT_MOVE_DN, 'move down'), (4,2))
 
         self.toolbar = wx.Panel(self, -1)
         toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)
         toolbarsizer.AddStretchSpacer()
-        toolbarsizer.Add(wx.Button(self.toolbar, ID_RELAX, 'relax'),1)
-        toolbarsizer.Add(wx.Button(self.toolbar, ID_CAPTURE, 'capture'),1)  # run       
-        toolbarsizer.Add(wx.Button(self.toolbar, ID_SET, 'set'),1)  #halt
+        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_RELAX, 'relax'),1)
+        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_RUN, 'run'),1)         
+        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_HALT, 'halt'),1)
         toolbarsizer.AddStretchSpacer()
         self.toolbar.SetSizer(toolbarsizer)
-        sizer.Add(self.toolbar, (5,0), wx.GBSpan(1,3))
+        sizer.Add(self.toolbar, (5,0), wx.GBSpan(1,3), wx.ALIGN_CENTER)
 
         sizer.Add(wx.StaticText(self, -1, "sequences:                                    "), (0,3))
         self.seqbox = wx.ListBox(self, -1)
@@ -423,8 +458,8 @@ class seqEditor(wx.Panel):
         self.seqbar = wx.Panel(self, -1)
         seqbarsizer = wx.BoxSizer(wx.HORIZONTAL)
         seqbarsizer.AddStretchSpacer()
-        seqbarsizer.Add(wx.Button(self.seqbar, ID_POSE_ADD, 'add'),3)
-        seqbarsizer.Add(wx.Button(self.seqbar, ID_POSE_REM, 'remove'),3)     
+        seqbarsizer.Add(wx.Button(self.seqbar, self.BT_POSE_ADD, 'add'),3)
+        seqbarsizer.Add(wx.Button(self.seqbar, self.BT_POSE_REM, 'remove'),3)     
         seqbarsizer.AddStretchSpacer()
         self.seqbar.SetSizer(seqbarsizer)
         sizer.Add(self.seqbar, (5,3))
@@ -452,6 +487,33 @@ class seqEditor(wx.Panel):
         pass
     def moveDn(self):
         pass
+
+
+###############################################################################
+# New Robot Dialog
+class NewRobot(wx.Dialog):
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title, size=(220, 140))
+
+        panel = wx.Panel(self, -1)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        wx.StaticBox(panel, -1, 'Robot Parameters', (5, 5), (210, 80))
+        wx.StaticText(panel, -1, 'Name:', (15,30))
+        self.name = wx.TextCtrl(panel, -1, '', (105,25)) 
+        wx.StaticText(panel, -1, '# of Servos:', (15,55))
+        self.count = wx.SpinCtrl(self, -1, '18', (105, 50), min=1, max=30)
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, wx.ID_OK, 'Ok', size=(70, 30))
+        closeButton = wx.Button(self, wx.ID_CANCEL, 'Close', size=(70, 30))
+        hbox.Add(okButton, 1)
+        hbox.Add(closeButton, 1, wx.LEFT, 5)
+
+        vbox.Add(panel)
+        vbox.Add(hbox, 1, wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, 10)
+
+        self.SetSizer(vbox)    
 
 
 if __name__ == "__main__":
