@@ -52,24 +52,24 @@ class pose(list):
 # Sequence class is a list, first element is name, rest are (pose,time) pairs 
 class sequence(list):
     """ A class to hold a sequence. """
-    def __init__(self, line):
+    def __init__(self, line=None):
         # load the name, (pose,time) pairs for this sequence
         try:
-            #self.append(line[0:line.index(":")])
-            #line = line[line.index(":")+1:]
+            if line == None:
+                return
             while True:
                 if line.find(",") > 0:
-                    self.append((line[0:line.index("|")].strip().rstrip(), int(line[line.index("|")+1:line.index(",")])))
+                    self.append(line[0:line.index(",")].strip().rstrip().replace("|",",")) 
                 else:
-                    self.append((line[0:line.index("|")].strip().rstrip(), int(line[line.index("|")+1:])))
+                    self.append(line.strip().rstrip().replace("|",",")) 
                 line = line[line.index(",")+1:] 
         except:
             pass
 
     def __str__(self):
-        #data = "Seq=" + self[0] + ": "
-        for translate in self: #[1:]:
-            data = data + str(translate[0]) + "|" + str(translate[1]) + ", "
+        data = " "        
+        for translate in self: 
+            data = data + translate + ", "
         return data[0:-2]
 
 
@@ -125,12 +125,20 @@ class robot:
         print>>posefile, "#include <avr/pgmspace.h>"
         print>>posefile, ""
         for p in self.poses.keys():
-            print>>posefile, "PROGMEM prog_uint16_t " + p + "[] = {0x0C,",
+            print>>posefile, "PROGMEM prog_uint16_t " + p + "[] = {" + str(self.count) + ",",
             p = self.poses[p]
             for x in p[0:-1]:
                 print>>posefile, str(x) + ",",
             print>>posefile, str(p[-1]) + "};"
-            print>>posefile, ""
+            #print>>posefile, ""
+        print>>posefile, ""
+        for s in self.sequences.keys():
+            print>>posefile, "PROGMEM transition_t " + s + "[] = {{0," + str(len(self.sequences[s])) + "}",
+            s = self.sequences[s]
+            for t in s:
+                print>>posefile, ",{" + t[0:t.find(",")] + "," + t[t.find(",")+1:] + "}",            
+            print>>posefile, "};"
+        print>>posefile, ""
         print>>posefile, "#endif"
         posefile.close()
 

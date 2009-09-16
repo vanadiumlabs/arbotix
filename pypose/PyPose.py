@@ -29,11 +29,19 @@ from ax12 import *
 #                getReg(id, start_addr, length)
 #                syncWrite(regstart, ((id1, val1, val2..), (id2, val1, val2...), ..) )
 import arbotix
-import direct
+#import direct
 
 from robot import *
 
 VERSION = "PyPose v0.91"
+
+#TODO: override self.close(), add stuff for autosave
+#      download an indexed pose
+#      download a sequence
+#      
+#  in sketch: 
+#      implement sequence playback engine
+#      
 
 ###############################################################################
 # Main editor window
@@ -50,6 +58,7 @@ class editor(wx.Frame):
     ID_RELAX=110
     ID_PORT=111
     ID_ABOUT=112
+    ID_NUKE=113
 
     def __init__(self):
         """ Creates pose editor window. """
@@ -57,8 +66,8 @@ class editor(wx.Frame):
 
         # data for our program
         self.robot = robot()
-        self.seqPane = None
-        self.posePane = None
+        self.saveReq = False
+        self.panel = None
         self.port = None
         self.filename = ""
         self.dirname = ""
@@ -77,12 +86,13 @@ class editor(wx.Frame):
         toolsmenu = wx.Menu()
         toolsmenu.Append(self.ID_POSE,"pose editor") # do pose creation
         toolsmenu.Append(self.ID_SEQ,"sequence editor") # do sequencing
-        #toolsmenu.Append(self.ID_NUKE,"NUKE") # do IK
+        toolsmenu.Append(self.ID_NUKE,"NUKE") # do IK
         toolsmenu.Append(self.ID_EXPORT,"export to AVR") # save as dialog
         menubar.Append(toolsmenu,"tools")
 
         configmenu = wx.Menu()
         configmenu.Append(self.ID_PORT,"port") # dialog box: arbotix/thru, speed, port
+        # live update?
         menubar.Append(configmenu, "config")    
 
         helpmenu = wx.Menu()
@@ -113,41 +123,29 @@ class editor(wx.Frame):
         self.sb.SetStatusText('not connected',1)
 
         self.loadPosePane()
-
         self.Centre()
         self.Show(True)
 
     ###########################################################################
     # pane handling      
-    def loadPosePane(self, e=None):
-        if self.posePane != None:
-            self.posePane.Destroy()
-            self.posePane = None
-        if self.seqPane != None:
-            self.seqPane.Destroy()
-            self.seqPane = None
+    def replacePanel(self, panelClass):
+        # do save here? 
+        if self.panel != None:
+            self.panel.save()
+            self.panel.Destroy()
         self.ClearBackground()
-        self.posePane = poseEditor(self)
+        self.panel = panelClass(self)
         self.sizer=wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.posePane,1,wx.EXPAND|wx.ALL,10)
+        self.sizer.Add(self.panel,1,wx.EXPAND|wx.ALL,10)
         self.SetSizer(self.sizer)
         self.SetAutoLayout(1)
         self.sizer.Fit(self)
 
+    def loadPosePane(self, e=None):
+        self.replacePanel(poseEditor)
+
     def loadSeqPane(self, e=None):
-        if self.posePane != None:
-            self.posePane.Destroy()
-            self.posePane = None
-        if self.seqPane != None:
-            self.seqPane.Destroy()
-            self.seqPane = None
-        self.ClearBackground()
-        self.seqPane = seqEditor(self)
-        self.sizer=wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.seqPane,1,wx.EXPAND|wx.ALL,10)
-        self.SetSizer(self.sizer)
-        self.SetAutoLayout(1)
-        self.sizer.Fit(self)    
+        self.replacePanel(seqEditor) 
 
     ###########################################################################
     # file handling                
@@ -158,6 +156,7 @@ class editor(wx.Frame):
             self.robot.new(dlg.name.GetValue(), dlg.count.GetValue())
             self.loadPosePane()      
             self.sb.SetStatusText('created new robot ' + self.robot.name)
+            self.panel.saveReq = True
         dlg.Destroy()
 
     def openFile(self, e):
@@ -170,8 +169,8 @@ class editor(wx.Frame):
             self.robot.load(self.filename)  
             self.SetTitle(VERSION+": " + self.robot.name)
             dlg.Destroy()
-        self.loadPosePane()
-        self.sb.SetStatusText('opened ' + self.filename)
+            self.loadPosePane()
+            self.sb.SetStatusText('opened ' + self.filename)
 
     def saveFile(self, e=None):
         """ Save a robot file from the GUI. """
@@ -185,6 +184,7 @@ class editor(wx.Frame):
                 return
         self.robot.save(self.filename)
         self.sb.SetStatusText('saved ' + self.filename)
+        self.panel.saveReq = False
 
     def saveFileAs(self, e):
         self.filename = ""
@@ -197,7 +197,7 @@ class editor(wx.Frame):
         dlg = wx.FileDialog(self, "Choose a file", self.dirname,"","*.h",wx.SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             self.robot.export(dlg.GetPath())
-            self.sb.SetStatusText("exported " + dlg.getPath(),0)
+            self.sb.SetStatusText("exported " + dlg.GetPath(),0)
             dlg.Destroy()        
 
     ###########################################################################
@@ -241,13 +241,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
 """
         info = wx.AboutDialogInfo()
         info.SetName(VERSION)
-        #info.SetVersion("0.91")
         info.SetDescription("A lightweight pose and capture software for the arbotiX robocontroller")
         info.SetCopyright("Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.")
         info.SetLicense(license)
         info.SetWebSite("http://www.vanadiumlabs.com")
         wx.AboutBox(info)
-        #AddDeveloper(string developer)	add a developer to the developer's list
 
 ###############################################################################
 # pose editor window
@@ -261,12 +259,18 @@ class poseEditor(wx.Panel):
     ID_POSE_BOX = 105
 
     def __init__(self, parent):
-        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL)#|wx.SUNKEN_BORDER)
+        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL)
         self.parent = parent  
         self.curpose = "" 
+        self.saveReq = False
 
-        sizer = wx.GridBagSizer(5,5)
+        sizer = wx.GridBagSizer(10,10)
 
+        # pose editor, goes in a box:
+        temp = wx.StaticBox(self, -1, 'edit pose')
+        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
+        editBox = wx.StaticBoxSizer(temp,orient=wx.VERTICAL) 
+        poseEditSizer = wx.GridBagSizer(5,5)
         # build servo editors
         self.servos = list() # the editors in the window
         for i in range(self.parent.robot.count):
@@ -277,42 +281,42 @@ class poseEditor(wx.Panel):
                 tempName = wx.StaticText(temp, -1, "ID 0"+str(i+1))   
             else:
                 tempName = wx.StaticText(temp, -1, "ID "+str(i+1))
-            temp.position = wx.Slider(temp, -1, 512, 0, 1023, wx.DefaultPosition, (200, -1), wx.SL_HORIZONTAL | wx.SL_LABELS)
+            temp.position = wx.Slider(temp, i, 512, 0, 1023, wx.DefaultPosition, (200, -1), wx.SL_HORIZONTAL | wx.SL_LABELS)
             hbox.Add(tempName)
             hbox.Add(temp.position)
             temp.SetSizer(hbox)
-            if i%2 == 0:
-                sizer.Add(temp, (i/2, 0))
+            if i == 0:
+                poseEditSizer.Add(temp, (i/2, 0), wx.GBSpan(1,1), wx.TOP,10)
+            elif i == 1:
+                poseEditSizer.Add(temp, (i/2, 1), wx.GBSpan(1,1), wx.TOP,10)
+            elif i%2 == 0:
+                poseEditSizer.Add(temp, (i/2, 0))
             else:
-                sizer.Add(temp, (i/2, 1))
-            # TODO: parametric setup
+                poseEditSizer.Add(temp, (i/2, 1))
             self.servos.append(temp)
-        
-        self.toolbar = wx.Panel(self, -1)
-        toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)
-        toolbarsizer.AddStretchSpacer()
-        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_RELAX, 'relax'),1)
-        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_CAPTURE, 'capture'),1)        
-        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_SET, 'set'),1)
-        toolbarsizer.AddStretchSpacer()
-        self.toolbar.SetSizer(toolbarsizer)
-        sizer.Add(self.toolbar, (self.parent.robot.count/2,0), wx.GBSpan(1,2))
-        
-        #Label(self, text="Poses:").grid(row=0,column=2,sticky=W+N,padx=5,pady=5)
-        #sizer.Add(wx.StaticText(self, -1, "poses:                                    "), (0,2))
+        # grid it
+        editBox.Add(poseEditSizer)
+        sizer.Add(editBox, (0,0), wx.GBSpan(1,1), wx.EXPAND)
+
+        # list of poses
         self.posebox = wx.ListBox(self, self.ID_POSE_BOX, choices=self.parent.robot.poses.keys())
-        self.posebox.SetMinSize(wx.Size(40,80))
-        sizer.Add(self.posebox, (0,2), wx.GBSpan(self.parent.robot.count/2,1), wx.EXPAND | wx.ALL)    
-        
-        self.posebar = wx.Panel(self, -1)
-        posebarsizer = wx.BoxSizer(wx.HORIZONTAL)
-        posebarsizer.AddStretchSpacer()
-        posebarsizer.Add(wx.Button(self.posebar, self.BT_POSE_ADD, 'add'),3)
-        posebarsizer.Add(wx.Button(self.posebar, self.BT_POSE_REM, 'remove'),3)     
-        posebarsizer.AddStretchSpacer()
-        self.posebar.SetSizer(posebarsizer)
-        sizer.Add(self.posebar, (self.parent.robot.count/2,2))
-   
+        sizer.Add(self.posebox, (0,1), wx.GBSpan(1,1), wx.EXPAND) 
+        # and add/remove
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Button(self, self.BT_POSE_ADD, 'add'))
+        hbox.Add(wx.Button(self, self.BT_POSE_REM, 'remove'))     
+        sizer.Add(hbox,(1,1),wx.GBSpan(1,1),wx.ALIGN_CENTER)
+
+        # toolbar
+        toolbar = wx.Panel(self, -1)
+        toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_RELAX, 'relax'),1)
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_CAPTURE, 'capture'),1)         
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_SET, 'set'),1)
+        toolbar.SetSizer(toolbarsizer)
+        sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
+       
+        self.Bind(wx.EVT_SLIDER, self.updatePose)
         wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
         wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose)    
         wx.EVT_BUTTON(self, self.BT_SET, self.setPose) 
@@ -322,14 +326,26 @@ class poseEditor(wx.Panel):
 
         self.SetSizerAndFit(sizer)
 
+    def save(self):
+        pass    
+    #    if self.curpose != "" and self.saveReq == True:
+    #        dlg = wx.MessageDialog(self, 'Do You Want to Save Changes to this Pose?', self.curpose + ' changed', wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
+    #        if dlg.ShowModal() == wx.ID_OK:
+    #            for servo in range(self.parent.robot.count):
+    #                self.parent.robot.poses[self.curpose][servo] = self.servos[servo].position.GetValue() 
+    #        dlg.Destroy()
+    #        self.saveReq == False
+
+            
     ###########################################################################
     # Pose Manipulation
+    def updatePose(self, e=None):
+        """ Save updates to a pose. """
+        if self.curpose != "":
+            self.parent.robot.poses[self.curpose][e.GetId()] = e.GetInt()
     def doPose(self, e=None):
-        """ Save previous pose changes, load a pose into the slider boxes. """
+        """ Load a pose into the slider boxes. """
         if e.IsSelection():
-            if self.curpose != "":
-                for servo in range(self.parent.robot.count):
-                    self.parent.robot.poses[self.curpose][servo] = self.servos[servo].position.GetValue() 
             self.curpose = str(e.GetString())
             for servo in range(self.parent.robot.count):
                 self.servos[servo].position.SetValue(self.parent.robot.poses[self.curpose][servo])
@@ -403,91 +419,192 @@ class seqEditor(wx.Panel):
     BT_RELAX = 103
     BT_RUN = 104
     BT_HALT = 105 
-    BT_POSE_ADD = 106
-    BT_POSE_REM = 107
+    BT_SEQ_ADD = 106
+    BT_SEQ_REM = 107
+    BT_TRAN_ADD = 108
+    BT_TRAN_REM = 109
+
+    ID_SEQ_BOX = 110
+    ID_TRAN_BOX = 111
+    ID_TRAN_POSE = 112
+    ID_TRAN_TIME = 113
 
     def __init__(self, parent):
-        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL) #|wx.SUNKEN_BORDER)
+        wx.Panel.__init__(self,parent,style=wx.TAB_TRAVERSAL)
         self.parent = parent        
         self.curseq = ""
+        self.curtran = -1
 
-        sizer = wx.GridBagSizer(5,5)
-
-        # listbox for sequence
-        sizer.Add(wx.StaticText(self, -1, "transitions:                          "), (0,0))
-        self.tranbox = wx.ListBox(self, -1)
-        sizer.Add(self.tranbox, (1,0), wx.GBSpan(4,1), wx.EXPAND | wx.ALL)
+        sizer = wx.GridBagSizer(10,10)
+    
+        # sequence editor, goes in a box:
+        temp = wx.StaticBox(self, -1, 'edit sequence')
+        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
+        editBox = wx.StaticBoxSizer(temp,orient=wx.VERTICAL)
+        seqEditSizer = wx.GridBagSizer(5,5)
         
-        sizer.Add(wx.StaticText(self,-1,""),(0,1))
-        sizer.Add(wx.StaticText(self,-1,""),(0,2))
-        # transition editor 
-        edit = wx.StaticText(self, -1, "edit transition:")
-        edit.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
-        sizer.Add(edit, (1,1))
+        # transitions list
+        temp = wx.StaticText(self, -1, "transitions:")
+        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
+        seqEditSizer.Add(temp, (0,0), wx.GBSpan(1,1), wx.TOP,10)
+        self.tranbox = wx.ListBox(self, self.ID_TRAN_BOX)
+        seqEditSizer.Add(self.tranbox, (1,0), wx.GBSpan(5,1), wx.EXPAND|wx.ALL) 
+        # and add/remove
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Button(self, self.BT_TRAN_ADD, 'new'))
+        hbox.Add(wx.Button(self, self.BT_TRAN_REM, 'delete'))     
+        seqEditSizer.Add(hbox,(6,0),wx.GBSpan(1,1),wx.ALIGN_CENTER)
+        
+        # pose name & delta-T
+        seqEditSizer.Add(wx.StaticText(self, -1, "pose:"), (1,1))
+        self.tranPose = wx.ComboBox(self, self.ID_TRAN_POSE, choices=self.parent.robot.poses.keys())
+        seqEditSizer.Add(self.tranPose, (1,2))
+        seqEditSizer.Add(wx.StaticText(self, -1, "delta-T:"), (2,1))
+        self.tranTime = wx.SpinCtrl(self, self.ID_TRAN_TIME, '1000', min=1, max=5000)
+        seqEditSizer.Add(self.tranTime, (2,2))
+        # buttons to move transition up/down
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Button(self, self.BT_MOVE_UP, 'move up'))
+        hbox.Add(wx.Button(self, self.BT_MOVE_DN, 'move down'))     
+        seqEditSizer.Add(hbox,(4,1),wx.GBSpan(1,2),wx.ALIGN_CENTER|wx.BOTTOM,10)
+        # grid it
+        editBox.Add(seqEditSizer)
+        sizer.Add(editBox, (0,0), wx.GBSpan(1,1), wx.EXPAND)
 
-        sizer.Add(wx.StaticText(self, -1, "pose:"), (2,1))
-        self.tranPose = wx.ComboBox(self, -1, choices=self.parent.robot.poses.keys())
-        sizer.Add(self.tranPose, (2,2)) #wx.TextCtrl(self,-1),(2,2))
+        # list of sequences
+        self.seqbox = wx.ListBox(self, self.ID_SEQ_BOX, choices=self.parent.robot.sequences.keys())
+        sizer.Add(self.seqbox, (0,1), wx.GBSpan(1,1), wx.EXPAND) 
+        # and add/remove
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.Button(self, self.BT_SEQ_ADD, 'add'))
+        hbox.Add(wx.Button(self, self.BT_SEQ_REM, 'remove'))     
+        sizer.Add(hbox,(1,1),wx.GBSpan(1,1),wx.ALIGN_CENTER)
 
-#wx.ComboBox(int id, string value='', wx.Point pos=wx.DefaultPosition, wx.Size size=wx.DefaultSize,
-#            wx.List choices=wx.EmptyList, int style=0, wx.Validator validator=wx.DefaultValidator,
-#            string name=wx.ComboBoxNameStr)
-
-        sizer.Add(wx.StaticText(self, -1, "delta-T:"), (3,1))
-        self.tranTime = wx.SpinCtrl(self, -1, '1000', min=1, max=2500)
-        sizer.Add(self.tranTime, (3,2))
-        sizer.Add(wx.Button(self, self.BT_MOVE_UP, 'move up'), (4,1))
-        sizer.Add(wx.Button(self, self.BT_MOVE_DN, 'move down'), (4,2))
-
-        self.toolbar = wx.Panel(self, -1)
+        # toolbar
+        toolbar = wx.Panel(self, -1)
         toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)
-        toolbarsizer.AddStretchSpacer()
-        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_RELAX, 'relax'),1)
-        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_RUN, 'run'),1)         
-        toolbarsizer.Add(wx.Button(self.toolbar, self.BT_HALT, 'halt'),1)
-        toolbarsizer.AddStretchSpacer()
-        self.toolbar.SetSizer(toolbarsizer)
-        sizer.Add(self.toolbar, (5,0), wx.GBSpan(1,3), wx.ALIGN_CENTER)
-
-        sizer.Add(wx.StaticText(self, -1, "sequences:                                    "), (0,3))
-        self.seqbox = wx.ListBox(self, -1)
-        self.seqbox.SetMinSize(wx.Size(40,80))
-        sizer.Add(self.seqbox, (1,3), wx.GBSpan(4,1), wx.EXPAND | wx.ALL)
-        #self.posebox.bind("<ButtonRelease-1>",self.doPose)        
-        
-        self.seqbar = wx.Panel(self, -1)
-        seqbarsizer = wx.BoxSizer(wx.HORIZONTAL)
-        seqbarsizer.AddStretchSpacer()
-        seqbarsizer.Add(wx.Button(self.seqbar, self.BT_POSE_ADD, 'add'),3)
-        seqbarsizer.Add(wx.Button(self.seqbar, self.BT_POSE_REM, 'remove'),3)     
-        seqbarsizer.AddStretchSpacer()
-        self.seqbar.SetSizer(seqbarsizer)
-        sizer.Add(self.seqbar, (5,3))
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_RELAX, 'relax'),1)
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_RUN, 'run'),1)         
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_HALT, 'halt'),1)
+        toolbar.SetSizer(toolbarsizer)
+        sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
 
         self.SetSizerAndFit(sizer)
 
+        wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
+        wx.EVT_BUTTON(self, self.BT_RUN, self.runSeq)    
+        wx.EVT_BUTTON(self, self.BT_HALT, self.haltSeq) 
+        wx.EVT_BUTTON(self, self.BT_SEQ_ADD, self.addSeq)
+        wx.EVT_BUTTON(self, self.BT_SEQ_REM, self.remSeq)   
+        wx.EVT_LISTBOX(self, self.ID_SEQ_BOX, self.doSeq)
+        wx.EVT_BUTTON(self, self.BT_MOVE_UP, self.moveUp)
+        wx.EVT_BUTTON(self, self.BT_MOVE_DN, self.moveDn)
+        wx.EVT_BUTTON(self, self.BT_TRAN_ADD, self.addTran)
+        wx.EVT_BUTTON(self, self.BT_TRAN_REM, self.remTran)   
+        wx.EVT_LISTBOX(self, self.ID_TRAN_BOX, self.doTran)
+        
+        wx.EVT_COMBOBOX(self, self.ID_TRAN_POSE, self.updateTran)
+        wx.EVT_SPINCTRL(self, self.ID_TRAN_TIME, self.updateTran)
+     
+    def save(self):            
+        if self.curseq != "":
+            self.parent.robot.sequences[self.curseq] = sequence()
+            for i in range(self.tranbox.GetCount()):
+                self.parent.robot.sequences[self.curseq].append(self.tranbox.GetString(i).replace(",","|"))               
+   
+    ###########################################################################
+    # Sequence Manipulation
+    def doSeq(self, e=None):
+        """ save previous sequence changes, load a sequence into the editor. """
+        if e.IsSelection():
+            self.save()            
+            self.curseq = str(e.GetString())
+            self.curtran = -1
+            for i in range(self.tranbox.GetCount()):
+                self.tranbox.Delete(0)      # TODO: There has got to be a better way to do this??
+            for transition in self.parent.robot.sequences[self.curseq]:
+                self.tranbox.Append(transition.replace("|",","))
+            self.tranPose.SetValue("")
+            self.tranTime.SetValue(500)
+    
 
-    def reset(self):
-        pass
+    def addSeq(self, e=None):       
+        """ create a new sequence. """
+        if self.parent.robot.name != "":
+            dlg = wx.TextEntryDialog(self,'Sequence Name:', 'New Sequence Settings')
+            dlg.SetValue("")
+            if dlg.ShowModal() == wx.ID_OK:
+                self.seqbox.Append(dlg.GetValue())
+                self.parent.robot.sequences[dlg.GetValue()] = sequence("")
+                dlg.Destroy()
+        else:
+            dlg = wx.MessageDialog(self, 'Please create a new robot first.', 'Error', wx.OK|wx.ICON_EXCLAMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+    def remSeq(self, e=None):
+        """ remove a sequence. """
+        if self.curseq != "":
+            dlg = wx.MessageDialog(self, 'Are you sure you want to delete this sequence?', 'Confirm', wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
+            if dlg.ShowModal() == wx.ID_OK:
+                # this order is VERY important!
+                v = self.seqbox.FindString(self.curseq)
+                del self.parent.robot.sequences[self.curseq]
+                self.seqbox.Delete(v)
+                self.curseq = ""
+                dlg.Destroy()
 
-    def addSeq(self):   
-        pass
-    def remSeq(self):
-        pass
+    ###########################################################################
+    # Transition Manipulation
+    def doTran(self, e=None):
+        """ load a transition into the editor. """
+        if e.IsSelection():
+            if self.curseq != "":
+                self.curtran = e.GetInt()
+                v = str(e.GetString())   
+                self.tranPose.SetValue(v[0:v.find(",")])
+                self.tranTime.SetValue(int(v[v.find(",")+1:]))
+            
+    def addTran(self, e=None):       
+        """ create a new transtion in this sequence. """
+        if self.curseq != "":
+            if self.curtran != -1:
+                self.tranbox.Insert("none,500",self.curtran+1)
+            else:
+                self.tranbox.Append("none,500")
+    def remTran(self, e=None):
+        """ remove a sequence. """
+        if self.curseq != "" and self.curTran != -1:
+            dlg = wx.MessageDialog(self, 'Are you sure you want to delete this transition?', 'Confirm', wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.tranbox.Delete(self.curtran)
+                self.curtran = -1
+                self.tranPose.SetValue("")
+                self.tranTime.SetValue(500)
+                dlg.Destroy()
 
-    def runSeq(self):
+    def moveUp(self, e=None):
+        if self.curtran > 0:
+            self.tranbox.Delete(self.curtran)
+            self.curtran = self.curtran - 1
+            self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)
+            self.tranbox.SetSelection(self.curtran)
+    def moveDn(self, e=None):
+        if self.curtran < self.tranbox.GetCount()-1:
+            self.tranbox.Delete(self.curtran)
+            self.curtran = self.curtran + 1
+            self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)   
+            self.tranbox.SetSelection(self.curtran)
+    def updateTran(self, e=None):
+        if self.curtran != -1:
+            self.tranbox.Delete(self.curtran)
+            self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)
+            print "Updated: " + self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran
+            self.tranbox.SetSelection(self.curtran)
+        
+    def runSeq(self, e=None):
         pass
-    def haltSeq(self):
+    def haltSeq(self, e=None):
         pass
-
-    def doSeq(self):
-        pass
-
-    def moveUp(self):
-        pass
-    def moveDn(self):
-        pass
-
 
 ###############################################################################
 # New Robot Dialog
