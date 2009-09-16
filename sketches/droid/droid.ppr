@@ -1,0 +1,8 @@
+droid:4
+Pose=liftLeft: 612, 620, 450, 380
+Pose=plantRight: 612, 620, 508, 516
+Pose=swingRight: 612, 620, 710, 593
+Pose=swingLeft: 413, 410, 450, 390
+Pose=plantLeft: 418, 411, 503, 516
+Pose=liftRight: 523, 520, 712, 592
+Seq=forward:  plantLeft|250, liftRight|250, swingRight|250, plantRight|250, liftLeft|250, swingLeft|250, plantLeft|250

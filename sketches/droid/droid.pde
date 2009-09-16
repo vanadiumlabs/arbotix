@@ -20,11 +20,7 @@
 #include <BioloidController.h>
 #include "poses.h"
 
-#define frames 6
-
 BioloidController bioloid = BioloidController(1000000);
-
-int idx = 0;
 
 void setup(){
     Serial.begin(38400);    
@@ -39,31 +35,11 @@ void setup(){
         bioloid.interpolateStep();
         delay(3);
     }
+    
+    // start our walking
+    bioloid.playSeq(forward);
 }
 
 void loop(){
-    int i;
-    
-    // if finished interpolating, which pose do we go to next?
-    if(bioloid.interpolating == 0){
-        idx++;
-        if(idx > 18) while(1);   // this demo goes 3 cycles, then stops
-        if(idx % frames == 0){
-            bioloid.loadPose(plantLeft);
-        }else if(idx % frames == 1){
-            bioloid.loadPose(liftRight);   
-        }else if(idx % frames == 2){
-            bioloid.loadPose(swingRight);   
-        }else if(idx % frames == 3){
-            bioloid.loadPose(plantRight);   
-        }else if(idx % frames == 4){
-            bioloid.loadPose(liftLeft);
-        }else if(idx % frames == 5){
-            bioloid.loadPose(swingLeft);
-        }
-        bioloid.interpolateSetup(1000);   
-    }
-    
-    // update joints, this should be called faster than 30hz.
-    bioloid.interpolateStep();
+    bioloid.play();
 }
