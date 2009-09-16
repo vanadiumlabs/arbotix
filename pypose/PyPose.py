@@ -119,10 +119,10 @@ class editor(wx.Frame):
         # editor area       
         self.sb = self.CreateStatusBar(2)
         self.sb.SetStatusWidths([-1,150])
-        self.sb.SetStatusText('please create or open a robot file...',0)
         self.sb.SetStatusText('not connected',1)
 
         self.loadPosePane()
+        self.sb.SetStatusText('please create or open a robot file...',0)
         self.Centre()
         self.Show(True)
 
@@ -143,9 +143,11 @@ class editor(wx.Frame):
 
     def loadPosePane(self, e=None):
         self.replacePanel(poseEditor)
+        self.sb.SetStatusText('please create or select a pose to edit...',0)
 
     def loadSeqPane(self, e=None):
         self.replacePanel(seqEditor) 
+        self.sb.SetStatusText('please create or select a sequence to edit...',0)
 
     ###########################################################################
     # file handling                
@@ -155,7 +157,7 @@ class editor(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             self.robot.new(dlg.name.GetValue(), dlg.count.GetValue())
             self.loadPosePane()      
-            self.sb.SetStatusText('created new robot ' + self.robot.name)
+            self.sb.SetStatusText('created new robot ' + self.robot.name + ', please create a pose...')
             self.panel.saveReq = True
         dlg.Destroy()
 
@@ -293,6 +295,7 @@ class poseEditor(wx.Panel):
                 poseEditSizer.Add(temp, (i/2, 0))
             else:
                 poseEditSizer.Add(temp, (i/2, 1))
+            temp.Disable()  # servo editors start out disabled, enabled only when a pose is selected
             self.servos.append(temp)
         # grid it
         editBox.Add(poseEditSizer)
@@ -346,10 +349,14 @@ class poseEditor(wx.Panel):
     def doPose(self, e=None):
         """ Load a pose into the slider boxes. """
         if e.IsSelection():
+            if self.curpose == "":   # if we haven't yet, enable servo editors
+                for servo in self.servos:
+                    servo.Enable()
             self.curpose = str(e.GetString())
             for servo in range(self.parent.robot.count):
                 self.servos[servo].position.SetValue(self.parent.robot.poses[self.curpose][servo])
-        
+            self.parent.sb.SetStatusText('now editing pose: ' + self.curpose,0)
+            
     def capturePose(self, e=None):
         """ Downloads the current pose from the robot to the GUI. """
         errors = "could not read servos: "
@@ -390,7 +397,7 @@ class poseEditor(wx.Panel):
             dlg = wx.TextEntryDialog(self,'Pose Name:', 'New Pose Settings')
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                self.posebox.Append(dlg.GetValue())
+                self.posebox.Append(dlg.GetValue()) 
                 self.parent.robot.poses[dlg.GetValue()] = pose("",self.parent.robot.count)
                 dlg.Destroy()
         else:
@@ -408,6 +415,9 @@ class poseEditor(wx.Panel):
                 self.posebox.Delete(v)
                 self.curpose = ""
                 dlg.Destroy()
+                for servo in self.servos:   # disable editors if we have no pose selected
+                    servo.Disable()
+            self.parent.sb.SetStatusText("please create or select a pose to edit...",0)   
 
 
 ###############################################################################
@@ -526,6 +536,7 @@ class seqEditor(wx.Panel):
                 self.tranbox.Append(transition.replace("|",","))
             self.tranPose.SetValue("")
             self.tranTime.SetValue(500)
+            self.parent.sb.SetStatusText('now editing sequence: ' + self.curseq)
     
 
     def addSeq(self, e=None):       
