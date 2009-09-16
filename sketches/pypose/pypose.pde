@@ -1,5 +1,5 @@
 /* 
-  ArbotiX Test Program for use with PyPose V1.0
+  ArbotiX Test Program for use with PyPose V0.91
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -24,8 +24,9 @@ BioloidController bioloid = BioloidController(1000000);
 
 #define ARB_SIZE_POSE   7  // also initializes
 #define ARB_LOAD_POSE   8
-#define ARB_PLAY_POSE   9
-#define ARB_COMP_POSE   10
+#define ARB_SIZE_SEQ    9
+#define ARB_LOAD_SEQ    10
+#define ARB_PLAY_SEQ    11
 
 int mode = 0;              // where we are in the frame
 
@@ -38,6 +39,11 @@ unsigned char index = 0;   // index in param buffer
 
 int checksum;              // checksum
 
+int seq_size;              // sequence size
+transition_t * seq;        // sequence
+
+int * poses;               // 
+
 void setup(){
     Serial.begin(38400);    
     pinMode(0,OUTPUT);     // status LED
@@ -49,9 +55,10 @@ void setup(){
  *
  * ID = 253 for these special commands!
  * Pose Size = 7, followed by single param: size of pose
- * Load Pose = 8, followed by pose positions (# of param = 2*pose_size)
- * Play Pose = 9, followed by 2-byte param: #ms to interpolate
- * Moving = 10, returns whether we are interpolating or not
+ * Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size)
+ * Seq Size = 9, followed by single param: size of seq
+ * Load Seq = A, followed by index/times (# of parameters = 3*seq_size) 
+ * Play Seq = B, no params
  */
 
 void loop(){
@@ -95,18 +102,25 @@ void loop(){
                 }else{
                     if(id == 253){
                         // special ArbotiX instructions
+                        // Pose Size = 7, followed by single param: size of pose
+                        // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size)
+                        // Seq Size = 9, followed by single param: size of seq
+                        // Load Seq = A, followed by index/times (# of parameters = 3*seq_size) 
+                        // Play Seq = B, no params
                         if(ins == ARB_SIZE_POSE){
                             bioloid.poseSize = params[0];
                             bioloid.readPose();    
                         }else if(ins == ARB_LOAD_POSE){
                             int i;
+                            
                             for(i=0;i<bioloid.poseSize;i++){
                                 bioloid.setNextPose(i+1,params[i]);   
                             }
-                        }else if(ins == ARB_PLAY_POSE){
+                        }else if(ins == ARB_SIZE_SEQ){
+                            seq_size = params[0];
                             int t = params[0] + (params[1]<<8);
                             bioloid.interpolateSetup(t);   
-                        }else if(ins == ARB_COMP_POSE){
+                        }else if(ins == ARB_LOAD_SEQ){
                             if(bioloid.interpolating){
                                 
                             }else{
