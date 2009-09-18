@@ -44,26 +44,42 @@ class ax12:
             self.ser.port = port
             self.ser.timeout = 3
             self.ser.open()
+            self.error = 0
         except:
             print "Cannot open port" + str(sys.exc_info()[0])
             #sys.exit(0)
 
+    def execute(self, index, ins, params):
+        """ Send an instruction """
+        self.ser.flushInput()
+        length = 2 + len(params)
+        checksum = 255 - ((index + length + ins + sum(params))%256)
+        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(ins))
+        for val in params:
+            self.ser.write(chr(val))
+        self.ser.write(chr(checksum))
+        return self.getPacket(0)
+
     def setReg(self, index, regstart, values):
         """ Set the value of registers. Should be called as such:
         ax12.setReg(1,1,(0x01,0x05)) """ 
-        self.ser.flushInput()
-        length = 3 + len(values)
-        checksum = 255 - ((index + length + AX_WRITE_DATA + regstart + sum(values))%256)
+        self.execute(index, AX_WRITE_DATA, [regstart] + values)
+        return self.error        
+        #self.ser.flushInput()
+        #length = 3 + len(values)
+        #checksum = 255 - ((index + length + AX_WRITE_DATA + regstart + sum(values))%256)
         # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
-        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(AX_WRITE_DATA)+chr(regstart))
-        for val in values:
-            self.ser.write(chr(val))
-        self.ser.write(chr(checksum))
-        time.sleep(0.05)
+        #self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(AX_WRITE_DATA)+chr(regstart))
+        #for val in values:
+        #    self.ser.write(chr(val))
+        #self.ser.write(chr(checksum))
+        #time.sleep(0.05)
+        #self.getPacket(0)
+        #return self.error == 0
         # print the return information        
-        while self.ser.inWaiting() > 0:
-              print b2a_hex(self.ser.read()),
-        print ""
+        #while self.ser.inWaiting() > 0:
+        #      print b2a_hex(self.ser.read()),
+        #print ""
 
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params = None):
         # need a positive byte
@@ -99,7 +115,11 @@ class ax12:
             return self.getPacket(4, id, ord(d))
         elif mode == 4:         # read error    
             print "Error level found: " + str(ord(d))
-            return self.getPacket(5, id, leng, ord(d), list())
+            self.error = ord(d)
+            if leng == 2:
+                return self.getPacket(6, id, leng, ord(d), list())
+            else:
+                return self.getPacket(5, id, leng, ord(d), list())
         elif mode == 5:         # read params
             print "Parameter found: " + str(ord(d))
             params.append(ord(d))
@@ -120,12 +140,13 @@ class ax12:
     def getReg(self, index, regstart, rlength):
         """ Get the value of registers, should be called as such:
         ax12.getReg(1,1,1) """
-        self.ser.flushInput()   
+        vals = self.execute(index, AX_READ_DATA, [regstart, rlength])
+        #self.ser.flushInput()   
         # send packet: FF FF ID LENGTH INS(0x02) PARAM .. CHECKSUM
-        checksum = 255 - ((6 + index + regstart + rlength)%256)
-        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(0x04)+chr(AX_READ_DATA)+chr(regstart)+chr(rlength)+chr(checksum))
+        #checksum = 255 - ((6 + index + regstart + rlength)%256)
+        #self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(0x04)+chr(AX_READ_DATA)+chr(regstart)+chr(rlength)+chr(checksum))
         # read packet: FF FF ID LENGTH ERROR PARAMS CHECKSUM
-        vals = self.getPacket(0)           
+        #vals = self.getPacket(0)           
         if vals == None:
             print "Read Failed: Servo ID = " + str(index)
             return -1        

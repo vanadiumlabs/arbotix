@@ -25,6 +25,7 @@ import wx
 
 from ax12 import *
 # drivers expose init(port, baud)
+#                execute(id, instr, params)
 #                setReg(id, start_addr, vals)
 #                getReg(id, start_addr, length)
 #                syncWrite(regstart, ((id1, val1, val2..), (id2, val1, val2...), ..) )
@@ -33,15 +34,7 @@ import arbotix
 
 from robot import *
 
-VERSION = "PyPose v0.91"
-
-#TODO: override self.close(), add stuff for autosave
-#      download an indexed pose
-#      download a sequence
-#      
-#  in sketch: 
-#      implement sequence playback engine
-#      
+VERSION = "PyPose v0.93"
 
 ###############################################################################
 # Main editor window
@@ -359,8 +352,8 @@ class poseEditor(wx.Panel):
             
     def capturePose(self, e=None):
         """ Downloads the current pose from the robot to the GUI. """
-        errors = "could not read servos: "
-        if self.parent.port != None:   
+        if self.parent.port != None and self.curpose != "":   
+            errors = "could not read servos: "
             dlg = wx.ProgressDialog("capturing pose","this may take a few seconds, please wait...",self.parent.robot.count + 1)
             dlg.Update(1)
             for servo in range(self.parent.robot.count):
@@ -381,11 +374,11 @@ class poseEditor(wx.Panel):
 
     def setPose(self, e=None):
         """ Write a pose out to the robot. """
-        if self.parent.port != None:
+        if self.parent.port != None and self.curpose != "":
             #curPose = list()
             for servo in range(self.parent.robot.count):
                  pos = self.servos[servo].position.GetValue()
-                 self.parent.port.setReg(servo+1, P_GOAL_POSITION_L, (pos%256, pos>>8))
+                 self.parent.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
                  self.parent.robot.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
             #    pos = self.servos[servo].position.get()
             #    curPose.append( (servo+1, pos%256, pos>>8) )
@@ -537,7 +530,6 @@ class seqEditor(wx.Panel):
             self.tranPose.SetValue("")
             self.tranTime.SetValue(500)
             self.parent.sb.SetStatusText('now editing sequence: ' + self.curseq)
-    
 
     def addSeq(self, e=None):       
         """ create a new sequence. """
@@ -611,11 +603,56 @@ class seqEditor(wx.Panel):
             self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)
             print "Updated: " + self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran
             self.tranbox.SetSelection(self.curtran)
-        
+
+    def extract(self, li):
+        """ extract x%256,x>>8 for every x in li """
+        out = list()
+        for i in li:
+            out = out + [i%256,i>>8]
+        return out        
+
     def runSeq(self, e=None):
-        pass
+        """ download poses, seqeunce, and send. """
+        self.save() # save sequence            
+        if self.parent.port != None and self.curseq != "":
+            poseDL = dict()     # key = pose name, val = index, download them after we build a transition list
+            tranDL = list()     # list of bytes to download
+            for t in self.parent.robot.sequences[self.curseq]:  
+                p = t[0:t.find("|")]                    # pose name
+                dt = int(t[t.find("|")+1:])             # delta-T
+                if p not in poseDL.keys():
+                    poseDL[p] = len(poseDL.keys())      # get ix for pose
+                # create transition values to download
+                tranDL.append(poseDL[p])                # ix of pose
+                tranDL.append(dt%256)                   # time is an int (16-bytes)
+                tranDL.append(dt>>8)
+            tranDL.append(255)      # notice to stop
+            tranDL.append(0)        # time is irrelevant on stop    
+            tranDL.append(0)
+            # set pose size -- IMPORTANT!
+            print "Setting pose size at " + str(self.parent.robot.count)
+            self.parent.port.execute(253, 7, [self.parent.robot.count])
+            #print self.parent.port.ser.readline()
+            # send out poses (each pose is sent as id, servo_1, servo_2....)
+            for p in poseDL.keys():
+                print "Sending pose " + str(p) + " to position " + str(poseDL[p])
+                self.parent.port.execute(253, 8, [poseDL[p]] + self.extract(self.parent.robot.poses[p])) 
+                #print self.parent.port.ser.readline() 
+            # send out sequence
+            print "Sending sequence: " + str(tranDL)
+            self.parent.port.execute(253, 9, tranDL) 
+            #while True:
+            #    x = self.parent.port.ser.readline() 
+            #    if x == '':
+            #        break
+            #    print x,          
+            # play sequence
+            self.parent.port.execute(253, 10, list())
+            self.parent.sb.SetStatusText('Playing Sequence: ')
     def haltSeq(self, e=None):
-        pass
+        """ send halt message ("H") """ 
+        if self.parent.port != None:
+            self.parent.port.ser.write("H")
 
 ###############################################################################
 # New Robot Dialog

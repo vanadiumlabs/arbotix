@@ -24,9 +24,8 @@ BioloidController bioloid = BioloidController(1000000);
 
 #define ARB_SIZE_POSE   7  // also initializes
 #define ARB_LOAD_POSE   8
-#define ARB_SIZE_SEQ    9
-#define ARB_LOAD_SEQ    10
-#define ARB_PLAY_SEQ    11
+#define ARB_LOAD_SEQ    9
+#define ARB_PLAY_SEQ    10
 
 int mode = 0;              // where we are in the frame
 
@@ -34,15 +33,20 @@ unsigned char id = 0;      // id of this frame
 unsigned char length = 0;  // length of this frame
 unsigned char ins = 0;     // instruction of this frame
 
-unsigned char params[30];  // parameters
+unsigned char params[50];  // parameters
 unsigned char index = 0;   // index in param buffer
 
 int checksum;              // checksum
 
-int seq_size;              // sequence size
-transition_t * seq;        // sequence
+typedef struct{
+    unsigned char pose;    // index of pose to transition to 
+    int time;              // time for transition
+} sp_trans_t;
 
-int * poses;               // 
+//  pose and sequence storage
+int poses[30][30];         // poses [index][servo_id-1]
+sp_trans_t sequence[50];   // sequence
+int seqPos;                // step in current sequence
 
 void setup(){
     Serial.begin(38400);    
@@ -97,34 +101,67 @@ void loop(){
             if(index + 1 == length){  // we've read params & checksum
                 mode = 0;
                 if((checksum%256) != 255){ 
-                    //Print("Packet Error\n");
-                    Serial.print("PE");
+                    // return a packet: FF FF id Len Err params=None check
+                    Serial.print(0xff,BYTE);
+                    Serial.print(0xff,BYTE);
+                    Serial.print(id,BYTE);
+                    Serial.print(2,BYTE);
+                    Serial.print(64,BYTE);
+                    Serial.print(255-((66+id)%256),BYTE);
                 }else{
                     if(id == 253){
+                        // return a packet: FF FF id Len Err params=None check
+                        Serial.print(0xff,BYTE);
+                        Serial.print(0xff,BYTE);
+                        Serial.print(id,BYTE);
+                        Serial.print(2,BYTE);
+                        Serial.print(0,BYTE);
+                        Serial.print(255-((2+id)%256),BYTE);
                         // special ArbotiX instructions
                         // Pose Size = 7, followed by single param: size of pose
                         // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size)
-                        // Seq Size = 9, followed by single param: size of seq
-                        // Load Seq = A, followed by index/times (# of parameters = 3*seq_size) 
-                        // Play Seq = B, no params
+                        // Load Seq = 9, followed by index/times (# of parameters = 3*seq_size) 
+                        // Play Seq = A, no params
                         if(ins == ARB_SIZE_POSE){
                             bioloid.poseSize = params[0];
                             bioloid.readPose();    
+                            Serial.println(bioloid.poseSize);
                         }else if(ins == ARB_LOAD_POSE){
-                            int i;
-                            
-                            for(i=0;i<bioloid.poseSize;i++){
-                                bioloid.setNextPose(i+1,params[i]);   
-                            }
-                        }else if(ins == ARB_SIZE_SEQ){
-                            seq_size = params[0];
-                            int t = params[0] + (params[1]<<8);
-                            bioloid.interpolateSetup(t);   
+                            int i;    
+                            Serial.print("New Pose:");
+                            for(i=0; i<bioloid.poseSize; i++){
+                                poses[params[0]][i] = params[(2*i)+1]+(params[(2*i)+2]<<8); 
+                                Serial.print(poses[params[0]][i]);
+                                Serial.print(",");     
+                            } 
+                            Serial.println("");
                         }else if(ins == ARB_LOAD_SEQ){
-                            if(bioloid.interpolating){
-                                
-                            }else{
-                                
+                            int i;
+                            for(i=0;i<(length-2)/3;i++){
+                                sequence[i].pose = params[(i*3)];
+                                sequence[i].time = params[(i*3)+1] + (params[(i*3)+2]<<8);
+                                Serial.print("New Transition:");
+                                Serial.print((int)sequence[i].pose);
+                                Serial.print(" in ");
+                                Serial.println(sequence[i].time);      
+                            }
+                        }else if(ins == ARB_PLAY_SEQ){
+                            seqPos = 0;
+                            while(sequence[seqPos].pose != 0xff){
+                                int i;
+                                int p = sequence[seqPos].pose;
+                                // are we HALT?
+                                if(Serial.read() == 'H') return;
+                                // load pose
+                                for(i=0; i<bioloid.poseSize; i++){
+                                    bioloid.setNextPose(i+1,poses[p][i]);
+                                } 
+                                // interpolate
+                                bioloid.interpolateSetup(sequence[seqPos].time);
+                                while(bioloid.interpolating)
+                                    bioloid.interpolateStep();
+                                // next transition
+                                seqPos++;
                             }
                         }   
                     }else{
@@ -142,6 +179,13 @@ void loop(){
                                 int x = params[1] + (params[2]<<8);
                                 ax12SetRegister2(id, params[0], x);
                             }
+                            // return a packet: FF FF id Len Err params check
+                            Serial.print(0xff,BYTE);
+                            Serial.print(0xff,BYTE);
+                            Serial.print(id,BYTE);
+                            Serial.print(2,BYTE);
+                            Serial.print(0,BYTE);
+                            Serial.print(255-((2+id)%256),BYTE);
                         }
                     }
                 }
