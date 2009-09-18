@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-""" PyPose: definitions of AX-12 Control Table
+""" 
+  PyPose: definitions of AX-12 Control Table
 
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 

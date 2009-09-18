@@ -4,28 +4,19 @@
   PyPose: Serial driver for connection to arbotiX board.
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
 
-  This library is distributed in the hope that it will be useful,
+  This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-packet: ff ff id length ins params checksum
-    same as ax-12 table, except, we define new instructions for Arbotix
-
-ID = 253 for these special commands!
-Pose Size = 7, followed by single param: size of pose
-Load Pose = 8, followed by pose positions (# of param = 2*pose_size)
-Play Pose = 9, followed by 2-byte param: #ms to interpolate
-Moving = 10, returns whether we are interpolating or not
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
 import serial
