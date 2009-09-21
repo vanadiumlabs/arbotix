@@ -1,5 +1,5 @@
 /* 
-  ArbotiX Test Program for use with PyPose V0.91
+  ArbotiX Test Program for use with PyPose V0.93
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -19,13 +19,16 @@
  
 #include <ax12.h>
 #include <BioloidController.h>
+#include <Motors2.h>
 
 BioloidController bioloid = BioloidController(1000000);
+Motors2 drive = Motors2();
 
 #define ARB_SIZE_POSE   7  // also initializes
 #define ARB_LOAD_POSE   8
 #define ARB_LOAD_SEQ    9
 #define ARB_PLAY_SEQ    10
+#define ARB_TEST        25
 
 int mode = 0;              // where we are in the frame
 
@@ -162,6 +165,48 @@ void loop(){
                                     bioloid.interpolateStep();
                                 // next transition
                                 seqPos++;
+                            }
+                        }else if(ins == ARB_TEST){
+                            int i;
+                            // Test Digital I/O
+                            for(i=0;i<8;i++){
+                                // test digital
+                                pinMode(i,OUTPUT);
+                                digitalWrite(i,HIGH);  
+                                // test analog
+                                pinMode(31-i,OUTPUT);
+                                digitalWrite(31-i,HIGH);
+                                
+                                delay(500);
+                                digitalWrite(i,LOW);
+                                digitalWrite(31-i,LOW);
+                            }
+                            // Test Ax-12
+                            for(i=452;i<552;i+=20){
+                                SetPosition(1,i);
+                                delay(200);
+                            }
+                            // Test Motors
+                            drive.set(-255,-255);
+                            delay(500);
+                            drive.set(0,0);
+                            delay(1500);
+                            drive.set(255,255);
+                            delay(500);
+                            drive.set(0,0);
+                            delay(1500);
+                            // Test Analog I/O
+                            for(i=0;i<8;i++){
+                                // test digital
+                                pinMode(i,OUTPUT);
+                                digitalWrite(i,HIGH);  
+                                // test analog
+                                pinMode(31-i,OUTPUT);
+                                digitalWrite(31-i,HIGH);
+                                
+                                delay(500);
+                                digitalWrite(i,LOW);
+                                digitalWrite(31-i,LOW);
                             }
                         }   
                     }else{
