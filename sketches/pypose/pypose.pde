@@ -128,14 +128,14 @@ void loop(){
                         if(ins == ARB_SIZE_POSE){
                             bioloid.poseSize = params[0];
                             bioloid.readPose();    
-                            Serial.println(bioloid.poseSize);
+                            //Serial.println(bioloid.poseSize);
                         }else if(ins == ARB_LOAD_POSE){
                             int i;    
                             Serial.print("New Pose:");
                             for(i=0; i<bioloid.poseSize; i++){
                                 poses[params[0]][i] = params[(2*i)+1]+(params[(2*i)+2]<<8); 
-                                Serial.print(poses[params[0]][i]);
-                                Serial.print(",");     
+                                //Serial.print(poses[params[0]][i]);
+                                //Serial.print(",");     
                             } 
                             Serial.println("");
                         }else if(ins == ARB_LOAD_SEQ){
@@ -143,10 +143,10 @@ void loop(){
                             for(i=0;i<(length-2)/3;i++){
                                 sequence[i].pose = params[(i*3)];
                                 sequence[i].time = params[(i*3)+1] + (params[(i*3)+2]<<8);
-                                Serial.print("New Transition:");
-                                Serial.print((int)sequence[i].pose);
-                                Serial.print(" in ");
-                                Serial.println(sequence[i].time);      
+                                //Serial.print("New Transition:");
+                                //Serial.print((int)sequence[i].pose);
+                                //Serial.print(" in ");
+                                //Serial.println(sequence[i].time);      
                             }
                         }else if(ins == ARB_PLAY_SEQ){
                             seqPos = 0;
