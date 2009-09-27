@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """ 
-  PyPose: Bioloid pose system for arbotiX robocontroller
-
+  PyPose: for all things related to PyPose projects
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
@@ -27,8 +26,6 @@ class pose(list):
     def __init__(self, line, length):
         # now load the name, positions for this pose
         try:
-            #self.append(line[0:line.index(":")])
-            #line = line[line.index(":")+1:]
             for servo in range(length): 
                 if line.find(",") > 0:
                     self.append(int(line[0:line.index(",")]))       
@@ -41,11 +38,7 @@ class pose(list):
                 self.append(512)
 
     def __str__(self):
-        #data = "Pose=" + self[0] + ": "
-        data = " "        
-        for position in self: #[1:]:
-            data = data + str(position) + ", "
-        return data[0:-2]
+        return ", ".join([str(p) for p in self])        
 
 
 ###############################################################################
@@ -67,15 +60,12 @@ class sequence(list):
             pass
 
     def __str__(self):
-        data = " "        
-        for translate in self: 
-            data = data + translate + ", "
-        return data[0:-2]
+        return ", ".join([str(t) for t in self])        
 
 
 ###############################################################################
-# Class for dealing with robot files
-class robot:
+# Class for dealing with project files
+class project:
     def __init__(self):
         self.name = ""
         self.count = 18
@@ -85,12 +75,12 @@ class robot:
     def load(self, filename):
         self.poses = dict()     
         self.sequences = dict()
-        robotFile = open(filename, "r").readlines()    
+        prjFile = open(filename, "r").readlines()    
         # load robot name and servo count
-        self.name = robotFile[0].split(":")[0]
-        self.count = int(robotFile[0].split(":")[1])    
+        self.name = prjFile[0].split(":")[0]
+        self.count = int(prjFile[0].split(":")[1])    
         # load poses and sequences
-        for line in robotFile[1:]:  
+        for line in prjFile[1:]:  
             if line[0:5] == "Pose=":
                 self.poses[line[5:line.index(":")]] = pose(line[line.index(":")+1:].rstrip(),self.count)
             elif line[0:4] == "Seq=":
@@ -100,12 +90,12 @@ class robot:
                 self.poses[line[0:line.index(":")]] = pose(line[line.index(":")+1:].rstrip(),self.count)   
 
     def save(self, filename):
-        robotFile = open(filename, "w")
-        print>>robotFile, self.name + ":" + str(self.count)
+        prjFile = open(filename, "w")
+        print>>prjFile, self.name + ":" + str(self.count)
         for p in self.poses.keys():            
-            print>>robotFile, "Pose=" + p + ":" + str(self.poses[p])
+            print>>prjFile, "Pose=" + p + ":" + str(self.poses[p])
         for s in self.sequences.keys():
-            print>>robotFile, "Seq=" + s + ": " + str(self.sequences[s])
+            print>>prjFile, "Seq=" + s + ": " + str(self.sequences[s])
 
     def new(self, nName, nCount):
         self.poses = dict()
