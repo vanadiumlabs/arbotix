@@ -82,7 +82,7 @@ int ax12ReadPacket(int length){
     while(bcount < length){
         ulCounter = 0;
         while((bcount + offset) == ax_rx_int_Pointer){
-            if(ulCounter++ > 3000L){
+            if(ulCounter++ > 1000L){ // was 3000
                 timeout = 1;
                 break;
             }
