@@ -19,8 +19,6 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-# TODO: Add checks for "need save" on close...
-
 import sys, time, os
 sys.path.append("tools")
 import wx
@@ -39,7 +37,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose v0.95"
+VERSION = "PyPose v0.97"
 
 ###############################################################################
 # Main editor window
@@ -124,6 +122,7 @@ class editor(wx.Frame):
         wx.EVT_MENU(self, self.ID_PORT, self.doPort)
         wx.EVT_MENU(self, self.ID_TEST, self.doTest)
         wx.EVT_MENU(self, self.ID_ABOUT, self.doAbout)
+        self.Bind(wx.EVT_CLOSE, self.doClose)
 
         # editor area       
         self.sb = self.CreateStatusBar(2)
@@ -161,6 +160,7 @@ class editor(wx.Frame):
         self.sizer.Fit(self)
         self.sb.SetStatusText(getattr(module,"STATUS"),0)
         self.tool = t
+        self.panel.SetFocus()
 
     ###########################################################################
     # file handling                
@@ -199,7 +199,6 @@ class editor(wx.Frame):
                 return
         self.project.save(self.filename)
         self.sb.SetStatusText('saved ' + self.filename)
-        self.panel.saveReq = False
 
     def saveFileAs(self, e):
         self.filename = ""
@@ -281,19 +280,33 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
         info.SetWebSite("http://www.vanadiumlabs.com")
         wx.AboutBox(info)
 
+    def doClose(self, e=None):
+        # TODO: edit this to check if we NEED to save...
+        if self.project.save == True:
+            dlg = wx.MessageDialog(None, 'Save changes before closing?', '',
+            wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION)
+            r = dlg.ShowModal()            
+            if r == wx.ID_CANCEL:
+                e.Veto()
+                return
+            elif r == wx.ID_YES:
+                self.saveFile()
+                pass
+        self.Destroy()
+            
 
 ###############################################################################
 # New Project Dialog
 class NewProject(wx.Dialog):
     def __init__(self, parent, id, title):
-        wx.Dialog.__init__(self, parent, id, title, size=(220, 140))
+        wx.Dialog.__init__(self, parent, id, title, size=(270, 140))  
 
         panel = wx.Panel(self, -1)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        wx.StaticBox(panel, -1, 'Project Parameters', (5, 5), (210, 80))
+        wx.StaticBox(panel, -1, 'Project Parameters', (5, 5), (260, 80))
         wx.StaticText(panel, -1, 'Name:', (15,30))
-        self.name = wx.TextCtrl(panel, -1, '', (105,25)) 
+        self.name = wx.TextCtrl(self, -1, '', (105,25)) 
         wx.StaticText(panel, -1, '# of Servos:', (15,55))
         self.count = wx.SpinCtrl(self, -1, '18', (105, 50), min=1, max=30)
 

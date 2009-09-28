@@ -71,6 +71,7 @@ class project:
         self.count = 18
         self.poses = dict()
         self.sequences = dict()    
+        self.save = False
 
     def load(self, filename):
         self.poses = dict()     
@@ -88,6 +89,7 @@ class project:
             # these next two lines can be removed later, once everyone is moved to Ver 0.91         
             else:
                 self.poses[line[0:line.index(":")]] = pose(line[line.index(":")+1:].rstrip(),self.count)   
+        self.save = False
 
     def save(self, filename):
         prjFile = open(filename, "w")
@@ -96,6 +98,7 @@ class project:
             print>>prjFile, "Pose=" + p + ":" + str(self.poses[p])
         for s in self.sequences.keys():
             print>>prjFile, "Seq=" + s + ": " + str(self.sequences[s])
+        self.save = False
 
     def new(self, nName, nCount):
         self.poses = dict()
@@ -103,6 +106,7 @@ class project:
         self.filename = ""
         self.count = nCount
         self.name = nName
+        self.save = True
 
     ###########################################################################
     # Export functionality

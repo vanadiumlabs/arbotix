@@ -28,12 +28,14 @@ from ax12 import *
 # pose editor window
 class PoseEditor(ToolPane):
     """ editor for the capture and creation of poses. """
-    BT_RELAX = 100
-    BT_CAPTURE = 101
-    BT_SET = 102
-    BT_POSE_ADD = 103
-    BT_POSE_REM = 104
-    ID_POSE_BOX = 105
+    BT_RELAX = wx.NewId()
+    BT_CAPTURE = wx.NewId()
+    BT_SET = wx.NewId()
+    BT_POSE_ADD = wx.NewId()
+    BT_POSE_ADV = wx.NewId()
+    BT_POSE_REM = wx.NewId()
+    BT_POSE_RENAME = wx.NewId()
+    ID_POSE_BOX = wx.NewId()
 
     def __init__(self, parent, port=None):
         ToolPane.__init__(self, parent, port)
@@ -81,7 +83,8 @@ class PoseEditor(ToolPane):
         # and add/remove
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(wx.Button(self, self.BT_POSE_ADD, 'add'))
-        hbox.Add(wx.Button(self, self.BT_POSE_REM, 'remove'))     
+        hbox.Add(wx.Button(self, self.BT_POSE_REM, 'remove'))   
+        hbox.Add(wx.Button(self, self.BT_POSE_RENAME, 'rename'))     
         sizer.Add(hbox,(1,1),wx.GBSpan(1,1),wx.ALIGN_CENTER)
 
         # toolbar
@@ -94,26 +97,25 @@ class PoseEditor(ToolPane):
         sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
        
         self.Bind(wx.EVT_SLIDER, self.updatePose)
-        self.parent.Bind(wx.EVT_CHAR, self.onChar)
         wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
-        wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose)    
-        wx.EVT_BUTTON(self, self.BT_SET, self.setPose) 
+        wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose) 
+        wx.EVT_BUTTON(self, self.BT_SET, self.setPose)   
         wx.EVT_BUTTON(self, self.BT_POSE_ADD, self.addPose)   
         wx.EVT_BUTTON(self, self.BT_POSE_REM, self.remPose)   
+        wx.EVT_BUTTON(self, self.BT_POSE_RENAME, self.renamePose)   
         wx.EVT_LISTBOX(self, self.ID_POSE_BOX, self.doPose)
 
+        # key accelerators
+        aTable = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('C'), self.BT_CAPTURE),
+                                      (wx.ACCEL_CTRL, ord('R'), self.BT_RELAX),
+                                      (wx.ACCEL_CTRL, ord('A'), self.BT_POSE_ADV),
+                                     ])
+        self.SetAcceleratorTable(aTable)
+        self.Bind(wx.EVT_MENU,self.capturePose,id=self.BT_CAPTURE)
+        self.Bind(wx.EVT_MENU,self.parent.doRelax,id=self.BT_RELAX)
+        self.Bind(wx.EVT_MENU,self.advancePose,id=self.BT_POSE_ADV)
+
         self.SetSizerAndFit(sizer)
-            
-    def onChar(self, e=None):
-        if e.ControlDown():
-            c = e.GetKeyCode()  
-            print c
-                
-        else:
-            print "skip!"
-            e.skip()        
-
-
 
     ###########################################################################
     # Pose Manipulation
@@ -121,6 +123,7 @@ class PoseEditor(ToolPane):
         """ Save updates to a pose. """
         if self.curpose != "":
             self.parent.project.poses[self.curpose][e.GetId()] = e.GetInt()
+            self.parent.project.save = True
     def doPose(self, e=None):
         """ Load a pose into the slider boxes. """
         if e.IsSelection():
@@ -132,8 +135,9 @@ class PoseEditor(ToolPane):
                 self.servos[servo].position.SetValue(self.parent.project.poses[self.curpose][servo])
             self.parent.sb.SetStatusText('now editing pose: ' + self.curpose,0)
             
-    def capturePose(self, e=None):
+    def capturePose(self, e=None):  
         """ Downloads the current pose from the robot to the GUI. """
+        print "Capturing pose..."
         if self.port != None and self.curpose != "":   
             errors = "could not read servos: "
             dlg = wx.ProgressDialog("capturing pose","this may take a few seconds, please wait...",self.parent.project.count + 1)
@@ -153,6 +157,7 @@ class PoseEditor(ToolPane):
             else:
                 self.parent.sb.SetStatusText("captured pose!",0)    
             dlg.Destroy()
+            self.parent.project.save = True
 
     def setPose(self, e=None):
         """ Write a pose out to the robot. """
@@ -175,10 +180,44 @@ class PoseEditor(ToolPane):
                 self.posebox.Append(dlg.GetValue()) 
                 self.parent.project.poses[dlg.GetValue()] = project.pose("",self.parent.project.count)
                 dlg.Destroy()
+            self.parent.project.save = True
         else:
             dlg = wx.MessageDialog(self, 'Please create a new robot first.', 'Error', wx.OK|wx.ICON_EXCLAMATION)
             dlg.ShowModal()
             dlg.Destroy()
+
+    def advancePose(self, e=None):
+        """ Create a new pose, with a default name. """
+        if self.parent.project.name != "":
+            i = 0
+            while True:
+                if "pose"+str(i) in self.parent.project.poses.keys():
+                    i = i + 1
+                else:
+                    break
+            # have name
+            self.parent.project.poses["pose"+str(i)] = project.pose("",self.parent.project.count)
+            self.posebox.Append("pose"+str(i))
+            self.posebox.SetSelection(self.posebox.FindString("pose"+str(i)))
+            self.curpose = "pose"+str(i)
+            self.parent.project.save = True
+
+    def renamePose(self, e=None):
+        """ Rename a pose. """
+        if self.curpose != "":
+            dlg = wx.TextEntryDialog(self,'Name of pose:', 'Rename Pose')
+            dlg.SetValue(self.curpose)
+            if dlg.ShowModal() == wx.ID_OK:
+                # rename in project data
+                newName = dlg.GetValue()
+                self.parent.project.poses[newName] = self.parent.project.poses[self.curpose]
+                del self.parent.project.poses[self.curpose] 
+                v = self.posebox.FindString(self.curpose)
+                self.posebox.Delete(v)
+                self.posebox.Insert(newName,v)
+                self.posebox.SetSelection(v)
+                self.curpose = newName
+                self.parent.project.save = True
 
     def remPose(self, e=None):
         """ Remove a pose. """
@@ -192,7 +231,8 @@ class PoseEditor(ToolPane):
                 dlg.Destroy()
                 for servo in self.servos:   # disable editors if we have no pose selected
                     servo.Disable()
-            self.parent.sb.SetStatusText("please create or select a pose to edit...",0)   
+            self.parent.sb.SetStatusText("please create or select a pose to edit...",0)
+            self.parent.project.save = True   
 
 NAME = "pose editor"
 STATUS = "please create or select a sequence to edit..."

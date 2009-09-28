@@ -127,7 +127,8 @@ class SeqEditor(ToolPane):
             self.parent.project.sequences[self.curseq] = project.sequence()
             for i in range(self.tranbox.GetCount()):
                 self.parent.project.sequences[self.curseq].append(self.tranbox.GetString(i).replace(",","|"))               
-   
+            self.parent.project.save = True
+
     ###########################################################################
     # Sequence Manipulation
     def doSeq(self, e=None):
@@ -153,6 +154,7 @@ class SeqEditor(ToolPane):
                 self.seqbox.Append(dlg.GetValue())
                 self.parent.project.sequences[dlg.GetValue()] = project.sequence("")
                 dlg.Destroy()
+                self.parent.project.save = True
         else:
             dlg = wx.MessageDialog(self, 'Please create a new robot first.', 'Error', wx.OK|wx.ICON_EXCLAMATION)
             dlg.ShowModal()
@@ -168,6 +170,7 @@ class SeqEditor(ToolPane):
                 self.seqbox.Delete(v)
                 self.curseq = ""
                 dlg.Destroy()
+                self.parent.project.save = True
 
     ###########################################################################
     # Transition Manipulation
@@ -179,6 +182,7 @@ class SeqEditor(ToolPane):
                 v = str(e.GetString())   
                 self.tranPose.SetValue(v[0:v.find(",")])
                 self.tranTime.SetValue(int(v[v.find(",")+1:]))
+                self.parent.project.save = True 
             
     def addTran(self, e=None):       
         """ create a new transtion in this sequence. """
@@ -187,6 +191,7 @@ class SeqEditor(ToolPane):
                 self.tranbox.Insert("none,500",self.curtran+1)
             else:
                 self.tranbox.Append("none,500")
+            self.parent.project.save = True
     def remTran(self, e=None):
         """ remove a sequence. """
         if self.curseq != "" and self.curtran != -1:
@@ -197,6 +202,7 @@ class SeqEditor(ToolPane):
                 self.tranPose.SetValue("")
                 self.tranTime.SetValue(500)
                 dlg.Destroy()
+                self.parent.project.save = True
 
     def moveUp(self, e=None):
         if self.curtran > 0:
@@ -204,18 +210,21 @@ class SeqEditor(ToolPane):
             self.curtran = self.curtran - 1
             self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)
             self.tranbox.SetSelection(self.curtran)
+            self.parent.project.save = True
     def moveDn(self, e=None):
         if self.curtran < self.tranbox.GetCount()-1:
             self.tranbox.Delete(self.curtran)
             self.curtran = self.curtran + 1
             self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)   
             self.tranbox.SetSelection(self.curtran)
+            self.parent.project.save = True
     def updateTran(self, e=None):
         if self.curtran != -1:
             self.tranbox.Delete(self.curtran)
             self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)
             print "Updated: " + self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran
             self.tranbox.SetSelection(self.curtran)
+            self.parent.project.save = True
 
     def extract(self, li):
         """ extract x%256,x>>8 for every x in li """
