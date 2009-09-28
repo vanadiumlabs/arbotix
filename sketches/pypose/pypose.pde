@@ -28,6 +28,7 @@ Motors2 drive = Motors2();
 #define ARB_LOAD_POSE   8
 #define ARB_LOAD_SEQ    9
 #define ARB_PLAY_SEQ    10
+#define ARB_LOOP_SEQ    11
 #define ARB_TEST        25
 
 int mode = 0;              // where we are in the frame
@@ -66,6 +67,7 @@ void setup(){
  * Seq Size = 9, followed by single param: size of seq
  * Load Seq = A, followed by index/times (# of parameters = 3*seq_size) 
  * Play Seq = B, no params
+ * Loop Seq = C, 
  */
 
 void loop(){
@@ -165,6 +167,26 @@ void loop(){
                                     bioloid.interpolateStep();
                                 // next transition
                                 seqPos++;
+                            }
+                        }else if(ins == ARB_LOOP_SEQ){
+                            while(1){
+                                seqPos = 0;
+                                while(sequence[seqPos].pose != 0xff){
+                                    int i;
+                                    int p = sequence[seqPos].pose;
+                                    // are we HALT?
+                                    if(Serial.read() == 'H') return;
+                                    // load pose
+                                    for(i=0; i<bioloid.poseSize; i++){
+                                        bioloid.setNextPose(i+1,poses[p][i]);
+                                    } 
+                                    // interpolate
+                                    bioloid.interpolateSetup(sequence[seqPos].time);
+                                    while(bioloid.interpolating)
+                                        bioloid.interpolateStep();
+                                    // next transition
+                                    seqPos++;
+                                }
                             }
                         }else if(ins == ARB_TEST){
                             int i;
