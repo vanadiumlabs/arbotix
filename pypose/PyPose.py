@@ -224,7 +224,7 @@ class editor(wx.Frame):
         # find ports?
         if self.port == None:        
             self.ports = list() 
-            for k in ["COM","/dev/ttyUSB","/dev/ttyACM"]:
+            for k in ["COM","/dev/ttyUSB","/dev/ttyACM","/dev/ttyS"]:
                 for i in range(4):
                     try:
                         s = serial.Serial(k+str(i))
