@@ -24,6 +24,7 @@
 import sys, time, os
 sys.path.append("tools")
 import wx
+import serial
 
 from ax12 import *
 # drivers expose init(port, baud)
@@ -130,7 +131,7 @@ class editor(wx.Frame):
         self.sb.SetStatusText('not connected',1)
 
         self.loadTool()
-        self.sb.SetStatusText('please create or open a robot file...',0)
+        self.sb.SetStatusText('please create or open a project...',0)
         self.Centre()
         # small hack for windows... 9-25-09 MEF
         self.SetBackgroundColour(wx.NullColor) # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
@@ -220,17 +221,27 @@ class editor(wx.Frame):
     ###########################################################################
     # Port Manipulation
     def doPort(self, e=None):
-        if self.port != None:
-            self.port.ser.close()
-        dlg = wx.TextEntryDialog(self,'Port (Ex. COM4 or /dev/ttyUSB0)', 'Select Communications Port')
-        dlg.SetValue("/dev/ttyUSB0")
+        # find ports?
+        if self.port == None:        
+            self.ports = list() 
+            for k in ["COM","/dev/ttyUSB","/dev/ttyACM"]:
+                for i in range(4):
+                    try:
+                        s = serial.Serial(k+str(i))
+                        s.close()
+                        self.ports.append(k+str(i))
+                    except:
+                        break
+        dlg = wx.SingleChoiceDialog(self,'Port (Ex. COM4 or /dev/ttyUSB0)','Select Communications Port',self.ports)
         if dlg.ShowModal() == wx.ID_OK:
-            print "Opening port: " + str(dlg.GetValue())
+            if self.port != None:
+                self.port.ser.close()
+            print "Opening port: " + self.ports[dlg.GetSelection()]
             try:
-                # TODO: add ability to select types of ports
-                self.port = arbotix.ax12(str(dlg.GetValue()), 38400)
+                # TODO: add ability to select type of driver
+                self.port = arbotix.ax12(self.ports[dlg.GetSelection()], 38400)
                 self.panel.port = self.port
-                self.sb.SetStatusText(str(dlg.GetValue()) + "@38400",1)
+                self.sb.SetStatusText(self.ports[dlg.GetSelection()] + "@38400",1)
             except:
                 self.port = None
                 self.sb.SetStatusText('not connected',1)
@@ -243,7 +254,7 @@ class editor(wx.Frame):
     def doRelax(self, e=None):
         """ Relax servos so you can pose them. """
         if self.port != None:
-            for servo in range(self.robot.count):
+            for servo in range(self.project.count):
                 self.port.setReg(servo+1,P_TORQUE_ENABLE, [0,])    
         print "PyPose: relaxing servos..."      
 

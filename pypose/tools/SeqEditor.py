@@ -32,6 +32,7 @@ class SeqEditor(ToolPane):
     BT_MOVE_DN = 102
     BT_RELAX = 103
     BT_RUN = 104
+    BT_LOOP = 114
     BT_HALT = 105 
     BT_SEQ_ADD = 106
     BT_SEQ_REM = 107
@@ -97,7 +98,8 @@ class SeqEditor(ToolPane):
         toolbar = wx.Panel(self, -1)
         toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)
         toolbarsizer.Add(wx.Button(toolbar, self.BT_RELAX, 'relax'),1)
-        toolbarsizer.Add(wx.Button(toolbar, self.BT_RUN, 'run'),1)         
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_RUN, 'run'),1)   
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_LOOP, 'loop'),1)        
         toolbarsizer.Add(wx.Button(toolbar, self.BT_HALT, 'halt'),1)
         toolbar.SetSizer(toolbarsizer)
         sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
@@ -105,7 +107,8 @@ class SeqEditor(ToolPane):
         self.SetSizerAndFit(sizer)
 
         wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
-        wx.EVT_BUTTON(self, self.BT_RUN, self.runSeq)    
+        wx.EVT_BUTTON(self, self.BT_RUN, self.runSeq)     
+        wx.EVT_BUTTON(self, self.BT_LOOP, self.runSeq)   
         wx.EVT_BUTTON(self, self.BT_HALT, self.haltSeq) 
         wx.EVT_BUTTON(self, self.BT_SEQ_ADD, self.addSeq)
         wx.EVT_BUTTON(self, self.BT_SEQ_REM, self.remSeq)   
@@ -121,7 +124,7 @@ class SeqEditor(ToolPane):
      
     def save(self):            
         if self.curseq != "":
-            self.parent.project.sequences[self.curseq] = sequence()
+            self.parent.project.sequences[self.curseq] = project.sequence()
             for i in range(self.tranbox.GetCount()):
                 self.parent.project.sequences[self.curseq].append(self.tranbox.GetString(i).replace(",","|"))               
    
@@ -186,7 +189,7 @@ class SeqEditor(ToolPane):
                 self.tranbox.Append("none,500")
     def remTran(self, e=None):
         """ remove a sequence. """
-        if self.curseq != "" and self.curTran != -1:
+        if self.curseq != "" and self.curtran != -1:
             dlg = wx.MessageDialog(self, 'Are you sure you want to delete this transition?', 'Confirm', wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
             if dlg.ShowModal() == wx.ID_OK:
                 self.tranbox.Delete(self.curtran)
@@ -249,7 +252,11 @@ class SeqEditor(ToolPane):
             print "Sending sequence: " + str(tranDL)
             # send sequence and play            
             self.port.execute(253, 9, tranDL) 
-            self.port.execute(253, 10, list())
+            # run or loop?
+            if e.GetId() == self.BT_LOOP:
+                self.port.execute(253,11,list())
+            else:
+                self.port.execute(253, 10, list())
             self.parent.sb.SetStatusText('Playing Sequence: ')
     def haltSeq(self, e=None):
         """ send halt message ("H") """ 

@@ -94,6 +94,7 @@ class PoseEditor(ToolPane):
         sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
        
         self.Bind(wx.EVT_SLIDER, self.updatePose)
+        self.parent.Bind(wx.EVT_CHAR, self.onChar)
         wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
         wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose)    
         wx.EVT_BUTTON(self, self.BT_SET, self.setPose) 
@@ -103,6 +104,17 @@ class PoseEditor(ToolPane):
 
         self.SetSizerAndFit(sizer)
             
+    def onChar(self, e=None):
+        if e.ControlDown():
+            c = e.GetKeyCode()  
+            print c
+                
+        else:
+            print "skip!"
+            e.skip()        
+
+
+
     ###########################################################################
     # Pose Manipulation
     def updatePose(self, e=None):
