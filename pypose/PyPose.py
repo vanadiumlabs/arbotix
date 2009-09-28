@@ -224,14 +224,14 @@ class editor(wx.Frame):
         # find ports?
         if self.port == None:        
             self.ports = list() 
-            for k in ["COM","/dev/ttyUSB","/dev/ttyACM","/dev/ttyS"]:
-                for i in range(4):
+            for k in [("COM",20),("/dev/ttyUSB",6),("/dev/ttyACM",4),("/dev/ttyS",6)]:
+                for i in range(k[1]):
                     try:
-                        s = serial.Serial(k+str(i))
+                        s = serial.Serial(k[0]+str(i))
                         s.close()
-                        self.ports.append(k+str(i))
+                        self.ports.append(k[0]+str(i))
                     except:
-                        break
+                        pass
         dlg = wx.SingleChoiceDialog(self,'Port (Ex. COM4 or /dev/ttyUSB0)','Select Communications Port',self.ports)
         if dlg.ShowModal() == wx.ID_OK:
             if self.port != None:
