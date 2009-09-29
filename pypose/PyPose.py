@@ -56,7 +56,7 @@ class editor(wx.Frame):
 
     def __init__(self):
         """ Creates pose editor window. """
-        wx.Frame.__init__(self, None, -1, VERSION, style=wx.SYSTEM_MENU)     
+        wx.Frame.__init__(self, None, -1, VERSION) #, style=wx.SYSTEM_MENU | wx.CAPTION)     
 
         # data for our program
         self.project = project() # holds data for our project
