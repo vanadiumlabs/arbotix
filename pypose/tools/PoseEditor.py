@@ -124,17 +124,20 @@ class PoseEditor(ToolPane):
         if self.curpose != "":
             self.parent.project.poses[self.curpose][e.GetId()] = e.GetInt()
             self.parent.project.save = True
+    def loadPose(self, posename):
+        if self.curpose == "":   # if we haven't yet, enable servo editors
+            for servo in self.servos:
+                servo.Enable()
+        self.curpose = posename
+        for servo in range(self.parent.project.count):
+            self.servos[servo].position.SetValue(self.parent.project.poses[self.curpose][servo])
+        self.parent.sb.SetStatusText('now editing pose: ' + self.curpose,0)
+        self.parent.project.save = True
     def doPose(self, e=None):
         """ Load a pose into the slider boxes. """
         if e.IsSelection():
-            if self.curpose == "":   # if we haven't yet, enable servo editors
-                for servo in self.servos:
-                    servo.Enable()
-            self.curpose = str(e.GetString())
-            for servo in range(self.parent.project.count):
-                self.servos[servo].position.SetValue(self.parent.project.poses[self.curpose][servo])
-            self.parent.sb.SetStatusText('now editing pose: ' + self.curpose,0)
-            
+            self.loadPose(str(e.GetString()))
+
     def capturePose(self, e=None):  
         """ Downloads the current pose from the robot to the GUI. """
         print "Capturing pose..."
@@ -195,12 +198,12 @@ class PoseEditor(ToolPane):
                     i = i + 1
                 else:
                     break
-            # have name
+            # have name, create pose
             self.parent.project.poses["pose"+str(i)] = project.pose("",self.parent.project.count)
             self.posebox.Append("pose"+str(i))
+            # select pose
+            self.loadPose("pose"+str(i))
             self.posebox.SetSelection(self.posebox.FindString("pose"+str(i)))
-            self.curpose = "pose"+str(i)
-            self.parent.project.save = True
 
     def renamePose(self, e=None):
         """ Rename a pose. """
