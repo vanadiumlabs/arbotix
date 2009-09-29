@@ -311,8 +311,8 @@ class NewProject(wx.Dialog):
         self.count = wx.SpinCtrl(panel, -1, '18', (105, 50), min=1, max=30)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        okButton = wx.Button(panel, wx.ID_OK, 'Ok', size=(70, 30))
-        closeButton = wx.Button(panel, wx.ID_CANCEL, 'Close', size=(70, 30))
+        okButton = wx.Button(self, wx.ID_OK, 'Ok', size=(70, 30))
+        closeButton = wx.Button(self, wx.ID_CANCEL, 'Close', size=(70, 30))
         hbox.Add(okButton, 1)
         hbox.Add(closeButton, 1, wx.LEFT, 5)
 
