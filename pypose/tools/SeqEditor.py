@@ -236,41 +236,57 @@ class SeqEditor(ToolPane):
     def runSeq(self, e=None):
         """ download poses, seqeunce, and send. """
         self.save() # save sequence            
-        if self.port != None and self.curseq != "":
-            poseDL = dict()     # key = pose name, val = index, download them after we build a transition list
-            tranDL = list()     # list of bytes to download
-            for t in self.parent.project.sequences[self.curseq]:  
-                p = t[0:t.find("|")]                    # pose name
-                dt = int(t[t.find("|")+1:])             # delta-T
-                if p not in poseDL.keys():
-                    poseDL[p] = len(poseDL.keys())      # get ix for pose
-                # create transition values to download
-                tranDL.append(poseDL[p])                # ix of pose
-                tranDL.append(dt%256)                   # time is an int (16-bytes)
-                tranDL.append(dt>>8)
-            tranDL.append(255)      # notice to stop
-            tranDL.append(0)        # time is irrelevant on stop    
-            tranDL.append(0)
-            # set pose size -- IMPORTANT!
-            print "Setting pose size at " + str(self.parent.project.count)
-            self.port.execute(253, 7, [self.parent.project.count])
-            # send poses            
-            for p in poseDL.keys():
-                print "Sending pose " + str(p) + " to position " + str(poseDL[p])
-                self.port.execute(253, 8, [poseDL[p]] + self.extract(self.parent.project.poses[p])) 
-            print "Sending sequence: " + str(tranDL)
-            # send sequence and play            
-            self.port.execute(253, 9, tranDL) 
-            # run or loop?
-            if e.GetId() == self.BT_LOOP:
-                self.port.execute(253,11,list())
+        if self.port != None: 
+            if self.curseq != "":
+                print "Run sequence..."
+                poseDL = dict()     # key = pose name, val = index, download them after we build a transition list
+                tranDL = list()     # list of bytes to download
+                for t in self.parent.project.sequences[self.curseq]:  
+                    p = t[0:t.find("|")]                    # pose name
+                    dt = int(t[t.find("|")+1:])             # delta-T
+                    if p not in poseDL.keys():
+                        poseDL[p] = len(poseDL.keys())      # get ix for pose
+                    # create transition values to download
+                    tranDL.append(poseDL[p])                # ix of pose
+                    tranDL.append(dt%256)                   # time is an int (16-bytes)
+                    tranDL.append(dt>>8)
+                tranDL.append(255)      # notice to stop
+                tranDL.append(0)        # time is irrelevant on stop    
+                tranDL.append(0)
+                # set pose size -- IMPORTANT!
+                print "Setting pose size at " + str(self.parent.project.count)
+                self.port.execute(253, 7, [self.parent.project.count])
+                # send poses            
+                for p in poseDL.keys():
+                    print "Sending pose " + str(p) + " to position " + str(poseDL[p])
+                    self.port.execute(253, 8, [poseDL[p]] + self.extract(self.parent.project.poses[p])) 
+                print "Sending sequence: " + str(tranDL)
+                # send sequence and play            
+                self.port.execute(253, 9, tranDL) 
+                # run or loop?
+                if e.GetId() == self.BT_LOOP:
+                    self.port.execute(253,11,list())
+                else:
+                    self.port.execute(253, 10, list())
+                self.parent.sb.SetStatusText('Playing Sequence: ' + self.curseq)
             else:
-                self.port.execute(253, 10, list())
-            self.parent.sb.SetStatusText('Playing Sequence: ')
+                self.parent.sb.SetBackgroundColour('RED')
+                self.parent.sb.SetStatusText("Select a Sequence",0) 
+                self.parent.timer.Start(20)                
+        else:
+            self.parent.sb.SetBackgroundColour('RED')
+            self.parent.sb.SetStatusText("No Port Open",0) 
+            self.parent.timer.Start(20)
+
     def haltSeq(self, e=None):
         """ send halt message ("H") """ 
         if self.port != None:
+            print "Halt sequence..."
             self.port.ser.write("H")
+        else:
+            self.parent.sb.SetBackgroundColour('RED')
+            self.parent.sb.SetStatusText("No Port Open",0) 
+            self.parent.timer.Start(20)
 
 NAME = "sequence editor"
 STATUS = "please create or select a sequence to edit..."

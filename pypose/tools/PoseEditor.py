@@ -140,8 +140,8 @@ class PoseEditor(ToolPane):
 
     def capturePose(self, e=None):  
         """ Downloads the current pose from the robot to the GUI. """
-        print "Capturing pose..."
         if self.port != None and self.curpose != "":   
+            print "Capturing pose..."
             errors = "could not read servos: "
             dlg = wx.ProgressDialog("capturing pose","this may take a few seconds, please wait...",self.parent.project.count + 1)
             dlg.Update(1)
@@ -161,10 +161,15 @@ class PoseEditor(ToolPane):
                 self.parent.sb.SetStatusText("captured pose!",0)    
             dlg.Destroy()
             self.parent.project.save = True
+        else:
+            self.parent.sb.SetBackgroundColour('RED')
+            self.parent.sb.SetStatusText("No Port Open",0) 
+            self.parent.timer.Start(20)
 
     def setPose(self, e=None):
         """ Write a pose out to the robot. """
         if self.port != None and self.curpose != "":
+            print "Setting pose..."
             #curPose = list() TODO: should we use a syncWrite here?
             for servo in range(self.parent.project.count):
                  pos = self.servos[servo].position.GetValue()
@@ -173,6 +178,10 @@ class PoseEditor(ToolPane):
             #    pos = self.servos[servo].position.get()
             #    curPose.append( (servo+1, pos%256, pos>>8) )
             #self.pose.syncWrite(P_GOAL_POSITION_L, curPose)
+        else:
+            self.parent.sb.SetBackgroundColour('RED')
+            self.parent.sb.SetStatusText("No Port Open",0) 
+            self.parent.timer.Start(20)
 
     def addPose(self, e=None):
         """ Add a new pose. """

@@ -37,7 +37,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose v0.97"
+VERSION = "PyPose v1.0"
 
 ###############################################################################
 # Main editor window
@@ -53,10 +53,11 @@ class editor(wx.Frame):
     ID_PORT=wx.NewId()
     ID_ABOUT=wx.NewId()
     ID_TEST=wx.NewId()
+    ID_TIMER=wx.NewId()
 
     def __init__(self):
         """ Creates pose editor window. """
-        wx.Frame.__init__(self, None, -1, VERSION, style = wx.DEFAULT_FRAME_STYLE & ~ (wx.MINIMIZE_BOX | wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+        wx.Frame.__init__(self, None, -1, VERSION, style = wx.DEFAULT_FRAME_STYLE & ~ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
 
         # data for our program
         self.project = project() # holds data for our project
@@ -67,6 +68,10 @@ class editor(wx.Frame):
         self.port = None
         self.filename = ""
         self.dirname = ""
+
+        # for clearing red color on status bar
+        self.timer = wx.Timer(self, self.ID_TIMER)
+        self.timeout = 0
         
         # build our menu bar  
         menubar = wx.MenuBar()
@@ -123,6 +128,7 @@ class editor(wx.Frame):
         wx.EVT_MENU(self, self.ID_TEST, self.doTest)
         wx.EVT_MENU(self, self.ID_ABOUT, self.doAbout)
         self.Bind(wx.EVT_CLOSE, self.doClose)
+        self.Bind(wx.EVT_TIMER, self.OnTimer, id=self.ID_TIMER)
 
         # editor area       
         self.sb = self.CreateStatusBar(2)
@@ -253,9 +259,13 @@ class editor(wx.Frame):
     def doRelax(self, e=None):
         """ Relax servos so you can pose them. """
         if self.port != None:
+            print "PyPose: relaxing servos..."      
             for servo in range(self.project.count):
                 self.port.setReg(servo+1,P_TORQUE_ENABLE, [0,])    
-        print "PyPose: relaxing servos..."      
+        else:
+            self.sb.SetBackgroundColour('RED')
+            self.sb.SetStatusText("No Port Open",0) 
+            self.timer.Start(20)
 
     def doAbout(self, e=None):
         license= """This program is free software; you can redistribute it and/or modify
@@ -294,6 +304,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
                 pass
         self.Destroy()
             
+
+    def OnTimer(self, e=None):
+        self.timeout = self.timeout + 1
+        if self.timeout > 50:
+            self.sb.SetBackgroundColour(wx.NullColor)
+            self.sb.SetStatusText("",0)
+            self.sb.Refresh()
+            self.timeout = 0
+            self.timer.Stop()
+
 
 ###############################################################################
 # New Project Dialog
