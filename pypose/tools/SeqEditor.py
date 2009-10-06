@@ -28,21 +28,21 @@ from ax12 import *
 # Sequence editor window
 class SeqEditor(ToolPane):
     """ editor for the creation of sequences. """
-    BT_MOVE_UP = 101
-    BT_MOVE_DN = 102
-    BT_RELAX = 103
-    BT_RUN = 104
-    BT_LOOP = 114
-    BT_HALT = 105 
-    BT_SEQ_ADD = 106
-    BT_SEQ_REM = 107
-    BT_TRAN_ADD = 108
-    BT_TRAN_REM = 109
+    BT_MOVE_UP=wx.NewId()
+    BT_MOVE_DN=wx.NewId()
+    BT_RELAX=wx.NewId()
+    BT_RUN=wx.NewId()
+    BT_LOOP=wx.NewId()
+    BT_HALT=wx.NewId()
+    BT_SEQ_ADD=wx.NewId()
+    BT_SEQ_REM=wx.NewId()
+    BT_TRAN_ADD=wx.NewId()
+    BT_TRAN_REM=wx.NewId()
 
-    ID_SEQ_BOX = 110
-    ID_TRAN_BOX = 111
-    ID_TRAN_POSE = 112
-    ID_TRAN_TIME = 113
+    ID_SEQ_BOX=wx.NewId()
+    ID_TRAN_BOX=wx.NewId()
+    ID_TRAN_POSE=wx.NewId()
+    ID_TRAN_TIME=wx.NewId()
 
     def __init__(self, parent, port=None):
         ToolPane.__init__(self, parent, port) 
