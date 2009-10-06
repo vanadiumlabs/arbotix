@@ -53,7 +53,7 @@ class sequence(list):
             while True:
                 if line.find(",") > 0:
                     self.append(line[0:line.index(",")].strip().rstrip().replace("|",",")) 
-                else:
+                elif line != "":
                     self.append(line.strip().rstrip().replace("|",",")) 
                 line = line[line.index(",")+1:] 
         except:
