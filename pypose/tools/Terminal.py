@@ -21,6 +21,7 @@
 
 import wx
 from ax12 import *
+import arbotix
 from ToolPane import ToolPane
 
 # help phrases
@@ -83,7 +84,25 @@ class shell(wx.TextCtrl):
                     self.Clear()                                  
                     self.SetValue(">> ")
                     self.SetInsertionPoint(3)
-                    return      
+                    return                      
+                elif l[0] == u"serial":
+                    # open a serial port
+                    if self.parent.parent.port != None:
+                        self.parent.parents.port.ser.close()
+                    print "Opening port: " + l[1]
+                    try:
+                        # TODO: add ability to select type of driver
+                        self.port = arbotix.ax12(str(l[1]), 38400)
+                        self.parent.parent.port = self.port
+                        self.parent.parent.sb.SetStatusText(str(l[1]) + "@38400",1)
+                        self.write("\rOK!")
+                    except:
+                        self.port = None
+                        self.parent.parent.sb.SetStatusText('not connected',1)
+                        # print error
+                        self.parent.parent.sb.SetBackgroundColour('RED')
+                        self.parent.parent.sb.SetStatusText("Could Not Open Port",0) 
+                        self.parent.parent.timer.Start(20)  
                 elif self.parent.port == None:
                     self.write("\rNo port open!")
                 elif l[0] == u"li":      # list servos
@@ -107,7 +126,6 @@ class shell(wx.TextCtrl):
                     pass
                 elif l[0] == u"get":
                     pass
-                        
             except:
                 self.write("\runrecognized command!")
             # new line!
