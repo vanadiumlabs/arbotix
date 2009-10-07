@@ -29,15 +29,15 @@ class ax12:
     """ Class to open a serial port and control AX-12 servos 
     through an arbotiX board. """
     def __init__(self, port="/dev/ttyUSB0",baud=38400):
-        try:
+        #try:
             self.ser = serial.Serial()
             self.ser.baudrate = baud
             self.ser.port = port
             self.ser.timeout = 0.25
             self.ser.open()
             self.error = 0
-        except:
-            print "Cannot open port" + str(sys.exc_info()[0])
+        #except:
+        #    print "Cannot open port" + str(sys.exc_info()[0])
 
     def execute(self, index, ins, params):
         """ Send an instruction to the arbotix. """
