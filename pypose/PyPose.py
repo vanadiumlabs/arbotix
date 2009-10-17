@@ -172,7 +172,7 @@ class editor(wx.Frame):
     # file handling                
     def newFile(self, e):  
         """ Open a dialog that asks for robot name and servo count. """ 
-        dlg = NewProject(self, -1, "Create New Project")
+        dlg = NewProjectDialog(self, -1, "Create New Project")
         if dlg.ShowModal() == wx.ID_OK:
             self.project.new(dlg.name.GetValue(), dlg.count.GetValue())
             self.loadTool()      
@@ -203,7 +203,7 @@ class editor(wx.Frame):
                 dlg.Destroy()
             else:
                 return
-        self.project.save(self.filename)
+        self.project.saveFile(self.filename)
         self.sb.SetStatusText('saved ' + self.filename)
 
     def saveFileAs(self, e):
@@ -225,19 +225,42 @@ class editor(wx.Frame):
 
     ###########################################################################
     # Port Manipulation
-    def doPort(self, e=None):
-        # find ports?
-        if self.port == None:        
-            self.ports = list() 
-            for k in [("COM",20),("/dev/ttyUSB",6),("/dev/ttyACM",4),("/dev/ttyS",6)]:
-                for i in range(k[1]):
+    def findPorts(self):
+        """ return a list of serial ports """
+        self.ports = list()
+        # windows first
+        for i in range(20):
+            try:
+                s = serial.Serial("COM"+str(i))
+                s.close()
+                self.ports.append("COM"+str(i))
+            except:
+                pass
+        if len(self.ports) > 0:
+            return self.ports
+        # mac specific next:        
+        try:
+            for port in os.listdir("/dev/"):
+                if port.startswith("tty.usbserial"):
+                    self.ports.append("/dev/"+port)
+        except:
+            pass
+        # linux/some-macs
+        for k in ["/dev/ttyUSB","/dev/ttyACM","/dev/ttyS"]:
+                for i in range(6):
                     try:
-                        s = serial.Serial(k[0]+str(i))
+                        s = serial.Serial(k+str(i))
                         s.close()
-                        self.ports.append(k[0]+str(i))
+                        self.ports.append(k+str(i))
                     except:
                         pass
+        return self.ports
+    def doPort(self, e=None):
+        """ open a serial port """
+        if self.port == None:
+            self.findPorts()
         dlg = wx.SingleChoiceDialog(self,'Port (Ex. COM4 or /dev/ttyUSB0)','Select Communications Port',self.ports)
+        #dlg = PortDialog(self,'Select Communications Port',self.ports)
         if dlg.ShowModal() == wx.ID_OK:
             if self.port != None:
                 self.port.ser.close()
@@ -251,7 +274,7 @@ class editor(wx.Frame):
                 self.port = None
                 self.sb.SetStatusText('not connected',1)
             dlg.Destroy()
-
+        
     def doTest(self, e=None):
         if self.port != None:
             self.port.execute(253, 25, list())
@@ -317,7 +340,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
 
 ###############################################################################
 # New Project Dialog
-class NewProject(wx.Dialog):
+class NewProjectDialog(wx.Dialog):
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title, size=(270, 180))  
 
@@ -341,6 +364,27 @@ class NewProject(wx.Dialog):
 
         self.SetSizer(vbox)    
 
+###############################################################################
+# Port Selection Dialog
+class PortDialog(wx.Dialog):
+    def __init__(self, parent, title, ports=None):
+        wx.Dialog.__init__(self, parent, -1, title)  
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        vbox.Add(wx.StaticText(self, -1, 'Port (Ex. COM4 or /dev/ttyUSB0)')) 
+        
+        self.portbox = wx.ListBox(self, -1, choices=ports)
+        vbox.Add(self.portbox, wx.ALIGN_CENTER | wx.EXPAND, 10) 
+
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, wx.ID_OK, 'Ok', size=(70, 30))
+        closeButton = wx.Button(self, wx.ID_CANCEL, 'Close', size=(70, 30))
+        hbox.Add(okButton, 1)
+        hbox.Add(closeButton, 1, wx.LEFT, 5)
+        vbox.Add(hbox, 1, wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, 10)
+
+        self.SetSizer(vbox) 
 
 if __name__ == "__main__":
     print "PyPose starting... "

@@ -91,7 +91,7 @@ class project:
                 self.poses[line[0:line.index(":")]] = pose(line[line.index(":")+1:].rstrip(),self.count)   
         self.save = False
 
-    def save(self, filename):
+    def saveFile(self, filename):
         prjFile = open(filename, "w")
         print>>prjFile, self.name + ":" + str(self.count)
         for p in self.poses.keys():            
