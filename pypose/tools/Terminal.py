@@ -28,7 +28,7 @@ from ToolPane import ToolPane
 help = ["\rPyPose Terminal VA.0",
 "\r",
 "\rvalid commands:",
-"\rli [baud] - list the servos found on the bus, default baud = 1MBps",
+"\rls [baud] - list the servos found on the bus, default baud = 1MBps",
 "\rmv id id2 - rename any servo with ID=id, to id2",
 "\rset param id val - set parameter on servo ID=id to val",
 "\rget param id - get a parameter value from a servo",
@@ -88,7 +88,7 @@ class shell(wx.TextCtrl):
                 elif l[0] == u"serial":
                     # open a serial port
                     if self.parent.parent.port != None:
-                        self.parent.parents.port.ser.close()
+                        self.parent.parent.port.ser.close()
                     print "Opening port: " + l[1]
                     try:
                         # TODO: add ability to select type of driver
@@ -103,24 +103,30 @@ class shell(wx.TextCtrl):
                         self.parent.parent.sb.SetBackgroundColour('RED')
                         self.parent.parent.sb.SetStatusText("Could Not Open Port",0) 
                         self.parent.parent.timer.Start(20)  
-                elif self.parent.port == None:
+                elif self.parent.parent.port == None:
                     self.write("\rNo port open!")
-                elif l[0] == u"li":      # list servos
+                elif l[0] == u"ls":      # list servos
+                    #self.parent.parent.port.ser.close()
+                    self.parent.parent.port.ser.timeout = 0.25
+                    #self.parent.parent.port.ser.open()
                     #baud = 1000000
                     #if len(l) > 1:       # we have a baud too!
                     #    baud = int(l[1])
                     k = 0                # how many id's have we printed...
                     self.write("\r")
                     for i in range(18):
-                        if self.parent.port.getReg(i+1,P_PRESENT_POSITION_L, 1) != -1:
+                        if self.parent.parent.port.getReg(i+1,P_PRESENT_POSITION_L, 1) != -1:
                             if k > 8:    # limit the width of each printout
                                 k = 0
                                 self.write("\r")
                             self.write(repr(i+1).rjust(4)) 
                             k = k + 1
                             wx.SafeYield()
+                    #self.parent.parent.port.ser.close()
+                    self.parent.parent.port.ser.timeout = 2
+                    #self.parent.parent.port.ser.open()
                 elif l[0] == u"mv":      # rename a servo
-                    if self.parent.port.setReg(int(l[1]),P_ID,[int(l[2])]) == 0:
+                    if self.parent.parent.port.setReg(int(l[1]),P_ID,[int(l[2])]) == 0:
                         self.write("\rOK")
                 elif l[0] == u"set":
                     pass

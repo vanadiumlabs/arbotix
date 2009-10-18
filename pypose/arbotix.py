@@ -33,7 +33,7 @@ class ax12:
             self.ser = serial.Serial()
             self.ser.baudrate = baud
             self.ser.port = port
-            self.ser.timeout = 0.25
+            self.ser.timeout = 2
             self.ser.open()
             self.error = 0
         #except:
@@ -72,12 +72,12 @@ class ax12:
             else:
                 print "Oxff NOT found, restart: " + str(ord(d))
                 return self.getPacket(0)
-        elif mode == 1:         # get our first 0xFF
+        elif mode == 1:         # get our second 0xFF
             if ord(d) == 0xff:
                 print "Oxff found"
                 return self.getPacket(2)
             else:
-                print "Oxff NOT found, restart"
+                print "Oxff NOT found, restart: " + str(ord(d))
                 return self.getPacket(0)
         elif mode == 2:         # get id
             if d != 0xff:
@@ -104,6 +104,7 @@ class ax12:
             else:
                 return self.getPacket(5, id, leng, error, params)
         elif mode == 6:         # read checksum
+            print "Checksum found: " + str(ord(d))
             checksum = id + leng + error + sum(params) + ord(d)
             print "Checksum computed: " + str(checksum)
             if checksum % 256 != 255:
