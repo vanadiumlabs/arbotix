@@ -104,37 +104,6 @@ int ax12ReadPacket(int length){
     }else{
         return 1;
     }
-
-    /*if(tx_buffer[2] != BROADCASTING_ID){
-        if(bTimeout && bRxPacketLength != 255){
-            //TxDString("\r\n [Error:RxD Timeout]");
-            CLEAR_BUFFER;
-        }
-        if(bLength > 3){
-            if(gbpRxBuffer[0] != 0xff || gbpRxBuffer[1] != 0xff ){
-                //TxDString("\r\n [Error:Wrong Header]");
-                CLEAR_BUFFER;
-                return 0;
-            }
-            if(gbpRxBuffer[2] != gbpTxBuffer[2] ){
-                TxDString("\r\n [Error:TxID != RxID]");
-                CLEAR_BUFFER;
-                return 0;
-            }
-            if(gbpRxBuffer[3] != bLength-4){
-                TxDString("\r\n [Error:Wrong Length]");
-                CLEAR_BUFFER;
-                return 0;
-            }
-            for(bCount = 2; bCount < bLength; bCount++) bChecksum += gbpRxBuffer[bCount];
-            if(bChecksum != 0xff){
-                TxDString("\r\n [Error:Wrong CheckSum]");
-                CLEAR_BUFFER;
-                return 0;
-            }
-        }
-    }
-    return blength;*/
 }
 
 /** initializes serial1 transmit at baud, 8-N-1 */
