@@ -232,13 +232,17 @@ void loop(){
                             }
                         }   
                     }else{
+                        int i;
                         // pass thru
-                        if(ins == AX_READ_DATA){
+                       if(ins == AX_READ_DATA){
                             int i;
                             ax12GetRegister(id, params[0], params[1]);
                             // return a packet: FF FF id Len Err params check
+                            if(ax_rx_buffer[3] > 0){
                             for(i=0;i<ax_rx_buffer[3]+4;i++)
                                 Serial.print(ax_rx_buffer[i],BYTE);
+                            }
+                            ax_rx_buffer[3] = 0;
                         }else if(ins == AX_WRITE_DATA){
                             if(length == 4){
                                 ax12SetRegister(id, params[0], params[1]);
