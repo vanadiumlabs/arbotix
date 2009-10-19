@@ -272,7 +272,10 @@ class editor(wx.Frame):
                 self.sb.SetStatusText(self.ports[dlg.GetSelection()] + "@38400",1)
             except:
                 self.port = None
+                self.sb.SetBackgroundColour('RED')
+                self.sb.SetStatusText("Could Not Open Port",0) 
                 self.sb.SetStatusText('not connected',1)
+                self.timer.Start(20)
             dlg.Destroy()
         
     def doTest(self, e=None):
