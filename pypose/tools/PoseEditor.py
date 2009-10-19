@@ -143,6 +143,7 @@ class PoseEditor(ToolPane):
         if self.port != None and self.curpose != "":   
             print "Capturing pose..."
             errors = "could not read servos: "
+            errCount = 0.0
             dlg = wx.ProgressDialog("capturing pose","this may take a few seconds, please wait...",self.parent.project.count + 1)
             dlg.Update(1)
             for servo in range(self.parent.project.count):
@@ -151,14 +152,19 @@ class PoseEditor(ToolPane):
                     self.servos[servo].position.SetValue(pos[0] + (pos[1]<<8))
                 else: 
                     errors = errors + str(servo+1) + ", "
+                    errCount = errCount + 1.0
                 if self.curpose != "":                
                     self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue() 
                 val = servo+2
                 dlg.Update(val)  
             if errors != "could not read servos: ":
                 self.parent.sb.SetStatusText(errors[0:-2],0)   
+                # if we are failing a lot, raise the timeout
+                if errCount/self.parent.project.count > 0.1 and self.parent.port.ser.timeout < 10:
+                    self.parent.port.ser.timeout = self.parent.port.ser.timeout * 2.0   
+                    print "Raised timeout threshold to ", self.parent.port.ser.timeout
             else:
-                self.parent.sb.SetStatusText("captured pose!",0)    
+                self.parent.sb.SetStatusText("captured pose!",0)
             dlg.Destroy()
             self.parent.project.save = True
         else:

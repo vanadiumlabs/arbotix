@@ -106,9 +106,8 @@ class shell(wx.TextCtrl):
                 elif self.parent.parent.port == None:
                     self.write("\rNo port open!")
                 elif l[0] == u"ls":      # list servos
-                    #self.parent.parent.port.ser.close()
+                    to = self.parent.parent.port.ser.timeout
                     self.parent.parent.port.ser.timeout = 0.25
-                    #self.parent.parent.port.ser.open()
                     #baud = 1000000
                     #if len(l) > 1:       # we have a baud too!
                     #    baud = int(l[1])
@@ -122,9 +121,7 @@ class shell(wx.TextCtrl):
                             self.write(repr(i+1).rjust(4)) 
                             k = k + 1
                             wx.SafeYield()
-                    #self.parent.parent.port.ser.close()
-                    self.parent.parent.port.ser.timeout = 2
-                    #self.parent.parent.port.ser.open()
+                    self.parent.parent.port.ser.timeout = to
                 elif l[0] == u"mv":      # rename a servo
                     if self.parent.parent.port.setReg(int(l[1]),P_ID,[int(l[2])]) == 0:
                         self.write("\rOK")

@@ -33,7 +33,7 @@ class ax12:
             self.ser = serial.Serial()
             self.ser.baudrate = baud
             self.ser.port = port
-            self.ser.timeout = 2
+            self.ser.timeout = 0.5
             self.ser.open()
             self.error = 0
         #except:
