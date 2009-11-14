@@ -224,14 +224,7 @@ class SeqEditor(ToolPane):
             self.tranbox.Insert(self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran)
             print "Updated: " + self.tranPose.GetValue() + "," + str(self.tranTime.GetValue()), self.curtran
             self.tranbox.SetSelection(self.curtran)
-            self.parent.project.save = True
-
-    def extract(self, li):
-        """ extract x%256,x>>8 for every x in li """
-        out = list()
-        for i in li:
-            out = out + [i%256,i>>8]
-        return out        
+            self.parent.project.save = True  
 
     def runSeq(self, e=None):
         """ download poses, seqeunce, and send. """
@@ -259,7 +252,7 @@ class SeqEditor(ToolPane):
                 # send poses            
                 for p in poseDL.keys():
                     print "Sending pose " + str(p) + " to position " + str(poseDL[p])
-                    self.port.execute(253, 8, [poseDL[p]] + self.extract(self.parent.project.poses[p])) 
+                    self.port.execute(253, 8, [poseDL[p]] + project.extract(self.parent.project.poses[p])) 
                 print "Sending sequence: " + str(tranDL)
                 # send sequence and play            
                 self.port.execute(253, 9, tranDL) 

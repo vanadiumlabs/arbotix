@@ -119,6 +119,8 @@ class project:
         print>>posefile, "#include <avr/pgmspace.h>"
         print>>posefile, ""
         for p in self.poses.keys():
+            if p.startswith("ik_"):
+                continue
             print>>posefile, "PROGMEM prog_uint16_t " + p + "[] = {" + str(self.count) + ",",
             p = self.poses[p]
             for x in p[0:-1]:
@@ -135,4 +137,11 @@ class project:
         print>>posefile, ""
         print>>posefile, "#endif"
         posefile.close()
+
+def extract(li):
+    """ extract x%256,x>>8 for every x in li """
+    out = list()
+    for i in li:
+        out = out + [i%256,i>>8]
+    return out
 

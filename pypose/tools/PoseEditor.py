@@ -28,6 +28,7 @@ from ax12 import *
 # pose editor window
 class PoseEditor(ToolPane):
     """ editor for the capture and creation of poses. """
+    BT_DELTA_T = wx.NewId()
     BT_RELAX = wx.NewId()
     BT_CAPTURE = wx.NewId()
     BT_SET = wx.NewId()
@@ -84,25 +85,30 @@ class PoseEditor(ToolPane):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(wx.Button(self, self.BT_POSE_ADD, 'add'))
         hbox.Add(wx.Button(self, self.BT_POSE_REM, 'remove'))   
-        hbox.Add(wx.Button(self, self.BT_POSE_RENAME, 'rename'))     
-        sizer.Add(hbox,(1,1),wx.GBSpan(1,1),wx.ALIGN_CENTER)
+        hbox.Add(wx.Button(self, self.BT_POSE_RENAME, 'rename')) 
+        sizer.Add(hbox,(1,1),wx.GBSpan(1,1),wx.ALIGN_CENTER)  
 
         # toolbar
         toolbar = wx.Panel(self, -1)
-        toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)
+        toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)        
+        #  delta-T for interpolation
+        if port != None and port.hasInterpolation == True:        
+            toolbarsizer.Add(wx.Button(toolbar, self.BT_DELTA_T, 'delta-T'),1)
+            self.deltaT = 500
         toolbarsizer.Add(wx.Button(toolbar, self.BT_RELAX, 'relax'),1)
         toolbarsizer.Add(wx.Button(toolbar, self.BT_CAPTURE, 'capture'),1)         
-        toolbarsizer.Add(wx.Button(toolbar, self.BT_SET, 'set'),1)
+        toolbarsizer.Add(wx.Button(toolbar, self.BT_SET, 'set'),1)                
         toolbar.SetSizer(toolbarsizer)
         sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
-       
+
         self.Bind(wx.EVT_SLIDER, self.updatePose)
         wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
         wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose) 
         wx.EVT_BUTTON(self, self.BT_SET, self.setPose)   
         wx.EVT_BUTTON(self, self.BT_POSE_ADD, self.addPose)   
         wx.EVT_BUTTON(self, self.BT_POSE_REM, self.remPose)   
-        wx.EVT_BUTTON(self, self.BT_POSE_RENAME, self.renamePose)   
+        wx.EVT_BUTTON(self, self.BT_POSE_RENAME, self.renamePose)
+        wx.EVT_BUTTON(self, self.BT_DELTA_T, self.doDeltaT)   
         wx.EVT_LISTBOX(self, self.ID_POSE_BOX, self.doPose)
 
         # key accelerators
@@ -175,15 +181,28 @@ class PoseEditor(ToolPane):
     def setPose(self, e=None):
         """ Write a pose out to the robot. """
         if self.port != None and self.curpose != "":
-            print "Setting pose..."
-            #curPose = list() TODO: should we use a syncWrite here?
+            # update pose in project
             for servo in range(self.parent.project.count):
-                 pos = self.servos[servo].position.GetValue()
-                 self.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
-                 self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
-            #    pos = self.servos[servo].position.get()
-            #    curPose.append( (servo+1, pos%256, pos>>8) )
-            #self.pose.syncWrite(P_GOAL_POSITION_L, curPose)
+                self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()   
+            print "Setting pose..."
+            if self.port.hasInterpolation == True:  # lets do this smoothly!
+                # set pose size -- IMPORTANT!
+                print "Setting pose size at " + str(self.parent.project.count)
+                self.port.execute(253, 7, [self.parent.project.count])
+                # download the pose
+                self.port.execute(253, 8, [0] + project.extract(self.parent.project.poses[self.curpose]))                 
+                self.port.execute(253, 9, [0, self.deltaT%256,self.deltaT>>8,255,0,0])                
+                self.port.execute(253, 10, list())
+            else:
+                # aww shucks...
+                #curPose = list() TODO: should we use a syncWrite here?
+                for servo in range(self.parent.project.count):
+                     pos = self.servos[servo].position.GetValue()
+                     self.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
+                     self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
+                #    pos = self.servos[servo].position.get()
+                #    curPose.append( (servo+1, pos%256, pos>>8) )
+                #self.pose.syncWrite(P_GOAL_POSITION_L, curPose)
         else:
             self.parent.sb.SetBackgroundColour('RED')
             self.parent.sb.SetStatusText("No Port Open",0) 
@@ -251,6 +270,15 @@ class PoseEditor(ToolPane):
                     servo.Disable()
             self.parent.sb.SetStatusText("please create or select a pose to edit...",0)
             self.parent.project.save = True   
+
+    def doDeltaT(self, e=None):
+        """ Adjust delta-T variable """
+        dlg = wx.TextEntryDialog(self,'Enter time in mS:', 'Adjust Interpolation time')
+        dlg.SetValue(str(self.deltaT))
+        if dlg.ShowModal() == wx.ID_OK:
+            print "Adjusting delta-T:" + str(dlg.GetValue())
+            self.deltaT = int(dlg.GetValue())
+            dlg.Destroy()
 
 NAME = "pose editor"
 STATUS = "please create or select a sequence to edit..."

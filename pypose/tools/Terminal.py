@@ -21,7 +21,7 @@
 
 import wx
 from ax12 import *
-import arbotix
+from driver import Driver
 from ToolPane import ToolPane
 
 # help phrases
@@ -92,7 +92,7 @@ class shell(wx.TextCtrl):
                     print "Opening port: " + l[1]
                     try:
                         # TODO: add ability to select type of driver
-                        self.port = arbotix.ax12(str(l[1]), 38400)
+                        self.port = Driver(str(l[1]), 38400, True)   # w/ interpolation
                         self.parent.parent.port = self.port
                         self.parent.parent.sb.SetStatusText(str(l[1]) + "@38400",1)
                         self.write("\rOK!")

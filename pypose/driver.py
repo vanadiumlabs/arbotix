@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """ 
-  PyPose: Serial driver for direct connection via USBDynamixel
-
+  PyPose: Serial driver for connection to arbotiX board or USBDynamixel.
   Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
@@ -20,42 +19,45 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import serial, time, sys
+import serial
+import time
+import sys
 from binascii import b2a_hex
 from ax12 import *
 
-class ax12:
-    """ Class to open a serial port and control AX-12 servos, 
-    typically through a HUV servo board. """
-    def __init__(self, port="COM4",baud=1000000):
-        try:
-            self.ser = serial.Serial()
-            self.ser.baudrate = baud
-            self.ser.port = port
-            self.ser.timeout = 3
-            self.ser.open()
-        except:
-            print "Cannot open port" + str(sys.exc_info()[0])
-            sys.exit(0)
+class Driver:
+    """ Class to open a serial port and control AX-12 servos 
+    through an arbotiX board or USBDynamixel. """
+    def __init__(self, port="/dev/ttyUSB0",baud=38400, interpolation=False, direct=False):
+        """ This may throw errors up the line -- that's a good thing. """
+        self.ser = serial.Serial()
+        self.ser.baudrate = baud
+        self.ser.port = port
+        self.ser.timeout = 0.5
+        self.ser.open()
+        self.error = 0
+        self.hasInterpolation = interpolation
+        self.direct = direct
+
+    def execute(self, index, ins, params):
+        """ Send an instruction to a device. """
+        self.ser.flushInput()
+        length = 2 + len(params)
+        checksum = 255 - ((index + length + ins + sum(params))%256)
+        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(ins))
+        for val in params:
+            self.ser.write(chr(val))
+        self.ser.write(chr(checksum))
+        return self.getPacket(0)
 
     def setReg(self, index, regstart, values):
         """ Set the value of registers. Should be called as such:
         ax12.setReg(1,1,(0x01,0x05)) """ 
-        self.ser.flushInput()
-        length = 3 + len(values)
-        checksum = 255 - ((index + length + AX_WRITE_DATA + regstart + sum(values))%256)
-        # packet: FF FF ID LENGTH INS(0x03) PARAM .. CHECKSUM
-        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(length)+chr(AX_WRITE_DATA)+chr(regstart))
-        for val in values:
-            self.ser.write(chr(val))
-        self.ser.write(chr(checksum))
-        time.sleep(0.05)
-        # print the return information        
-        while self.ser.inWaiting() > 0:
-              print b2a_hex(self.ser.read()),
-        print ""
+        self.execute(index, AX_WRITE_DATA, [regstart] + values)
+        return self.error     
 
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params = None):
+        """ Read a return packet, iterative attempt """
         # need a positive byte
         d = self.ser.read()
         if d == '': 
@@ -70,12 +72,12 @@ class ax12:
             else:
                 print "Oxff NOT found, restart: " + str(ord(d))
                 return self.getPacket(0)
-        elif mode == 1:         # get our first 0xFF
+        elif mode == 1:         # get our second 0xFF
             if ord(d) == 0xff:
                 print "Oxff found"
                 return self.getPacket(2)
             else:
-                print "Oxff NOT found, restart"
+                print "Oxff NOT found, restart: " + str(ord(d))
                 return self.getPacket(0)
         elif mode == 2:         # get id
             if d != 0xff:
@@ -89,7 +91,11 @@ class ax12:
             return self.getPacket(4, id, ord(d))
         elif mode == 4:         # read error    
             print "Error level found: " + str(ord(d))
-            return self.getPacket(5, id, leng, ord(d), list())
+            self.error = ord(d)
+            if leng == 2:
+                return self.getPacket(6, id, leng, ord(d), list())
+            else:
+                return self.getPacket(5, id, leng, ord(d), list())
         elif mode == 5:         # read params
             print "Parameter found: " + str(ord(d))
             params.append(ord(d))
@@ -98,6 +104,7 @@ class ax12:
             else:
                 return self.getPacket(5, id, leng, error, params)
         elif mode == 6:         # read checksum
+            print "Checksum found: " + str(ord(d))
             checksum = id + leng + error + sum(params) + ord(d)
             print "Checksum computed: " + str(checksum)
             if checksum % 256 != 255:
@@ -110,12 +117,7 @@ class ax12:
     def getReg(self, index, regstart, rlength):
         """ Get the value of registers, should be called as such:
         ax12.getReg(1,1,1) """
-        self.ser.flushInput()   
-        # send packet: FF FF ID LENGTH INS(0x02) PARAM .. CHECKSUM
-        checksum = 255 - ((6 + index + regstart + rlength)%256)
-        self.ser.write(chr(0xFF)+chr(0xFF)+chr(index)+chr(0x04)+chr(AX_READ_DATA)+chr(regstart)+chr(rlength)+chr(checksum))
-        # read packet: FF FF ID LENGTH ERROR PARAMS CHECKSUM
-        vals = self.getPacket(0)           
+        vals = self.execute(index, AX_READ_DATA, [regstart, rlength])
         if vals == None:
             print "Read Failed: Servo ID = " + str(index)
             return -1        

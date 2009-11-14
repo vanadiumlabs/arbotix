@@ -25,19 +25,13 @@ import wx
 import serial
 
 from ax12 import *
-# drivers expose init(port, baud)
-#                execute(id, instr, params)
-#                setReg(id, start_addr, vals)
-#                getReg(id, start_addr, length)
-#                syncWrite(regstart, ((id1, val1, val2..), (id2, val1, val2...), ..) )
-import arbotix
-#import direct
+from driver import Driver
 
 from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose v1.0a"
+VERSION = "PyPose v1.0b"
 
 ###############################################################################
 # Main editor window
@@ -215,7 +209,9 @@ class editor(wx.Frame):
     def export(self, e):        
         """ Export a pose file for use with Sanguino Library. """
         if self.project.name == "":
+            self.sb.SetBackgroundColour('RED')
             self.sb.SetStatusText('please create a project')
+            self.timer.Start(20)
             return
         dlg = wx.FileDialog(self, "Choose a file", self.dirname,"","*.h",wx.SAVE)
         if dlg.ShowModal() == wx.ID_OK:
@@ -267,7 +263,7 @@ class editor(wx.Frame):
             print "Opening port: " + self.ports[dlg.GetSelection()]
             try:
                 # TODO: add ability to select type of driver
-                self.port = arbotix.ax12(self.ports[dlg.GetSelection()], 38400)
+                self.port = Driver(self.ports[dlg.GetSelection()], 38400, True) # w/ interpolation
                 self.panel.port = self.port
                 self.sb.SetStatusText(self.ports[dlg.GetSelection()] + "@38400",1)
             except:
@@ -367,27 +363,6 @@ class NewProjectDialog(wx.Dialog):
 
         self.SetSizer(vbox)    
 
-###############################################################################
-# Port Selection Dialog
-class PortDialog(wx.Dialog):
-    def __init__(self, parent, title, ports=None):
-        wx.Dialog.__init__(self, parent, -1, title)  
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-
-        vbox.Add(wx.StaticText(self, -1, 'Port (Ex. COM4 or /dev/ttyUSB0)')) 
-        
-        self.portbox = wx.ListBox(self, -1, choices=ports)
-        vbox.Add(self.portbox, wx.ALIGN_CENTER | wx.EXPAND, 10) 
-
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        okButton = wx.Button(self, wx.ID_OK, 'Ok', size=(70, 30))
-        closeButton = wx.Button(self, wx.ID_CANCEL, 'Close', size=(70, 30))
-        hbox.Add(okButton, 1)
-        hbox.Add(closeButton, 1, wx.LEFT, 5)
-        vbox.Add(hbox, 1, wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, 10)
-
-        self.SetSizer(vbox) 
 
 if __name__ == "__main__":
     print "PyPose starting... "
