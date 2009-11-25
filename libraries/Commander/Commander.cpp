@@ -29,13 +29,13 @@ Commander::Commander(){
 
 /* process messages coming from Commander 
  *  format = 0xFF WALK_H WALK_V REG_LOOK_H LOOK_V BUTTONS EXTRA CHECKSUM */
-void Commander::ReadMsgs(){
+int Commander::ReadMsgs(){
     while(Serial.available() > 0){
         if(index == -1){         // looking for new packet
             if(Serial.read() == 0xff){
                 index = 0;
                 checksum = 0;
-                //digitalWrite(0,HIGH-digitalRead(0));
+                digitalWrite(0,HIGH-digitalRead(0));
             }
         }else if(index == 0){
             vals[index] = (unsigned char) Serial.read();
@@ -50,7 +50,7 @@ void Commander::ReadMsgs(){
             if(index == 7){ // packet complete
                 if(checksum%256 != 255){
                     // packet error!
-                    digitalWrite(0,HIGH-digitalRead(0));
+                    //digitalWrite(0,HIGH-digitalRead(0));
                 }else{
                     walkV = (signed char)( (int)vals[0]-128 );
                     walkH = (signed char)( (int)vals[1]-128 );
@@ -58,13 +58,15 @@ void Commander::ReadMsgs(){
                     lookH = (signed char)( (int)vals[3]-128 );
                     buttons = vals[4];
                     extra = vals[5];
-                    if(buttons & WALK_2)
+                    /*if(buttons & WALK_2)
                         walkZ++;
                     if(buttons & WALK_3)
-                        walkZ--;
+                        walkZ--;*/
                 }
                 index = -1;
+                return 1;
             }
         }
     }
+    return 0;
 }

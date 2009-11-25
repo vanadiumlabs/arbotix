@@ -21,21 +21,21 @@
 #define Commander_h
 
 /* bitmasks for buttons array */
-#define WALK_1      0
-#define WALK_2      1
-#define WALK_3      2
-#define WALK_TOP    3
-#define LOOK_A      4
-#define LOOK_B      5
-#define LOOK_C      6
-#define LOOK_TOP    7
+#define WALK_1      0x01
+#define WALK_2      0x02
+#define WALK_3      0x04
+#define LOOK_4      0x08
+#define LOOK_5      0x10
+#define LOOK_6      0x20
+#define WALK_TOP    0x40
+#define LOOK_TOP    0x80
 
 /* the Commander will send out a frame at about 30hz, this class helps decipher the output. */
 class Commander
 {    
   public:
 	Commander(); 
-    void ReadMsgs();        // must be called regularly to clean out Serial buffer
+    int ReadMsgs();         // must be called regularly to clean out Serial buffer
 
     // joystick values are -125 to 125
     signed char walkV;      // vertical stick movement = forward speed
