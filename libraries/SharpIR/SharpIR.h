@@ -30,6 +30,7 @@ class SharpIR
   public:
 	SharpIR(int type, int pin);
 	int getData(void);
+    int getSmoothData(void);
   private:
 	int _type;
 	int _pin;

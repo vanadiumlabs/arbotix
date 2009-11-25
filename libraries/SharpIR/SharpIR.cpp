@@ -62,6 +62,16 @@ int gp2longGetData(int pin){
 	return sample - 1;
 }
 
+/** = a smoothed out reading of a port - useful for IR sensors... */
+int smooth(int (*func)(int ch), int channel){
+    int reading = func(channel);
+    reading = reading + func(channel);
+    reading = reading + func(channel);
+    reading = reading + func(channel);
+    reading = reading/4;
+    return reading; 
+}
+
 SharpIR::SharpIR(int type, int pin){
 	pinMode(pin,INPUT);
 	_pin = pin;
@@ -80,6 +90,19 @@ int SharpIR::getData(){
 	return 0;
 }
 
+int SharpIR::getSmoothData(){
+	switch(_type){
+		case GP2D12:
+			return smooth(&gp2d12GetData,_pin);
+		case GP2D120:
+			return smooth(&gp2shortGetData,_pin);
+		case GP2Y0A02YK:
+			return smooth(&gp2longGetData,_pin);
+	}
+	return 0;
+}
+
 /* Revisions
  * 5-5-09 Modified to use CM rather than inch 
+ * 10-20-09 Added getSmoothData()
  */
