@@ -265,6 +265,7 @@ class editor(wx.Frame):
                 # TODO: add ability to select type of driver
                 self.port = Driver(self.ports[dlg.GetSelection()], 38400, True) # w/ interpolation
                 self.panel.port = self.port
+                self.panel.portUpdated()
                 self.sb.SetStatusText(self.ports[dlg.GetSelection()] + "@38400",1)
             except:
                 self.port = None

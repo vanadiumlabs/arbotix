@@ -92,9 +92,12 @@ class PoseEditor(ToolPane):
         toolbar = wx.Panel(self, -1)
         toolbarsizer = wx.BoxSizer(wx.HORIZONTAL)        
         #  delta-T for interpolation
+        self.deltaTButton = wx.Button(toolbar, self.BT_DELTA_T, 'delta-T')   
+        self.deltaTButton.Disable()     
+        toolbarsizer.Add(self.deltaTButton,1)
+        self.deltaT = 500
         if port != None and port.hasInterpolation == True:        
-            toolbarsizer.Add(wx.Button(toolbar, self.BT_DELTA_T, 'delta-T'),1)
-            self.deltaT = 500
+            self.deltaTButton.Enable()
         toolbarsizer.Add(wx.Button(toolbar, self.BT_RELAX, 'relax'),1)
         toolbarsizer.Add(wx.Button(toolbar, self.BT_CAPTURE, 'capture'),1)         
         toolbarsizer.Add(wx.Button(toolbar, self.BT_SET, 'set'),1)                
@@ -279,6 +282,13 @@ class PoseEditor(ToolPane):
             print "Adjusting delta-T:" + str(dlg.GetValue())
             self.deltaT = int(dlg.GetValue())
             dlg.Destroy()
+
+    def portUpdated(self):
+        """ Adjust delta-T button """
+        if self.port != None and self.port.hasInterpolation == True:        
+            self.deltaTButton.Enable()
+        else:
+            self.deltaTButton.Disable()
 
 NAME = "pose editor"
 STATUS = "please create or select a sequence to edit..."

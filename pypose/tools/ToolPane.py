@@ -32,3 +32,6 @@ class ToolPane(wx.Panel):
     def save(self):
         pass    
 
+    def portUpdated(self):
+        pass
+

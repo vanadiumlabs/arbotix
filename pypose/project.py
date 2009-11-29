@@ -60,7 +60,7 @@ class sequence(list):
             pass
 
     def __str__(self):
-        return ", ".join([str(t) for t in self])        
+        return ", ".join([str(t) for t in self])     
 
 
 ###############################################################################
@@ -70,7 +70,8 @@ class project:
         self.name = ""
         self.count = 18
         self.poses = dict()
-        self.sequences = dict()    
+        self.sequences = dict()
+        self.nuke = ""    
         self.save = False
 
     def load(self, filename):
@@ -85,7 +86,9 @@ class project:
             if line[0:5] == "Pose=":
                 self.poses[line[5:line.index(":")]] = pose(line[line.index(":")+1:].rstrip(),self.count)
             elif line[0:4] == "Seq=":
-                self.sequences[line[4:line.index(":")]] = (sequence(line[line.index(":")+1:].rstrip()))    
+                self.sequences[line[4:line.index(":")]] = (sequence(line[line.index(":")+1:].rstrip())) 
+            elif line[0:5] == "Nuke=":
+                self.nuke = line[5:].rstrip()   
             # these next two lines can be removed later, once everyone is moved to Ver 0.91         
             else:
                 self.poses[line[0:line.index(":")]] = pose(line[line.index(":")+1:].rstrip(),self.count)   
@@ -98,6 +101,8 @@ class project:
             print>>prjFile, "Pose=" + p + ":" + str(self.poses[p])
         for s in self.sequences.keys():
             print>>prjFile, "Seq=" + s + ": " + str(self.sequences[s])
+        if self.nuke != "":
+            print>>prjFile, "Nuke=" + self.nuke
         self.save = False
 
     def new(self, nName, nCount):
