@@ -31,7 +31,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose v1.0b"
+VERSION = "PyPose v1.0c"
 
 ###############################################################################
 # Main editor window
