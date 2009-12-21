@@ -28,8 +28,11 @@
 
 #include "ax12.h"
 
-#define BIOLOID_FRAME_LENGTH      33    // 33 ms between frames
-#define BIOLOID_SHIFT 3
+/* pose engine runs at 30Hz (33ms between frames) 
+   recommended values for interpolateSetup are of the form X*BIOLOID_FRAME_LENGTH + 1 */
+#define BIOLOID_FRAME_LENGTH      33
+/* we need some extra resolution, use 13 bits, rather than 10, during interpolation */
+#define BIOLOID_SHIFT             3
 
 /** a structure to hold transitions **/
 typedef struct{
@@ -42,24 +45,32 @@ class BioloidController
 {
   public:
     /* YOU SHOULD NOT USE Serial1 */
-	BioloidController(long baud);               // baud usually 1000000
+    BioloidController(long baud);               // baud usually 1000000
 
     /* Pose Manipulation */
     void loadPose( const unsigned int * addr ); // load a named pose from FLASH  
     void readPose();                            // read a pose in from the servos  
     void writePose();                           // write a pose out to the servos
+    int getCurPose(int id);                     // get a servo value in the current pose
+    int getNextPose(int id);                    // get a servo value in the next pose
+    void setNextPose(int id, int pos);          // set a servo value in the next pose
+    
+    /* Pose Engine */
     void interpolateSetup(int time);            // calculate speeds for smooth transition
     void interpolateStep();                     // move forward one step in current interpolation  
     unsigned char interpolating;                // are we in an interpolation? 0=No, 1=Yes
-    unsigned char runningSeq;                   // are we running a sequence? 0=No, 1=Yes
- 
-    int getCurPose(int id);                     // get a servo value in the current pose
-    int getNextPose(int id);                    // get a servo value in the next pose
-    void setNextPose(int id, int pos);          // set a servo value in the next pose    
+    unsigned char runningSeq;                   // are we running a sequence? 0=No, 1=Yes 
     int poseSize;                               // how many servos are in this pose, used by Sync()
 
-    /* Pose Engine */
-    
+    /* to interpolate:
+     *  bioloid.loadPose(myPose);
+     *  bioloid.interpolateSetup(67);
+     *  while(bioloid.interpolating > 0){
+     *      bioloid.interpolateStep();
+     *      delay(1);
+     *  }
+     */
+
     /* Sequence Engine */
     void playSeq( const transition_t * addr );  // load a sequence and play it from FLASH
     void play();                                // keep moving forward in time
