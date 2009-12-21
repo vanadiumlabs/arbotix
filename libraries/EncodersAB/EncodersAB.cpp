@@ -35,7 +35,7 @@ void leftCounter(){
 }
 void rightCounter(){
     // d3 & A0 (d14)
-    if(PINA&0x01)
+    if(PINC&0x01)
         Encoders.right++; // cw is d3 == A0
     else
         Encoders.right--;
