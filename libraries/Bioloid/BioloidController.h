@@ -29,7 +29,7 @@
 #include "ax12.h"
 
 /* pose engine runs at 30Hz (33ms between frames) 
-   recommended values for interpolateSetup are of the form X*BIOLOID_FRAME_LENGTH + 1 */
+   recommended values for interpolateSetup are of the form X*BIOLOID_FRAME_LENGTH - 1 */
 #define BIOLOID_FRAME_LENGTH      33
 /* we need some extra resolution, use 13 bits, rather than 10, during interpolation */
 #define BIOLOID_SHIFT             3
