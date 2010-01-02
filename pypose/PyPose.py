@@ -31,7 +31,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose v1.0c"
+VERSION = "PyPose v1.1"
 
 ###############################################################################
 # Main editor window
@@ -171,7 +171,9 @@ class editor(wx.Frame):
             self.project.new(dlg.name.GetValue(), dlg.count.GetValue())
             self.loadTool()      
             self.sb.SetStatusText('created new project ' + self.project.name + ', please create a pose...')
+            self.SetTitle(VERSION+": " + self.project.name)
             self.panel.saveReq = True
+            self.filename = ""
         dlg.Destroy()
 
     def openFile(self, e):
