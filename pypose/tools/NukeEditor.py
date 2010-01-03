@@ -25,6 +25,7 @@ import project
 from ToolPane import ToolPane
 from ax12 import *
 import time
+from commander import Commander
 
 # Which IK models to load?
 from models.manifest import iKmodels
@@ -33,7 +34,6 @@ from models.manifest import iKmodels
 
 # TODO V1.1 Beta1
 #   walk test, based on commander
-#   images for neutrals: lizard.
 
 # TODO V1.1 Beta2?
 #   Sign test for mammal3, image for neutral
@@ -684,15 +684,17 @@ class NukeEditor(ToolPane):
             self.signs = self.model.doSignTest(self) 
             self.save()
     def doWalkTest(self, e=None):
-        # TODO: Replace this with a commander dialog!        
-        if self.doChecks(["project","port","ik"]) > 0:
-            self.loadModel()
-            self.model.gaitGen = self.model.defaultGait
-            for i in range(24):
-                self.model.doIK()
-                self.writePose(self.model.nextPose, 50)
-                #time.sleep(0.001)
-            self.model.gaitGen = None
+        if self.doChecks(["port"]) > 0:
+            comm = Commander(self, self.port.ser)    
+            comm.Center()    
+        #if self.doChecks(["project","port","ik"]) > 0:
+        #    self.loadModel()
+        #    self.model.gaitGen = self.model.defaultGait
+        #    for i in range(24):
+        #        self.model.doIK()
+        #        self.writePose(self.model.nextPose, 50)
+        #        #time.sleep(0.001)
+        #    self.model.gaitGen = None
 
         
     ###########################################################################
