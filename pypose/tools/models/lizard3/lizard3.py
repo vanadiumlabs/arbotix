@@ -21,6 +21,7 @@
 
 import wx
 from math import cos,sin,atan2,sqrt,acos
+from NukeEditor import NukeDialog
 
 # Some preliminaries
 def sq(x):  
@@ -354,7 +355,7 @@ class lizard3(dict):
 
     def defaultGait(self,leg):        
         # just walk forward for now
-        travelX = 25
+        travelX = 50
         travelY = 0
         travelRotZ = 0
 
@@ -384,159 +385,118 @@ class lizard3(dict):
             return "+"
         else:
             return "-"
+
     def doSignTest(self,parent,step=0):
-        print "Moving to neutral positions"
-        self["RIGHT_FRONT"] = [0,self.L_FEMUR+self.L_COXA,self.L_TIBIA]
-        self["RIGHT_REAR"] = [0,self.L_FEMUR+self.L_COXA,self.L_TIBIA]
-        self["LEFT_FRONT"] = [0,-self.L_FEMUR-self.L_COXA,self.L_TIBIA]
-        self["LEFT_REAR"] = [0,-self.L_FEMUR-self.L_COXA,self.L_TIBIA]
-        self["RIGHT_MIDDLE"] = [0,self.L_FEMUR+self.L_COXA,self.L_TIBIA]
-        self["LEFT_MIDDLE"] = [0,-self.L_FEMUR-self.L_COXA,self.L_TIBIA]
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
+        if step == 0:
+            print "Moving to neutral positions"
+            self["RIGHT_FRONT"] = [0,self.L_FEMUR+self.L_COXA,self.L_TIBIA]
+            self["RIGHT_REAR"] = [0,self.L_FEMUR+self.L_COXA,self.L_TIBIA]
+            self["LEFT_FRONT"] = [0,-self.L_FEMUR-self.L_COXA,self.L_TIBIA]
+            self["LEFT_REAR"] = [0,-self.L_FEMUR-self.L_COXA,self.L_TIBIA]
+            self["RIGHT_MIDDLE"] = [0,self.L_FEMUR+self.L_COXA,self.L_TIBIA]
+            self["LEFT_MIDDLE"] = [0,-self.L_FEMUR-self.L_COXA,self.L_TIBIA]
+            self.doIK()
+            parent.writePose(self.nextPose, 500)
+            dlg = wx.MessageDialog(parent, "Click OK when ready!", 'Sign Test', wx.OK)
+            if dlg.ShowModal() == wx.ID_OK:    
+                return self.doSignTest(parent,1)
+            else:
+                return "".join([self.strRep(t) for t in self.signs])   
+        else:
+            msg = ""            # message to display to user
+            servo = -1          # servo ID to reverse if we get a NCK    
+            if step == 1:
+                # SET COXAS FIRST
+                self["RIGHT_FRONT"][0] = self.L_COXA/2
+                msg = "Did my RF leg move forward?"
+                servo = "RF_COXA"
+            elif step == 2:
+                self["LEFT_FRONT"][0] = self.L_COXA/2
+                msg = 'Did my LF leg move forward?'
+                servo = "LF_COXA"
+            elif step == 3:
+                self["RIGHT_REAR"][0] = -self.L_COXA/2
+                msg = 'Did my RR leg move backward?'
+                servo = "RR_COXA"
+            elif step == 4:
+                self["LEFT_REAR"][0] = -self.L_COXA/2
+                msg = 'Did my LR leg move backward?'
+                servo = "LR_COXA"
+            elif step == 5:
+                # Now FEMURs and TIBIAs
+                self["RIGHT_FRONT"][2] = self["RIGHT_FRONT"][2] - 20
+                msg = 'Did my RF leg move upward?'
+                servo = "RF_FEMUR"
+            elif step == 6: 
+                msg = 'Is my RF tibia still straight up and down?'
+                #msg = 'Did my RF leg move inward or outward too?'
+                servo = "RF_TIBIA"
+            elif step == 7:
+                self["LEFT_FRONT"][2] = self["LEFT_FRONT"][2] - 20
+                msg = 'Did my LF leg move upward?'
+                servo = "LF_FEMUR"
+            elif step == 8:
+                msg = 'Is my LF tibia still straight up and down?'
+                #msg = 'Did my LF leg move inward or outward too?'
+                servo = "LF_TIBIA"
+            elif step == 9:
+                self["RIGHT_REAR"][2] = self["RIGHT_REAR"][2] - 20
+                msg = 'Did my RR leg move upward?'
+                servo = "RR_FEMUR"
+            elif step == 10:
+                msg = 'Is my RR tibia still straight up and down?'
+                #msg = 'Did my RR leg move inward or outward too?'
+                servo = "RR_TIBIA"
+            elif step == 11:
+                self["LEFT_REAR"][2] = self["LEFT_REAR"][2] - 20
+                msg = 'Did my LR leg move upward?'
+                servo = "LR_FEMUR"
+            elif step == 12:
+                msg = 'Is my LR tibia still straight up and down?'
+                #msg = 'Did my LR leg move inward or outward too?'
+                servo = "LR_TIBIA"   
+            elif step == 13:
+                # middle legs
+                self["RIGHT_MIDDLE"][0] = self.L_COXA/2
+                msg = "Did my RM leg move forward?"
+                servo = "RM_COXA"
+            elif step == 14:
+                self["LEFT_MIDDLE"][0] = self.L_COXA/2
+                msg = "Did my LM leg move forward?"
+                servo = "LM_COXA"
+            elif step == 15:
+                self["RIGHT_MIDDLE"][2] = self["RIGHT_MIDDLE"][2] - 20
+                msg = 'Did my RM leg move upward?'
+                servo = "RM_FEMUR"
+            elif step == 16:
+                msg = 'Is my RM tibia still straight up and down?'
+                servo = "RM_TIBIA"
+            elif step == 17:
+                self["LEFT_MIDDLE"][2] = self["LEFT_MIDDLE"][2] - 20
+                msg = 'Did my LM leg move upward?'
+                servo = "LM_FEMUR"
+            elif step == 18:
+                msg = 'Is my LM tibia still straight up and down?'
+                servo = "LM_TIBIA"  
 
-        # SET COXAS FIRST
-        self["RIGHT_FRONT"][0] = self.L_COXA/2
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my RF leg move forward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing RF_COXA sign"
-            if self.signs[self["RF_COXA"]] > 0:
-                self.signs[self["RF_COXA"]] = -1
-            else:
-                self.signs[self["RF_COXA"]] = 1
+            # do IK and display dialog
             self.doIK()
             parent.writePose(self.nextPose, 500)
+            #dlg = SignDialog(parent, 'Sign Test', msg)
+            dlg = wx.MessageDialog(parent, msg, 'Sign Test', wx.YES | wx.NO)
+            result = dlg.ShowModal()    
+            if result == wx.ID_CANCEL:
+                return "".join([self.strRep(t) for t in self.signs])            
+            elif result == wx.ID_NO:
+                print "Reversing", servo, "sign"       
+                if self.signs[self[servo]] > 0:
+                    self.signs[self[servo]] = -1
+                else:
+                    self.signs[self[servo]] = 1
+                self.doIK()
+                parent.writePose(self.nextPose, 500)
+            if step < (3*self.legs):
+                return self.doSignTest(parent,step+1)
+            else:
+                return "".join([self.strRep(t) for t in self.signs])
 
-        self["LEFT_FRONT"][0] = self.L_COXA/2
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my LF leg move forward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing LF_COXA sign"
-            if self.signs[self["LF_COXA"]] > 0:
-                self.signs[self["LF_COXA"]] = -1
-            else:
-                self.signs[self["LF_COXA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-    
-        self["RIGHT_REAR"][0] = -self.L_COXA/2
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my RR leg move backward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing LF_COXA sign"
-            if self.signs[self["RR_COXA"]] > 0:
-                self.signs[self["RR_COXA"]] = -1
-            else:
-                self.signs[self["RR_COXA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-
-        self["LEFT_REAR"][0] = -self.L_COXA/2
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my LR leg move backward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing LR_COXA sign"
-            if self.signs[self["LR_COXA"]] > 0:
-                self.signs[self["LR_COXA"]] = -1
-            else:
-                self.signs[self["LR_COXA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-
-        # Now FEMURs and TIBIAs
-        self["RIGHT_FRONT"][2] = self["RIGHT_FRONT"][2] - 20
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my RF leg move upward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing RF_FEMUR sign"
-            if self.signs[self["RF_FEMUR"]] > 0:
-                self.signs[self["RF_FEMUR"]] = -1
-            else:
-                self.signs[self["RF_FEMUR"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my RF leg move inward or outward too?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() == wx.ID_YES:
-            print "Reversing RF_TIBIA sign"
-            if self.signs[self["RF_TIBIA"]] > 0:
-                self.signs[self["RF_TIBIA"]] = -1
-            else:
-                self.signs[self["RF_TIBIA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-        
-        self["LEFT_FRONT"][2] = self["LEFT_FRONT"][2] - 20
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my LF leg move upward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing LF_FEMUR sign"
-            if self.signs[self["LF_FEMUR"]] > 0:
-                self.signs[self["LF_FEMUR"]] = -1
-            else:
-                self.signs[self["LF_FEMUR"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my LF leg move inward or outward too?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() == wx.ID_YES:
-            print "Reversing LF_TIBIA sign"
-            if self.signs[self["LF_TIBIA"]] > 0:
-                self.signs[self["LF_TIBIA"]] = -1
-            else:
-                self.signs[self["LF_TIBIA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-
-        self["RIGHT_REAR"][2] = self["RIGHT_REAR"][2] - 20
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my RR leg move upward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing RR_FEMUR sign"
-            if self.signs[self["RR_FEMUR"]] > 0:
-                self.signs[self["RR_FEMUR"]] = -1
-            else:
-                self.signs[self["RR_FEMUR"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my RR leg move inward or outward too?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() == wx.ID_YES:
-            print "Reversing RR_TIBIA sign"
-            if self.signs[self["RR_TIBIA"]] > 0:
-                self.signs[self["RR_TIBIA"]] = -1
-            else:
-                self.signs[self["RR_TIBIA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-        
-        self["LEFT_REAR"][2] = self["LEFT_REAR"][2] - 20
-        self.doIK()
-        parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my LR leg move upward?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() != wx.ID_YES:
-            print "Reversing LR_FEMUR sign"
-            if self.signs[self["LR_FEMUR"]] > 0:
-                self.signs[self["LR_FEMUR"]] = -1
-            else:
-                self.signs[self["LR_FEMUR"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-        dlg = wx.MessageDialog(parent, 'Did my LR leg move inward or outward too?', 'Sign Test', wx.YES | wx.NO)
-        if dlg.ShowModal() == wx.ID_YES:
-            print "Reversing LR_TIBIA sign"
-            if self.signs[self["LR_TIBIA"]] > 0:
-                self.signs[self["LR_TIBIA"]] = -1
-            else:
-                self.signs[self["LR_TIBIA"]] = 1
-            self.doIK()
-            parent.writePose(self.nextPose, 500)
-    
-        return "".join([self.strRep(t) for t in self.signs])
-
-    

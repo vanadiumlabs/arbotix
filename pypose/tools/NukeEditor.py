@@ -32,12 +32,11 @@ from models.manifest import iKmodels
 # TODO: encapsulate pose editor into a seperate class, so we can load it for neutral tuning...
 
 # TODO V1.1 Beta1
-#   "undo" during sign test, sign test for middle legs
 #   walk test, based on commander
-#   images for neutrals: mammal, lizard.
+#   images for neutrals: lizard.
 
 # TODO V1.1 Beta2?
-#   Sign test for mammal3
+#   Sign test for mammal3, image for neutral
 
 ###############################################################################
 # nuke editor window
@@ -167,7 +166,7 @@ class NukeEditor(ToolPane):
         self.signButton = wx.Button(self, self.BT_SIGN, 'Go')        
         actionSizer.Add(self.signButton,(2,1))
         driveButton = wx.Button(self, self.BT_DRIVE, 'Drive')
-        driveButton.Disable()
+        #driveButton.Disable()
         actionSizer.Add(driveButton,(3,1))
         
         actionBox.Add(actionSizer)
@@ -274,7 +273,7 @@ class NukeEditor(ToolPane):
         wx.EVT_BUTTON(self, self.BT_LIMITS, self.doLimits)                
         wx.EVT_BUTTON(self, self.BT_NEUTRAL, self.doNeutral)
         wx.EVT_BUTTON(self, self.BT_SIGN, self.doSignTest) 
-        #wx.EVT_BUTTON(self, self.BT_DRIVE, self.doWalkTest) 
+        wx.EVT_BUTTON(self, self.BT_DRIVE, self.doWalkTest) 
         wx.EVT_BUTTON(self, self.BT_EXPORT, self.doExport) 
 
         wx.EVT_COMBOBOX(self, self.ID_IKTYPE, self.doIKType)
@@ -692,7 +691,8 @@ class NukeEditor(ToolPane):
             for i in range(24):
                 self.model.doIK()
                 self.writePose(self.model.nextPose, 50)
-                time.sleep(0.07)
+                #time.sleep(0.001)
+            self.model.gaitGen = None
 
         
     ###########################################################################
@@ -751,7 +751,7 @@ class NeutralDialog(wx.Dialog):
         self.label_3 = wx.StaticText(self, -1, "Click OK when you've positioned the robot as shown:")
         self.bitmap_1 = wx.StaticBitmap(self, -1, wx.Bitmap(image, wx.BITMAP_TYPE_ANY))
         self.button_1 = wx.Button(self, wx.ID_CANCEL, "Cancel")
-        self.button_2 = wx.Button(self, -1, "OK")
+        self.button_2 = wx.Button(self, wx.ID_OK, "OK")
 
         #self.SetTitle("dialog_2")
         self.label_3.SetFont(wx.Font(11, wx.DEFAULT, wx.NORMAL, wx.BOLD, 0, ""))
