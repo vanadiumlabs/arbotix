@@ -64,6 +64,7 @@ int Commander::ReadMsgs(){
                         walkZ--;*/
                 }
                 index = -1;
+                Serial.flush();
                 return 1;
             }
         }
