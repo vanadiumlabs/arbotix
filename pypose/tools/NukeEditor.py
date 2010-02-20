@@ -32,11 +32,10 @@ from models.manifest import iKmodels
 
 # TODO: encapsulate pose editor into a seperate class, so we can load it for neutral tuning...
 
-# TODO V1.1 Beta1
-#   walk test, based on commander
-
 # TODO V1.1 Beta2?
 #   Sign test for mammal3, image for neutral
+#   move test drive button
+#   visual indication that captures are done. 
 
 ###############################################################################
 # nuke editor window
@@ -201,46 +200,46 @@ class NukeEditor(ToolPane):
         
         # SERVOS = Coxa, Femur, Tibia (LF, RF, LM, RM, LR, RR)
         self.servos = list()
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '6', min=1, max=self.parent.project.count))    # LF
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '2', min=1, max=self.parent.project.count))    # LF
         servoSizer.Add(self.servos[0], (0,1), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
         self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '4', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[1], (1,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '2', min=1, max=self.parent.project.count))
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '6', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[2], (2,1))
 
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '5', min=1, max=self.parent.project.count))    # RF
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '1', min=1, max=self.parent.project.count))    # RF
         servoSizer.Add(self.servos[3], (0,3), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
         self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '3', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[4], (1,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '1', min=1, max=self.parent.project.count))
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '5', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[5], (2,3))
 
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '18', min=1, max=self.parent.project.count))   # LM
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '14', min=1, max=self.parent.project.count))  # LM
         servoSizer.Add(self.servos[6], (4,1))
         self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '16', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[7], (5,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '14', min=1, max=self.parent.project.count))
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '18', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[8], (6,1))
 
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '17', min=1, max=self.parent.project.count))   # RM
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '13', min=1, max=self.parent.project.count))  # RM
         servoSizer.Add(self.servos[9], (4,3))
         self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '15', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[10], (5,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '13', min=1, max=self.parent.project.count))
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '17', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[11], (6,3))
 
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '12', min=1, max=self.parent.project.count))   # LR
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '8', min=1, max=self.parent.project.count))   # LR
         servoSizer.Add(self.servos[12], (8,1))
         self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '10', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[13], (9,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '8', min=1, max=self.parent.project.count))
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '12', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[14], (10,1))        
 
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '11', min=1, max=self.parent.project.count))   # RR
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '7', min=1, max=self.parent.project.count))   # RR
         servoSizer.Add(self.servos[15], (8,3))
         self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '9', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[16], (9,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '7', min=1, max=self.parent.project.count))
+        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '11', min=1, max=self.parent.project.count))
         servoSizer.Add(self.servos[17], (10,3))
 
         servoBox.Add(servoSizer)
@@ -498,6 +497,7 @@ class NukeEditor(ToolPane):
                 for i in range(18):        
                     self.servos[i].Disable()
             else:
+                self.legCount.SetItems([str(c) for c in iKmodels[self.ikType.GetValue()].legoptions])
                 self.legCount.Enable()        
                 if self.legCount.GetValue() == "":
                     # Disable all but legCount
@@ -536,6 +536,8 @@ class NukeEditor(ToolPane):
         if self.doChecks(["project","port"]) == 0:
             return
         else:
+            print "Relax servos for capture..."
+            self.parent.doRelax()
             print "Capturing limits..."
             self.parent.project.poses["ik_min"] = project.pose("",self.parent.project.count)
             self.parent.project.poses["ik_max"] = project.pose("",self.parent.project.count)
@@ -600,6 +602,8 @@ class NukeEditor(ToolPane):
     def doNeutral(self, e = None):
         """ Capture the Neutral Position. """
         if self.doChecks(["project","port"]) > 0:
+            print "Relax servos for capture..."
+            self.parent.doRelax()
             print "Capturing neutral..."
             # show dialog with what neutral should like for this bot
             modelClassName = iKmodels[self.ikType.GetValue()].folder
@@ -702,6 +706,7 @@ class NukeEditor(ToolPane):
     def doIKType(self, e=None):
         """ Set IKType, make leg box visible """
         self.save()
+        self.legCount.SetItems([str(c) for c in iKmodels[self.ikType.GetValue()].legoptions])
         self.legCount.Enable()
 
     def doLegCount(self, e=None):
