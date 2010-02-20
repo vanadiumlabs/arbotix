@@ -52,9 +52,9 @@ class sequence(list):
                 return
             while True:
                 if line.find(",") > 0:
-                    self.append(line[0:line.index(",")].strip().rstrip().replace("|",",")) 
+                    self.append(line[0:line.index(",")].strip().rstrip()) 
                 elif line != "":
-                    self.append(line.strip().rstrip().replace("|",",")) 
+                    self.append(line.strip().rstrip()) 
                 line = line[line.index(",")+1:] 
         except:
             pass
@@ -137,7 +137,7 @@ class project:
             print>>posefile, "PROGMEM transition_t " + s + "[] = {{0," + str(len(self.sequences[s])) + "}",
             s = self.sequences[s]
             for t in s:
-                print>>posefile, ",{" + t[0:t.find(",")] + "," + t[t.find(",")+1:] + "}",            
+                print>>posefile, ",{" + t[0:t.find("|")] + "," + t[t.find("|")+1:] + "}",            
             print>>posefile, "};"
         print>>posefile, ""
         print>>posefile, "#endif"
