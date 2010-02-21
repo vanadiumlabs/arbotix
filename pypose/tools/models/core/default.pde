@@ -48,12 +48,12 @@ void loop(){
   // take commands 
   if(command.ReadMsgs() > 0){
     Xspeed = ((command.walkV));
-    if((command.buttons&WALK_TOP) > 0)
+    if((command.buttons&BUT_LT) > 0)
       Yspeed = (command.walkH);
     else
       Rspeed = -(command.walkH)/250.0;  
     bodyRotY = (((float)command.lookV))/250.0;
-    if((command.buttons&LOOK_TOP) > 0)
+    if((command.buttons&BUT_RT) > 0)
       bodyRotX = ((float)command.lookH)/250.0; 
     else
       bodyRotZ = ((float)command.lookH)/250.0;
