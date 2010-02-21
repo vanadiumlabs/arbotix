@@ -48,6 +48,10 @@ class editor(wx.Frame):
     ID_ABOUT=wx.NewId()
     ID_TEST=wx.NewId()
     ID_TIMER=wx.NewId()
+    ID_COL_MENU=wx.NewId()
+    ID_2COL=wx.NewId()
+    ID_3COL=wx.NewId()
+    ID_4COL=wx.NewId()
 
     def __init__(self):
         """ Creates pose editor window. """
@@ -62,6 +66,7 @@ class editor(wx.Frame):
         self.port = None
         self.filename = ""
         self.dirname = ""
+        self.columns = 2        # column count for pose editor
 
         # for clearing red color on status bar
         self.timer = wx.Timer(self, self.ID_TIMER)
@@ -96,7 +101,12 @@ class editor(wx.Frame):
 
         configmenu = wx.Menu()
         configmenu.Append(self.ID_PORT,"port") # dialog box: arbotix/thru, speed, port
-        configmenu.Append(self.ID_TEST,"test") # for in-house testing of boards
+        columnmenu = wx.Menu()        
+        columnmenu.Append(self.ID_2COL,"2 columns")
+        columnmenu.Append(self.ID_3COL,"3 columns")
+        columnmenu.Append(self.ID_4COL,"4 columns")
+        configmenu.AppendMenu(self.ID_COL_MENU,"pose editor",columnmenu)
+        #configmenu.Append(self.ID_TEST,"test") # for in-house testing of boards
         # live update?
         menubar.Append(configmenu, "config")    
 
@@ -123,6 +133,10 @@ class editor(wx.Frame):
         wx.EVT_MENU(self, self.ID_ABOUT, self.doAbout)
         self.Bind(wx.EVT_CLOSE, self.doClose)
         self.Bind(wx.EVT_TIMER, self.OnTimer, id=self.ID_TIMER)
+
+        wx.EVT_MENU(self, self.ID_2COL, self.do2Col)
+        wx.EVT_MENU(self, self.ID_3COL, self.do3Col)
+        wx.EVT_MENU(self, self.ID_4COL, self.do4Col)
 
         # editor area       
         self.sb = self.CreateStatusBar(2)
@@ -152,7 +166,10 @@ class editor(wx.Frame):
         self.ClearBackground()
         module = __import__(t, globals(), locals(), [t,"STATUS"])
         panelClass = getattr(module, t)
-        self.panel = panelClass(self,self.port)
+        if t == "PoseEditor":
+            self.panel = panelClass(self,self.port,self.columns)
+        else:        
+            self.panel = panelClass(self,self.port)
         self.sizer=wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.panel,1,wx.EXPAND|wx.ALL,10)
         self.SetSizer(self.sizer)
@@ -329,7 +346,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
                 pass
         self.Destroy()
             
-
     def OnTimer(self, e=None):
         self.timeout = self.timeout + 1
         if self.timeout > 50:
@@ -339,6 +355,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
             self.timeout = 0
             self.timer.Stop()
 
+    ###########################################################################
+    # Pose Editor width settings
+    def do2Col(self, e=None):
+        self.columns = 2
+        if self.tool == "PoseEditor":
+            self.loadTool()
+    def do3Col(self, e=None):
+        self.columns = 3
+        if self.tool == "PoseEditor":
+            self.loadTool()
+    def do4Col(self, e=None):
+        self.columns = 4
+        if self.tool == "PoseEditor":
+            self.loadTool()
 
 ###############################################################################
 # New Project Dialog

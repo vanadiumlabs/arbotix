@@ -2,7 +2,7 @@
 
 """ 
   PyPose: Bioloid pose system for arbotiX robocontroller
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class PoseEditor(ToolPane):
     BT_POSE_RENAME = wx.NewId()
     ID_POSE_BOX = wx.NewId()
 
-    def __init__(self, parent, port=None):
+    def __init__(self, parent, port=None, columns=2):
         ToolPane.__init__(self, parent, port)
         self.curpose = "" 
         self.saveReq = False
@@ -64,14 +64,11 @@ class PoseEditor(ToolPane):
             hbox.Add(tempName)
             hbox.Add(temp.position)
             temp.SetSizer(hbox)
-            if i == 0:
-                poseEditSizer.Add(temp, (i/2, 0), wx.GBSpan(1,1), wx.TOP,10)
-            elif i == 1:
-                poseEditSizer.Add(temp, (i/2, 1), wx.GBSpan(1,1), wx.TOP,10)
-            elif i%2 == 0:
-                poseEditSizer.Add(temp, (i/2, 0))
+            # multiple columns now:
+            if i < columns:
+                poseEditSizer.Add(temp, (0, i), wx.GBSpan(1,1), wx.TOP,10)
             else:
-                poseEditSizer.Add(temp, (i/2, 1))
+                poseEditSizer.Add(temp, (i/columns, i%columns))
             temp.Disable()  # servo editors start out disabled, enabled only when a pose is selected
             self.servos.append(temp)
         # grid it
