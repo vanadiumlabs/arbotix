@@ -2,7 +2,7 @@
 
 """ 
   PyPose: Bioloid pose system for arbotiX robocontroller
-  Copyright (c) 2009, 2010 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009,2010 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,14 +23,14 @@ import time, sys, serial
 import wx
 
 # Commander definitions
-BUT_WALK1 = 1
-BUT_WALK2 = 2
-BUT_WALK3 = 4
-BUT_LOOK4 = 8
-BUT_LOOK5 = 16
-BUT_LOOK6 = 32
-BUT_WALKT = 64
-BUT_LOOKT = 128
+BUT_R1 = 1
+BUT_R2 = 2
+BUT_R3 = 4
+BUT_L4 = 8
+BUT_L5 = 16
+BUT_L6 = 32
+BUT_RT = 64
+BUT_LT = 128
 
 width = 300
 
@@ -115,7 +115,7 @@ class Commander(wx.Frame):
         Tilt = self.tilt.GetValue()  + 128
         Buttons = 0
         if self.selStrafe.GetValue():
-            Buttons = BUT_WALKT
+            Buttons = BUT_RT
         #print Xspeed, Rspeed, Pan, Tilt
         self.sendPacket(Xspeed, Rspeed, Tilt, Pan, Buttons)
         self.timer.Start(50)

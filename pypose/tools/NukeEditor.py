@@ -3,7 +3,7 @@
 """ 
   PyPose: Bioloid pose system for arbotiX robocontroller
   Nuke: The Nearly Universal Kinematics Engine
-  Copyright (c) 2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009-2010 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,9 +32,8 @@ from models.manifest import iKmodels
 
 # TODO: encapsulate pose editor into a seperate class, so we can load it for neutral tuning...
 
-# TODO V1.1 Beta2?
+# TODO: Release 0013
 #   Sign test for mammal3, image for neutral
-#   move test drive button
 #   visual indication that captures are done. 
 
 ###############################################################################
@@ -158,15 +157,15 @@ class NukeEditor(ToolPane):
         actionSizer.Add(wx.StaticText(self, -1, "Capture Limits:"), (0,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
         actionSizer.Add(wx.StaticText(self, -1, "Capture Neutral:"), (1,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
         actionSizer.Add(wx.StaticText(self, -1, "Set/Test Signs:"), (2,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        actionSizer.Add(wx.StaticText(self, -1, "Test Drive:"), (3,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
+        #actionSizer.Add(wx.StaticText(self, -1, "Test Drive:"), (3,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
                 
         actionSizer.Add(wx.Button(self, self.BT_LIMITS, 'Capture'),(0,1))
         actionSizer.Add(wx.Button(self, self.BT_NEUTRAL, 'Capture'),(1,1))
         self.signButton = wx.Button(self, self.BT_SIGN, 'Go')        
         actionSizer.Add(self.signButton,(2,1))
-        driveButton = wx.Button(self, self.BT_DRIVE, 'Drive')
+        #driveButton = wx.Button(self, self.BT_DRIVE, 'Drive')
         #driveButton.Disable()
-        actionSizer.Add(driveButton,(3,1))
+        #actionSizer.Add(driveButton,(3,1))
         
         actionBox.Add(actionSizer)
         sizer.Add(actionBox, (1,1), wx.GBSpan(1,1), wx.EXPAND)    
@@ -258,6 +257,7 @@ class NukeEditor(ToolPane):
         viewBut = wx.Button(self,-1, 'Viewer/Tuner')
         viewBut.Disable()
         hbox.Add(viewBut)
+        hbox.Add(wx.Button(self, self.BT_DRIVE, 'Test Drive'))
         hbox.Add(wx.Button(self,self.BT_EXPORT, 'Export'))
         sizer.Add(hbox, (2,2), wx.GBSpan(1,1), wx.ALIGN_CENTER) 
 

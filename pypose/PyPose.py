@@ -2,7 +2,7 @@
 
 """ 
   PyPose: Bioloid pose system for arbotiX robocontroller
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose v1.1"
+VERSION = "PyPose 0012"
 
 ###############################################################################
 # Main editor window
