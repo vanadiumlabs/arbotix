@@ -1,6 +1,6 @@
 /* 
-  ArbotiX Test Program for use with PyPose V1.0c
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  ArbotiX Test Program for use with PyPose 0012
+  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public

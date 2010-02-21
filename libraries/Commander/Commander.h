@@ -21,20 +21,23 @@
 #define Commander_h
 
 /* bitmasks for buttons array */
-#define WALK_1      0x01
-#define WALK_2      0x02
-#define WALK_3      0x04
-#define LOOK_4      0x08
-#define LOOK_5      0x10
-#define LOOK_6      0x20
-#define WALK_TOP    0x40
-#define LOOK_TOP    0x80
+#define BUT_R1      0x01
+#define BUT_R2      0x02
+#define BUT_R3      0x04
+#define BUT_L4      0x08
+#define BUT_L5      0x10
+#define BUT_L6      0x20
+#define BUT_RT      0x40
+#define BUT_LT      0x80
 
 /* the Commander will send out a frame at about 30hz, this class helps decipher the output. */
 class Commander
 {    
   public:
 	Commander(); 
+    void begin(int baud);
+    void UseSouthPaw();     // enable southpaw configuration
+    void UseExtended();     // enable execution of extended instruction set
     int ReadMsgs();         // must be called regularly to clean out Serial buffer
 
     // joystick values are -125 to 125
@@ -45,10 +48,7 @@ class Commander
     
     // buttons are 0 or 1 (PRESSED), and bitmapped
     unsigned char buttons;  // 
-    unsigned char extra;    //
-
-    // specialty helpers
-    int walkZ;              // accumulated Z-offset, walk2=raise, walk3=lower
+    unsigned char ext;      // Extended function set
         
     // Hooks are used as callbacks for button presses -- NOT IMPLEMENT YET
         
@@ -57,6 +57,7 @@ class Commander
     unsigned char vals[7];  // temporary values, moved after we confirm checksum
     int index;              // -1 = waiting for new packet
     int checksum;
+    unsigned char status; 
 };
 
 #endif

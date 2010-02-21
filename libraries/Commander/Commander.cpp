@@ -23,19 +23,31 @@
 
 /* Constructor */
 Commander::Commander(){
-    Serial.begin(38400);
     index = -1;
+    southpaw = 0;
+}
+void Commander::begin(int baud){
+    Serial.begin(38400);
+}
+
+/* SouthPaw Support */
+void Commander::UseSouthPaw(){
+    status |= 0x01;
+}
+/* Extended Register Support */
+void Commander::UseExtended(){
+    status |= 0x02;
 }
 
 /* process messages coming from Commander 
- *  format = 0xFF WALK_H WALK_V REG_LOOK_H LOOK_V BUTTONS EXTRA CHECKSUM */
+ *  format = 0xFF RIGHT_H RIGHT_V LEFT_H LEFT_V BUTTONS EXT CHECKSUM */
 int Commander::ReadMsgs(){
     while(Serial.available() > 0){
         if(index == -1){         // looking for new packet
             if(Serial.read() == 0xff){
                 index = 0;
                 checksum = 0;
-                digitalWrite(0,HIGH-digitalRead(0));
+                //digitalWrite(0,HIGH-digitalRead(0));
             }
         }else if(index == 0){
             vals[index] = (unsigned char) Serial.read();
@@ -52,16 +64,24 @@ int Commander::ReadMsgs(){
                     // packet error!
                     //digitalWrite(0,HIGH-digitalRead(0));
                 }else{
-                    walkV = (signed char)( (int)vals[0]-128 );
-                    walkH = (signed char)( (int)vals[1]-128 );
-                    lookV = (signed char)( (int)vals[2]-128 );
-                    lookH = (signed char)( (int)vals[3]-128 );
+                    if((status&0x01) > 0){     // SouthPaw
+                        walkV = (signed char)( (int)vals[0]-128 );
+                        walkH = (signed char)( (int)vals[1]-128 );
+                        lookV = (signed char)( (int)vals[2]-128 );
+                        lookH = (signed char)( (int)vals[3]-128 );
+                    }else{
+                        lookV = (signed char)( (int)vals[0]-128 );
+                        lookH = (signed char)( (int)vals[1]-128 );
+                        walkV = (signed char)( (int)vals[2]-128 );
+                        walkH = (signed char)( (int)vals[3]-128 );
+                    }
                     buttons = vals[4];
-                    extra = vals[5];
-                    /*if(buttons & WALK_2)
-                        walkZ++;
-                    if(buttons & WALK_3)
-                        walkZ--;*/
+                    ext = vals[5];
+                }
+                // if desired, process extended instruction set
+                if((status&0x02) > 0){
+
+
                 }
                 index = -1;
                 Serial.flush();
