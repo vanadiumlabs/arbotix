@@ -24,7 +24,7 @@
 /* Constructor */
 Commander::Commander(){
     index = -1;
-    southpaw = 0;
+    status = 0;
 }
 void Commander::begin(int baud){
     Serial.begin(38400);
@@ -63,6 +63,7 @@ int Commander::ReadMsgs(){
                 if(checksum%256 != 255){
                     // packet error!
                     //digitalWrite(0,HIGH-digitalRead(0));
+                    return 0;
                 }else{
                     if((status&0x01) > 0){     // SouthPaw
                         walkV = (signed char)( (int)vals[0]-128 );
