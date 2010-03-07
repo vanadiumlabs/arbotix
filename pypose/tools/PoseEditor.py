@@ -154,7 +154,7 @@ class PoseEditor(ToolPane):
             dlg.Update(1)
             for servo in range(self.parent.project.count):
                 pos = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
-                if pos != -1:
+                if pos != -1 and len(pos) > 1:
                     self.servos[servo].position.SetValue(pos[0] + (pos[1]<<8))
                 else: 
                     errors = errors + str(servo+1) + ", "
