@@ -24,13 +24,13 @@
 
     // first, make this a 2DOF problem... by solving coxa
     ans.coxa = radToServo(atan2(X,Y));
-    int trueX = sqrt(sq(X)+sq(Y)) - L_COXA;
-    int im = sqrt(sq(trueX)+sq(Z));    // length of imaginary leg
+    long trueX = sqrt(sq((long)X)+sq((long)Y)) - L_COXA;
+    long im = sqrt(sq((long)trueX)+sq((long)Z));    // length of imaginary leg
     
     // get femur angle above horizon...
     float q1 = -atan2(Z,trueX);
-    int d1 = sq(L_FEMUR)-sq(L_TIBIA)+sq(im);
-    int d2 = 2*L_FEMUR*im;
+    long d1 = sq(L_FEMUR)-sq(L_TIBIA)+sq(im);
+    long d2 = 2*L_FEMUR*im;
     float q2 = acos((float)d1/(float)d2);
     ans.femur = radToServo(q1+q2); 
     
