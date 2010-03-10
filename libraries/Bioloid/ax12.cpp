@@ -22,6 +22,9 @@
 #include "ax12.h"
 #include <avr/interrupt.h>
 
+// Uncomment the following line if you wish to use the RX-Bridge
+//#define RX_PROTOCOL 1
+
 /******************************************************************************
  * Hardware Serial Level, this uses the same stuff as Serial1, therefore 
  *  you should not use the Arduino Serial1 library.
@@ -38,15 +41,27 @@ volatile int ax_rx_int_Pointer;
 
 /** helper functions to emulate half-duplex */
 void setTX(){
-    bitClear(UCSR1B, RXCIE1);
+#ifdef RX_PROTOCOL
+    PORTD |= 0x10;
+#endif
     bitClear(UCSR1B, RXEN1);    
     bitSet(UCSR1B, TXEN1);
+    bitClear(UCSR1B, RXCIE1);
     ax_tx_Pointer = 0;
 }
 void setRX(){
+#ifdef RX_PROTOCOL
+    // Need to wait for last byte to be sent before turning the bus around.
+    // Check the Transmit complete flag
+    while((UCSR1A&TXC1) == 0);
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    PORTD &= 0xEF;
+#endif 
     bitClear(UCSR1B, TXEN1);
     bitSet(UCSR1B, RXEN1);
-    bitSet(UCSR1B, RXCIE1); 
+    bitSet(UCSR1B, RXCIE1);
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
 }
@@ -113,6 +128,10 @@ void ax12Init(long baud){
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
     ax_tx_Pointer = 0;
+#ifdef RX_PROTOCOL
+    DDRD |= 0x10;   // Servo B = output
+    PORTD &= 0xEF;  // Servo B low
+#endif
     // enable rx
     setRX();    
 }
@@ -149,6 +168,7 @@ int ax12GetRegister(int id, int regstart, int length){
 /* Set the value of a single-byte register. */
 void ax12SetRegister(int id, int regstart, int data){
     setTX();    
+    int checksum = ~((id + 4 + AX_WRITE_DATA + regstart + (data&0xff)) % 256);
     ax12writeB(0xFF);
     ax12writeB(0xFF);
     ax12writeB(id);
@@ -157,13 +177,14 @@ void ax12SetRegister(int id, int regstart, int data){
     ax12writeB(regstart);
     ax12writeB(data&0xff);
     // checksum = 
-    ax12writeB(0xFF - ((id + 4 + AX_WRITE_DATA + regstart + (data&0xff)) % 256) );
+    ax12writeB(checksum);
     setRX();
     //ax12ReadPacket();
 }
 /* Set the value of a double-byte register. */
 void ax12SetRegister2(int id, int regstart, int data){
     setTX();    
+    int checksum = ~((id + 5 + AX_WRITE_DATA + regstart + (data&0xFF) + ((data&0xFF00)>>8)) % 256);
     ax12writeB(0xFF);
     ax12writeB(0xFF);
     ax12writeB(id);
@@ -173,9 +194,11 @@ void ax12SetRegister2(int id, int regstart, int data){
     ax12writeB(data&0xff);
     ax12writeB((data&0xff00)>>8);
     // checksum = 
-    ax12writeB(0xFF - ((id + 5 + AX_WRITE_DATA + regstart + (data&0xFF) + ((data&0xFF00)>>8)) % 256) );
+    ax12writeB(checksum);
     setRX();
     //ax12ReadPacket();
 }
+
 // general write?
 // general sync write?
+
