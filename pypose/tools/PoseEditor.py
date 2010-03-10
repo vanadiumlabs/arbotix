@@ -146,33 +146,38 @@ class PoseEditor(ToolPane):
 
     def capturePose(self, e=None):  
         """ Downloads the current pose from the robot to the GUI. """
-        if self.port != None and self.curpose != "":   
-            print "Capturing pose..."
-            errors = "could not read servos: "
-            errCount = 0.0
-            dlg = wx.ProgressDialog("capturing pose","this may take a few seconds, please wait...",self.parent.project.count + 1)
-            dlg.Update(1)
-            for servo in range(self.parent.project.count):
-                pos = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
-                if pos != -1 and len(pos) > 1:
-                    self.servos[servo].position.SetValue(pos[0] + (pos[1]<<8))
-                else: 
-                    errors = errors + str(servo+1) + ", "
-                    errCount = errCount + 1.0
-                if self.curpose != "":                
-                    self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue() 
-                val = servo+2
-                dlg.Update(val)  
-            if errors != "could not read servos: ":
-                self.parent.sb.SetStatusText(errors[0:-2],0)   
-                # if we are failing a lot, raise the timeout
-                if errCount/self.parent.project.count > 0.1 and self.parent.port.ser.timeout < 10:
-                    self.parent.port.ser.timeout = self.parent.port.ser.timeout * 2.0   
-                    print "Raised timeout threshold to ", self.parent.port.ser.timeout
+        if self.port != None: 
+            if self.curpose != "":   
+                print "Capturing pose..."
+                errors = "could not read servos: "
+                errCount = 0.0
+                dlg = wx.ProgressDialog("capturing pose","this may take a few seconds, please wait...",self.parent.project.count + 1)
+                dlg.Update(1)
+                for servo in range(self.parent.project.count):
+                    pos = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
+                    if pos != -1 and len(pos) > 1:
+                        self.servos[servo].position.SetValue(pos[0] + (pos[1]<<8))
+                    else: 
+                        errors = errors + str(servo+1) + ", "
+                        errCount = errCount + 1.0
+                    if self.curpose != "":                
+                        self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue() 
+                    val = servo+2
+                    dlg.Update(val)  
+                if errors != "could not read servos: ":
+                    self.parent.sb.SetStatusText(errors[0:-2],0)   
+                    # if we are failing a lot, raise the timeout
+                    if errCount/self.parent.project.count > 0.1 and self.parent.port.ser.timeout < 10:
+                        self.parent.port.ser.timeout = self.parent.port.ser.timeout * 2.0   
+                        print "Raised timeout threshold to ", self.parent.port.ser.timeout
+                else:
+                    self.parent.sb.SetStatusText("captured pose!",0)
+                dlg.Destroy()
+                self.parent.project.save = True
             else:
-                self.parent.sb.SetStatusText("captured pose!",0)
-            dlg.Destroy()
-            self.parent.project.save = True
+                self.parent.sb.SetBackgroundColour('RED')
+                self.parent.sb.SetStatusText("Please Select a Pose",0) 
+                self.parent.timer.Start(20)       
         else:
             self.parent.sb.SetBackgroundColour('RED')
             self.parent.sb.SetStatusText("No Port Open",0) 
@@ -180,29 +185,34 @@ class PoseEditor(ToolPane):
 
     def setPose(self, e=None):
         """ Write a pose out to the robot. """
-        if self.port != None and self.curpose != "":
-            # update pose in project
-            for servo in range(self.parent.project.count):
-                self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()   
-            print "Setting pose..."
-            if self.port.hasInterpolation == True:  # lets do this smoothly!
-                # set pose size -- IMPORTANT!
-                print "Setting pose size at " + str(self.parent.project.count)
-                self.port.execute(253, 7, [self.parent.project.count])
-                # download the pose
-                self.port.execute(253, 8, [0] + project.extract(self.parent.project.poses[self.curpose]))                 
-                self.port.execute(253, 9, [0, self.deltaT%256,self.deltaT>>8,255,0,0])                
-                self.port.execute(253, 10, list())
-            else:
-                # aww shucks...
-                #curPose = list() TODO: should we use a syncWrite here?
+        if self.port != None:
+            if self.curpose != "":
+                # update pose in project
                 for servo in range(self.parent.project.count):
-                     pos = self.servos[servo].position.GetValue()
-                     self.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
-                     self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
-                #    pos = self.servos[servo].position.get()
-                #    curPose.append( (servo+1, pos%256, pos>>8) )
-                #self.pose.syncWrite(P_GOAL_POSITION_L, curPose)
+                    self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()   
+                print "Setting pose..."
+                if self.port.hasInterpolation == True:  # lets do this smoothly!
+                    # set pose size -- IMPORTANT!
+                    print "Setting pose size at " + str(self.parent.project.count)
+                    self.port.execute(253, 7, [self.parent.project.count])
+                    # download the pose
+                    self.port.execute(253, 8, [0] + project.extract(self.parent.project.poses[self.curpose]))                 
+                    self.port.execute(253, 9, [0, self.deltaT%256,self.deltaT>>8,255,0,0])                
+                    self.port.execute(253, 10, list())
+                else:
+                    # aww shucks...
+                    #curPose = list() TODO: should we use a syncWrite here?
+                    for servo in range(self.parent.project.count):
+                         pos = self.servos[servo].position.GetValue()
+                         self.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
+                         self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
+                    #    pos = self.servos[servo].position.get()
+                    #    curPose.append( (servo+1, pos%256, pos>>8) )
+                    #self.pose.syncWrite(P_GOAL_POSITION_L, curPose)
+            else:
+                self.parent.sb.SetBackgroundColour('RED')
+                self.parent.sb.SetStatusText("Please Select a Pose",0) 
+                self.parent.timer.Start(20)       
         else:
             self.parent.sb.SetBackgroundColour('RED')
             self.parent.sb.SetStatusText("No Port Open",0) 
