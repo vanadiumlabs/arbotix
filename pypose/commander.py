@@ -115,9 +115,9 @@ class Commander(wx.Frame):
         Tilt = self.tilt.GetValue()  + 128
         Buttons = 0
         if self.selStrafe.GetValue():
-            Buttons = BUT_RT
+            Buttons = BUT_LT
         #print Xspeed, Rspeed, Pan, Tilt
-        self.sendPacket(Xspeed, Rspeed, Tilt, Pan, Buttons)
+        self.sendPacket(Tilt, Pan, Xspeed, Rspeed, Buttons)
         self.timer.Start(50)
         
     def sendPacket(self, Xspeed, Rspeed, Tilt, Pan, Buttons):
