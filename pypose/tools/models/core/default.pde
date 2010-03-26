@@ -11,6 +11,7 @@
 Commander command = Commander();
 
 void setup(){   
+    pinMode(0,OUTPUT);
     // setup IK    
     setupIK();    
     gaitSelect(RIPPLE);
@@ -47,6 +48,7 @@ void loop(){
   bioloid.interpolateStep();
   // take commands 
   if(command.ReadMsgs() > 0){
+    digitalWrite(0,HIGH-digitalRead(0));
     Xspeed = ((command.walkV));
     if((command.buttons&BUT_LT) > 0)
       Yspeed = (command.walkH);
