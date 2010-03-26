@@ -40,6 +40,7 @@ void setupIK(){
   endpoints[RIGHT_REAR].y = @Y_STANCE;
   endpoints[RIGHT_REAR].z = @Z_STANCE;
 @IF legs 6
+
   endpoints[RIGHT_MIDDLE].x = 0;
   endpoints[RIGHT_MIDDLE].y = @Y_STANCE;
   endpoints[RIGHT_MIDDLE].z = @Z_STANCE;
@@ -211,7 +212,7 @@ void doIK(){
     // right middle leg
     gait = gaitGen(RIGHT_MIDDLE);    
     req = bodyIK(endpoints[RIGHT_MIDDLE].x+gait.x,endpoints[RIGHT_MIDDLE].y+gait.y, endpoints[RIGHT_MIDDLE].z+gait.z, 0, Y_COXA, gait.r);
-    sol = legIK(-endpoints[RIGHT_MIDDLE].x-req.x-gait.x,endpoints[RIGHT_MIDDLE].y+req.y+gait.y,endpoints[RIGHT_MIDDLE].z+req.z+gait.z);
+    sol = legIK(endpoints[RIGHT_MIDDLE].x+req.x+gait.x,endpoints[RIGHT_MIDDLE].y+req.y+gait.y,endpoints[RIGHT_MIDDLE].z+req.z+gait.z);
     servo = @NEUTRAL_RM_COXA @SIGN_RM_COXA sol.coxa;
     if(servo < maxs[RM_COXA-1] && servo > mins[RM_COXA-1])
         bioloid.setNextPose(RM_COXA, servo);
@@ -237,7 +238,7 @@ void doIK(){
     // left middle leg
     gait = gaitGen(LEFT_MIDDLE);
     req = bodyIK(endpoints[LEFT_MIDDLE].x+gait.x,endpoints[LEFT_MIDDLE].y+gait.y, endpoints[LEFT_MIDDLE].z+gait.z, 0, -Y_COXA, gait.r);
-    sol = legIK(-endpoints[LEFT_MIDDLE].x-req.x-gait.x,-endpoints[LEFT_MIDDLE].y-req.y-gait.y,endpoints[LEFT_MIDDLE].z+req.z+gait.z);
+    sol = legIK(endpoints[LEFT_MIDDLE].x+req.x+gait.x,-endpoints[LEFT_MIDDLE].y-req.y-gait.y,endpoints[LEFT_MIDDLE].z+req.z+gait.z);
     servo = @NEUTRAL_LM_COXA @SIGN_LM_COXA sol.coxa;
     if(servo < maxs[LM_COXA-1] && servo > mins[LM_COXA-1])
         bioloid.setNextPose(LM_COXA, servo);
