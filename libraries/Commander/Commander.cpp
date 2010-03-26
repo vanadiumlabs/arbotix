@@ -47,7 +47,6 @@ int Commander::ReadMsgs(){
             if(Serial.read() == 0xff){
                 index = 0;
                 checksum = 0;
-                //digitalWrite(0,HIGH-digitalRead(0));
             }
         }else if(index == 0){
             vals[index] = (unsigned char) Serial.read();
@@ -62,7 +61,7 @@ int Commander::ReadMsgs(){
             if(index == 7){ // packet complete
                 if(checksum%256 != 255){
                     // packet error!
-                    //digitalWrite(0,HIGH-digitalRead(0));
+                    index = -1
                     return 0;
                 }else{
                     if((status&0x01) > 0){     // SouthPaw
