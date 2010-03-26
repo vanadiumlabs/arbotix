@@ -1,5 +1,5 @@
 /* 
-  ArbotiX Test Program for use with PyPose 0012
+  ArbotiX Test Program for use with PyPose 0013
   Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or

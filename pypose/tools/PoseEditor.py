@@ -112,9 +112,9 @@ class PoseEditor(ToolPane):
         wx.EVT_LISTBOX(self, self.ID_POSE_BOX, self.doPose)
 
         # key accelerators
-        aTable = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('C'), self.BT_CAPTURE),
-                                      (wx.ACCEL_CTRL, ord('R'), self.BT_RELAX),
-                                      (wx.ACCEL_CTRL, ord('A'), self.BT_POSE_ADV),
+        aTable = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('S'), self.BT_CAPTURE),  # capture Servos
+                                      (wx.ACCEL_CTRL, ord('R'), self.BT_RELAX),     # Relax
+                                      (wx.ACCEL_CTRL, ord('A'), self.BT_POSE_ADV),  # Advance
                                      ])
         self.SetAcceleratorTable(aTable)
         self.Bind(wx.EVT_MENU,self.capturePose,id=self.BT_CAPTURE)
