@@ -442,6 +442,7 @@ class NukeEditor(ToolPane):
                         else:
                             while template[i].find("@ELSE") < 0 and template[i].find("@END") < 0:
                                 i = i + 1
+                            i = i + 1 # don't output @ELSE
                             while template[i].find("@END") < 0:
                                 print>>out, template[i].rstrip()
                                 i = i + 1
@@ -629,7 +630,8 @@ class NukeEditor(ToolPane):
         modelModule = __import__(modelClassName, globals(), locals(), [modelClassName])
         modelClass = getattr(modelModule, modelClassName)
         # make instance            
-        model = modelClass(4,True)    # legs/debug/GaitGen
+        self.legChoice = self.legCount.GetValue()
+        model = modelClass(int(self.legChoice),True)    # legs/debug/GaitGen
         # VARS = coxaLen, femurLen, tibiaLen, xBody, yBody, midyBody, xCOG, yCOG
         model.L_COXA = int(self.vars[0].GetValue())
         model.L_FEMUR = int(self.vars[1].GetValue())
