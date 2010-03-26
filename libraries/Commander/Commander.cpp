@@ -61,7 +61,7 @@ int Commander::ReadMsgs(){
             if(index == 7){ // packet complete
                 if(checksum%256 != 255){
                     // packet error!
-                    index = -1
+                    index = -1;
                     return 0;
                 }else{
                     if((status&0x01) > 0){     // SouthPaw
