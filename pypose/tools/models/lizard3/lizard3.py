@@ -291,8 +291,10 @@ class lizard3(dict):
             # right middle leg
             if self.gaitGen != None:
                 gait = self.gaitGen("RM_GAIT")    
-            req = self.bodyIK(self["RIGHT_MID"][0]+gait[0],self["RIGHT_MID"][1]+gait[1],self["RIGHT_MID"][2]+gait[2], 0, self.Y_MID, gait[3])
-            sol = self.legIK(self["RIGHT_MID"][0]+req[0]+gait[0],-self["RIGHT_MID"][1]-req[1]-gait[1],self["RIGHT_MID"][2]+req[2]+gait[2])
+            if self.debug:
+                print "RIGHT_MIDDLE: ", [self["RIGHT_MIDDLE"][i] + gait[i] for i in range(3)] 
+            req = self.bodyIK(self["RIGHT_MIDDLE"][0]+gait[0],self["RIGHT_MIDDLE"][1]+gait[1],self["RIGHT_MIDDLE"][2]+gait[2], 0, self.Y_MID, gait[3])
+            sol = self.legIK(+self["RIGHT_MIDDLE"][0]+req[0]+gait[0],self["RIGHT_MIDDLE"][1]+req[1]+gait[1],self["RIGHT_MIDDLE"][2]+req[2]+gait[2])
             servo = self["RM_COXA"]
             output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
             if output < self.maxs[servo] and output > self.mins[servo]:
@@ -321,8 +323,10 @@ class lizard3(dict):
             # left middle leg
             if self.gaitGen != None:
                 gait = self.gaitGen("LM_GAIT")    
-            req = self.bodyIK(self["LEFT_MID"][0]+gait[0],self["LEFT_MID"][1]+gait[1],self["LEFT_MID"][2]+gait[2], 0, -self.Y_MID, gait[3])
-            sol = self.legIK(-self["LEFT_MID"][0]-req[0]-gait[0],-self["LEFT_MID"][1]-req[1]-gait[1],self["LEFT_MID"][2]+req[2]+gait[2])
+            if self.debug:
+                print "LEFT_MIDDLE: ", [self["LEFT_MIDDLE"][i] + gait[i] for i in range(3)] 
+            req = self.bodyIK(self["LEFT_MIDDLE"][0]+gait[0],self["LEFT_MIDDLE"][1]+gait[1],self["LEFT_MIDDLE"][2]+gait[2], 0, -self.Y_MID, gait[3])
+            sol = self.legIK(self["LEFT_MIDDLE"][0]+req[0]+gait[0],-self["LEFT_MIDDLE"][1]-req[1]-gait[1],self["LEFT_MIDDLE"][2]+req[2]+gait[2])
             servo = self["LM_COXA"]
             output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
             if output < self.maxs[servo] and output > self.mins[servo]:
