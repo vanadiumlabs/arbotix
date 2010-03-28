@@ -47,8 +47,13 @@ ik_req_t DefaultGaitGen(int leg){
 
 void gaitSelect(int GaitType){
   tranTime = STD_TRANSITION;
-  cycleTime = tranTime;
-  if(GaitType == RIPPLE){               // simple ripple, 8 steps
+  cycleTime = 0;
+@IF legs 4
+  // simple ripple, 8 steps
+@ELSE
+  // simple ripple, 12 steps
+@END
+  if(GaitType == RIPPLE){               
     gaitGen = &DefaultGaitGen;
     gaitSetup = &DefaultGaitSetup;
 @IF legs 4
@@ -69,7 +74,8 @@ void gaitSelect(int GaitType){
     stepsInCycle = 12;      
 @END
 @IF legs 4
-  }else if(GaitType == RIPPLE_LEFT){    // simple ripple for left turns
+  // simple ripple for left turns
+  }else if(GaitType == RIPPLE_LEFT){    
     gaitGen = &DefaultGaitGen;
     gaitSetup = &DefaultGaitSetup;
     gaitLegNo[RIGHT_FRONT] = 4;
@@ -78,7 +84,8 @@ void gaitSelect(int GaitType){
     gaitLegNo[RIGHT_REAR] = 6;
     pushSteps = 6;	
     stepsInCycle = 8; 
-  }else if(GaitType == RIPPLE_RIGHT){   // simple ripple for right turns
+  // simple ripple for right turns
+  }else if(GaitType == RIPPLE_RIGHT){
     gaitGen = &DefaultGaitGen;
     gaitSetup = &DefaultGaitSetup;
     gaitLegNo[RIGHT_FRONT] = 2;
@@ -110,7 +117,7 @@ void gaitSelect(int GaitType){
     stepsInCycle = 4;      
 @END
   }
-  if(cycleTime == tranTime)
+  if(cycleTime == 0)
     cycleTime = (stepsInCycle*tranTime)/1000.0;
   step = 0;
 }
