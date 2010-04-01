@@ -23,7 +23,7 @@
 #include <avr/interrupt.h>
 
 // Uncomment the following line if you wish to use the RX-Bridge
-//#define RX_PROTOCOL 1
+#define RX_PROTOCOL 1
 
 /******************************************************************************
  * Hardware Serial Level, this uses the same stuff as Serial1, therefore 
@@ -51,12 +51,12 @@ void setTX(){
 }
 void setRX(){
 #ifdef RX_PROTOCOL
+    int i;
     // Need to wait for last byte to be sent before turning the bus around.
     // Check the Transmit complete flag
-    while((UCSR1A&TXC1) == 0);
-    asm("nop");
-    asm("nop");
-    asm("nop");
+    while (bit_is_clear(UCSR1A, UDRE1));
+    for(i=0; i<25; i++)    
+        asm("nop");
     PORTD &= 0xEF;
 #endif 
     bitClear(UCSR1B, TXEN1);
