@@ -22,9 +22,6 @@
 #include "ax12.h"
 #include <avr/interrupt.h>
 
-// Uncomment the following line if you wish to use the RX-Bridge
-#define RX_PROTOCOL 1
-
 /******************************************************************************
  * Hardware Serial Level, this uses the same stuff as Serial1, therefore 
  *  you should not use the Arduino Serial1 library.

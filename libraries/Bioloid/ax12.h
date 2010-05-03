@@ -20,6 +20,9 @@
 #ifndef ax12_h
 #define ax12_h
 
+// Uncomment the following line if you wish to use the RX-Bridge
+//#define RX_PROTOCOL 1
+
 #define AX12_MAX_SERVOS             18
 #define AX12_BUFFER_SIZE            32
 
