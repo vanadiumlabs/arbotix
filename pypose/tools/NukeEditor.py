@@ -428,11 +428,10 @@ class NukeEditor(ToolPane):
                 while i < len(template):
                     if template[i].find("@IF") >= 0:
                         # do we include this?
-                        line = template[i][template[i].find("@IF")+3:].strip()
+                        line = template[i][template[i].find("@IF")+3:].strip().rstrip()
                         var = line[0:line.find(" ")].rstrip()
                         val = line[line.find(" ")+1:].strip().rstrip()
                         i = i + 1   
-                        #print "IF " + var + " == '" + val + "'" + params[var]
                         if params[var] == val:
                             while template[i].find("@ELSE") < 0 and template[i].find("@END") < 0:
                                 print>>out, template[i].rstrip()
@@ -442,7 +441,8 @@ class NukeEditor(ToolPane):
                         else:
                             while template[i].find("@ELSE") < 0 and template[i].find("@END") < 0:
                                 i = i + 1
-                            i = i + 1 # don't output @ELSE
+                            if template[i].find("@ELSE") >= 0:
+                                i = i + 1 # don't output @ELSE
                             while template[i].find("@END") < 0:
                                 print>>out, template[i].rstrip()
                                 i = i + 1
