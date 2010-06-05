@@ -48,6 +48,7 @@ Motors2::Motors2(){
 /* pwm values can range from -255 (full-speed reverse)
    to 255 (full-speed forward), with 0 indicating a stop */
 void Motors2::left(int pwm){
+    l_pwm = pwm;
   	if (pwm == 0){
 		digitalWrite(M2_LEFT_DIR, LOW);
 		TCCR2A &= ~((1<<COM2B1) | (1<<COM2B0));
@@ -70,6 +71,7 @@ void Motors2::left(int pwm){
 /* pwm values can range from -255 (full-speed reverse)
    to 255 (full-speed forward), with 0 indicating a stop */
 void Motors2::right(int pwm){
+    r_pwm = pwm;
   	if (pwm == 0){
 		digitalWrite(M2_RIGHT_DIR,LOW);
 		TCCR2A &= ~((1<<COM2A1) | (1<<COM2A0));
@@ -93,3 +95,12 @@ void Motors2::set(int lpwm, int rpwm){
 	this->left(lpwm);
 	this->right(rpwm);
 }
+
+int Motors2::getLeft(){
+    return this->l_pwm;
+}
+
+int Motors2::getRight(){
+    return this->r_pwm;
+}
+

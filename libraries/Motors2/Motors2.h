@@ -42,6 +42,12 @@ class Motors2
     void left(int pwm);
     void right(int pwm);
 	void set(int lpwm, int rpwm);
+    int getLeft();
+    int getRight();
+
+  private:
+    int l_pwm;
+    int r_pwm;
 };
 
 #endif
