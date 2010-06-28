@@ -31,7 +31,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose 0013"
+VERSION = "PyPose/NUKE 2.0"
 
 ###############################################################################
 # Main editor window
@@ -49,6 +49,7 @@ class editor(wx.Frame):
     ID_TEST=wx.NewId()
     ID_TIMER=wx.NewId()
     ID_COL_MENU=wx.NewId()
+    ID_LIVE_UPDATE=wx.NewId()
     ID_2COL=wx.NewId()
     ID_3COL=wx.NewId()
     ID_4COL=wx.NewId()
@@ -57,7 +58,7 @@ class editor(wx.Frame):
         """ Creates pose editor window. """
         wx.Frame.__init__(self, None, -1, VERSION, style = wx.DEFAULT_FRAME_STYLE & ~ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
 
-        # data for our program
+        # key data for our program
         self.project = project() # holds data for our project
         self.tools = dict() # our tool instances
         self.toolIndex = dict() # existant tools
@@ -106,8 +107,9 @@ class editor(wx.Frame):
         columnmenu.Append(self.ID_3COL,"3 columns")
         columnmenu.Append(self.ID_4COL,"4 columns")
         configmenu.AppendMenu(self.ID_COL_MENU,"pose editor",columnmenu)
+        # live update
+        self.live = configmenu.Append(self.ID_LIVE_UPDATE,"live pose update",kind=wx.ITEM_CHECK)
         #configmenu.Append(self.ID_TEST,"test") # for in-house testing of boards
-        # live update?
         menubar.Append(configmenu, "config")    
 
         helpmenu = wx.Menu()
@@ -134,6 +136,7 @@ class editor(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.doClose)
         self.Bind(wx.EVT_TIMER, self.OnTimer, id=self.ID_TIMER)
 
+        wx.EVT_MENU(self, self.ID_LIVE_UPDATE, self.setLiveUpdate)
         wx.EVT_MENU(self, self.ID_2COL, self.do2Col)
         wx.EVT_MENU(self, self.ID_3COL, self.do3Col)
         wx.EVT_MENU(self, self.ID_4COL, self.do4Col)
@@ -147,7 +150,7 @@ class editor(wx.Frame):
         self.sb.SetStatusText('please create or open a project...',0)
         self.Centre()
         # small hack for windows... 9-25-09 MEF
-        self.SetBackgroundColour(wx.NullColor) # wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
+        self.SetBackgroundColour(wx.NullColor)
         self.Show(True)
 
     ###########################################################################
@@ -164,12 +167,10 @@ class editor(wx.Frame):
             self.sizer.Remove(self.panel)
             self.panel.Destroy()
         self.ClearBackground()
+        # instantiate
         module = __import__(t, globals(), locals(), [t,"STATUS"])
         panelClass = getattr(module, t)
-        if t == "PoseEditor":
-            self.panel = panelClass(self,self.port,self.columns)
-        else:        
-            self.panel = panelClass(self,self.port)
+        self.panel = panelClass(self,self.port)
         self.sizer=wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.panel,1,wx.EXPAND|wx.ALL,10)
         self.SetSizer(self.sizer)
@@ -326,8 +327,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
 """
         info = wx.AboutDialogInfo()
         info.SetName(VERSION)
-        info.SetDescription("A lightweight pose and capture software for the arbotiX robocontroller")
-        info.SetCopyright("Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.")
+        info.SetDescription("A lightweight pose and capture software for the ArbotiX robocontroller")
+        info.SetCopyright("Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.")
         info.SetLicense(license)
         info.SetWebSite("http://www.vanadiumlabs.com")
         wx.AboutBox(info)
@@ -356,7 +357,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
             self.timer.Stop()
 
     ###########################################################################
-    # Pose Editor width settings
+    # Pose Editor settings
     def do2Col(self, e=None):
         self.columns = 2
         if self.tool == "PoseEditor":
@@ -369,7 +370,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
         self.columns = 4
         if self.tool == "PoseEditor":
             self.loadTool()
-
+    def setLiveUpdate(self, e=None):
+        if self.tool == "PoseEditor":
+            self.panel.live = self.live.IsChecked()
+        
 ###############################################################################
 # New Project Dialog
 class NewProjectDialog(wx.Dialog):

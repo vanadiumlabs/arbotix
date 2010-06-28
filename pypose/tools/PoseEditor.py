@@ -38,10 +38,11 @@ class PoseEditor(ToolPane):
     BT_POSE_RENAME = wx.NewId()
     ID_POSE_BOX = wx.NewId()
 
-    def __init__(self, parent, port=None, columns=2):
+    def __init__(self, parent, port=None):
         ToolPane.__init__(self, parent, port)
         self.curpose = "" 
         self.saveReq = False
+        self.live = self.parent.live.IsChecked()
 
         sizer = wx.GridBagSizer(10,10)
 
@@ -65,10 +66,10 @@ class PoseEditor(ToolPane):
             hbox.Add(temp.position)
             temp.SetSizer(hbox)
             # multiple columns now:
-            if i < columns:
+            if i < self.parent.columns:
                 poseEditSizer.Add(temp, (0, i), wx.GBSpan(1,1), wx.TOP,10)
             else:
-                poseEditSizer.Add(temp, (i/columns, i%columns))
+                poseEditSizer.Add(temp, (i/self.parent.columns, i%self.parent.columns))
             temp.Disable()  # servo editors start out disabled, enabled only when a pose is selected
             self.servos.append(temp)
         # grid it
@@ -130,6 +131,9 @@ class PoseEditor(ToolPane):
         if self.curpose != "":
             self.parent.project.poses[self.curpose][e.GetId()] = e.GetInt()
             self.parent.project.save = True
+            if self.live:   # live update   
+                pos = e.GetInt()   
+                self.port.setReg(e.GetId()+1, P_GOAL_POSITION_L, [pos%256,pos>>8])
     def loadPose(self, posename):
         if self.curpose == "":   # if we haven't yet, enable servo editors
             for servo in self.servos:
