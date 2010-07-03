@@ -189,7 +189,7 @@ class editor(wx.Frame):
             self.project.new(dlg.name.GetValue(), dlg.count.GetValue())
             self.loadTool()      
             self.sb.SetStatusText('created new project ' + self.project.name + ', please create a pose...')
-            self.SetTitle(VERSION+": " + self.project.name)
+            self.SetTitle(VERSION+" - " + self.project.name)
             self.panel.saveReq = True
             self.filename = ""
         dlg.Destroy()
@@ -202,7 +202,7 @@ class editor(wx.Frame):
             self.dirname = dlg.GetDirectory()
             print "Opening: " + self.filename            
             self.project.load(self.filename)  
-            self.SetTitle(VERSION+": " + self.project.name)
+            self.SetTitle(VERSION+" - " + self.project.name)
             dlg.Destroy()
             self.loadTool()
             self.sb.SetStatusText('opened ' + self.filename)
