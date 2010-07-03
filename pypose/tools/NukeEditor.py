@@ -30,12 +30,6 @@ from commander import Commander
 # Which IK models to load?
 from models.manifest import iKmodels
 
-# TODO: encapsulate pose editor into a seperate class, so we can load it for neutral tuning...
-
-# TODO: Release 0013
-#   Sign test for mammal3, image for neutral
-#   visual indication that captures are done. 
-
 ###############################################################################
 # nuke editor window
 class NukeEditor(ToolPane):
@@ -47,31 +41,9 @@ class NukeEditor(ToolPane):
     BT_TUNER = wx.NewId()
     BT_EXPORT = wx.NewId()
     BT_DRIVE = wx.NewId()
-    ID_LEGCOUNT = wx.NewId()
     ID_IKTYPE = wx.NewId()
+    ID_IKOPT = wx.NewId()
     ID_GAIT_BOX = wx.NewId()
-    # sizes
-    ID_LEN_COXA = wx.NewId()
-    ID_LEN_FEMUR = wx.NewId()
-    ID_LEN_TIBIA = wx.NewId()
-    ID_BODY_X = wx.NewId()
-    ID_BODY_Y = wx.NewId()
-    ID_BODY_MIDY = wx.NewId()
-    ID_COG_X = wx.NewId()
-    ID_COG_Y = wx.NewId()   
-    # servo assignments
-    ID_RF_COXA = wx.NewId()
-    ID_RF_FEMUR = wx.NewId()
-    ID_RF_TIBIA = wx.NewId()
-    ID_RR_COXA = wx.NewId()
-    ID_RR_FEMUR = wx.NewId()
-    ID_RR_TIBIA = wx.NewId()
-    ID_LF_COXA = wx.NewId()
-    ID_LF_FEMUR = wx.NewId()
-    ID_LF_TIBIA = wx.NewId()
-    ID_LR_COXA = wx.NewId()
-    ID_LR_FEMUR = wx.NewId()
-    ID_LR_TIBIA = wx.NewId()
     ID_ANY = wx.NewId()
 
     def __init__(self, parent, port=None):
@@ -80,56 +52,10 @@ class NukeEditor(ToolPane):
         self.signs = "+"*18
         self.curpose = "" 
         self.ikChoice = ""
-        self.legChoice = ""
+        self.optChoice = ""
         
-        sizer = wx.GridBagSizer(10,10)
-        
-        # Body Dimensions 
-        temp = wx.StaticBox(self, -1, 'Body Dimensions')
-        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
-        bodyBox = wx.StaticBoxSizer(temp,orient=wx.VERTICAL) 
-        bodySizer = wx.GridBagSizer(5,5)
+        self.sizer = wx.GridBagSizer(10,10)
     
-        bodySizer.Add(wx.StaticText(self, -1, "Leg"), (0,0), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
-        bodySizer.Add(wx.StaticText(self, -1, "Coxa(mm):"), (1,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "Femur(mm):"), (2,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "Tibia(mm):"), (3,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "Offsets"), (4,0), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
-        bodySizer.Add(wx.StaticText(self, -1, "X(mm):"), (5,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "Y(mm):"), (6,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "Mid-Y(mm):"), (7,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "COG Offset"), (8,0), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
-        bodySizer.Add(wx.StaticText(self, -1, "X(mm):"), (9,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        bodySizer.Add(wx.StaticText(self, -1, "Y(mm):"), (10,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        
-        # VARS = coxaLen, femurLen, tibiaLen, xBody, yBody, midyBody, xCOG, yCOG
-        self.vars = list()
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '50', min=1, max=5000))
-        bodySizer.Add(self.vars[0], (1,1))
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '50', min=1, max=5000))
-        bodySizer.Add(self.vars[1], (2,1))
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '50', min=1, max=5000))
-        bodySizer.Add(self.vars[2], (3,1))
-        self.picture = wx.StaticBitmap(self, bitmap=wx.Bitmap("tools/images/leg.jpg"))
-        bodySizer.Add(self.picture, (1,2), wx.GBSpan(3,1))
-
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '50', min=1, max=5000))
-        bodySizer.Add(self.vars[3], (5,1))
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '50', min=1, max=5000))
-        bodySizer.Add(self.vars[4], (6,1))
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '50', min=1, max=5000))
-        bodySizer.Add(self.vars[5], (7,1)) 
-        self.picture1 = wx.StaticBitmap(self, bitmap=wx.Bitmap("tools/images/body.jpg"))
-        bodySizer.Add(self.picture1, (5,2), wx.GBSpan(3,1))      
-
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '0', min=-200, max=200))
-        bodySizer.Add(self.vars[6], (9,1))
-        self.vars.append(wx.SpinCtrl(self, self.ID_ANY, '0', min=-200, max=200))
-        bodySizer.Add(self.vars[7], (10,1))
-
-        bodyBox.Add(bodySizer)
-        sizer.Add(bodyBox, (0,0), wx.GBSpan(2,1), wx.EXPAND)
-
         # IK styles/Config
         temp = wx.StaticBox(self, -1, 'IK Config')
         temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
@@ -139,14 +65,14 @@ class NukeEditor(ToolPane):
         self.ikType = wx.ComboBox(self, self.ID_IKTYPE, choices=iKmodels.keys())
         configSizer.Add(self.ikType,(0,1),wx.GBSpan(1,1),wx.TOP,10)   
         
-        # Number of Legs
+        # IK Option (typical # of legs or # of DOF)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        configSizer.Add(wx.StaticText(self, -1, "# of Legs:"),(1,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        self.legCount = wx.ComboBox(self, self.ID_LEGCOUNT, choices=["4","6"])
-        configSizer.Add(self.legCount,(1,1))     
-        #configSizer.Add(wx.Button(self, -1, 'Advanced View'), (2,1), wx.GBSpan(1,1), wx.ALIGN_RIGHT)
+        self.optLabel = wx.StaticText(self, -1, "# of Legs:")
+        configSizer.Add(self.optLabel,(1,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
+        self.ikOpt = wx.ComboBox(self, self.ID_IKOPT, choices=["4","6"])
+        configSizer.Add(self.ikOpt,(1,1))     
         configBox.Add(configSizer)
-        sizer.Add(configBox, (0,1), wx.GBSpan(1,1), wx.EXPAND)
+        self.sizer.Add(configBox, (0,1), wx.GBSpan(1,1), wx.EXPAND)
 
         # Actions buttons
         temp = wx.StaticBox(self, -1, 'Actions')
@@ -157,97 +83,19 @@ class NukeEditor(ToolPane):
         actionSizer.Add(wx.StaticText(self, -1, "Capture Limits:"), (0,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
         actionSizer.Add(wx.StaticText(self, -1, "Capture Neutral:"), (1,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
         actionSizer.Add(wx.StaticText(self, -1, "Set/Test Signs:"), (2,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        #actionSizer.Add(wx.StaticText(self, -1, "Test Drive:"), (3,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
                 
         actionSizer.Add(wx.Button(self, self.BT_LIMITS, 'Capture'),(0,1))
         actionSizer.Add(wx.Button(self, self.BT_NEUTRAL, 'Capture'),(1,1))
         self.signButton = wx.Button(self, self.BT_SIGN, 'Go')        
         actionSizer.Add(self.signButton,(2,1))
-        #driveButton = wx.Button(self, self.BT_DRIVE, 'Drive')
-        #driveButton.Disable()
-        #actionSizer.Add(driveButton,(3,1))
         
         actionBox.Add(actionSizer)
-        sizer.Add(actionBox, (1,1), wx.GBSpan(1,1), wx.EXPAND)    
-        
-        # Servo ID Selections
-        temp = wx.StaticBox(self, -1, 'Servo Assignments')
-        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
-        servoBox = wx.StaticBoxSizer(temp,orient=wx.VERTICAL) 
-        servoSizer = wx.GridBagSizer(5,5)
-    
-        servoSizer.Add(wx.StaticText(self, -1, "LF Coxa:"), (0,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL| wx.TOP, 10)
-        servoSizer.Add(wx.StaticText(self, -1, "LF Femur:"), (1,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "LF Tibia:"), (2,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RF Coxa:"), (0,2), wx.GBSpan(1,1), wx.ALIGN_CENTER_VERTICAL| wx.TOP, 10)
-        servoSizer.Add(wx.StaticText(self, -1, "RF Femur:"), (1,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RF Tibia:"), (2,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-
-        servoSizer.Add(wx.StaticText(self, -1, "LM Coxa:"), (4,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "LM Femur:"), (5,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "LM Tibia:"), (6,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RM Coxa:"), (4,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RM Femur:"), (5,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RM Tibia:"), (6,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        
-        servoSizer.Add(wx.StaticText(self, -1, "LR Coxa:"), (8,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "LR Femur:"), (9,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "LR Tibia:"), (10,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RR Coxa:"), (8,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RR Femur:"), (9,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        servoSizer.Add(wx.StaticText(self, -1, "RR Tibia:"), (10,2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
-        
-        # SERVOS = Coxa, Femur, Tibia (LF, RF, LM, RM, LR, RR)
-        self.servos = list()
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '2', min=1, max=self.parent.project.count))    # LF
-        servoSizer.Add(self.servos[0], (0,1), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '4', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[1], (1,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '6', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[2], (2,1))
-
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '1', min=1, max=self.parent.project.count))    # RF
-        servoSizer.Add(self.servos[3], (0,3), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '3', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[4], (1,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '5', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[5], (2,3))
-
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '14', min=1, max=self.parent.project.count))  # LM
-        servoSizer.Add(self.servos[6], (4,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '16', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[7], (5,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '18', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[8], (6,1))
-
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '13', min=1, max=self.parent.project.count))  # RM
-        servoSizer.Add(self.servos[9], (4,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '15', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[10], (5,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '17', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[11], (6,3))
-
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '8', min=1, max=self.parent.project.count))   # LR
-        servoSizer.Add(self.servos[12], (8,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '10', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[13], (9,1))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '12', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[14], (10,1))        
-
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '7', min=1, max=self.parent.project.count))   # RR
-        servoSizer.Add(self.servos[15], (8,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '9', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[16], (9,3))
-        self.servos.append(wx.SpinCtrl(self, self.ID_ANY, '11', min=1, max=self.parent.project.count))
-        servoSizer.Add(self.servos[17], (10,3))
-
-        servoBox.Add(servoSizer)
-        sizer.Add(servoBox, (0,2), wx.GBSpan(2,1), wx.EXPAND)
+        self.sizer.Add(actionBox, (1,1), wx.GBSpan(1,1), wx.EXPAND)    
 
         # NUKE Label
-        nukeIt = wx.StaticText(self, -1, "NUKE: Kinematics Made Easy")
+        nukeIt = wx.StaticText(self, -1, "NUKE: Get Your IK On")
         nukeIt.SetFont(wx.Font(15, wx.DEFAULT, wx.NORMAL, wx.BOLD, wx.ITALIC))
-        sizer.Add(nukeIt, (2,0), wx.GBSpan(1,2), wx.ALIGN_CENTER_VERTICAL)        
+        self.sizer.Add(nukeIt, (2,0), wx.GBSpan(1,2), wx.ALIGN_CENTER_VERTICAL)        
 
         # Buttons
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -259,14 +107,13 @@ class NukeEditor(ToolPane):
         hbox.Add(viewBut)
         hbox.Add(wx.Button(self, self.BT_DRIVE, 'Test Drive'))
         hbox.Add(wx.Button(self,self.BT_EXPORT, 'Export'))
-        sizer.Add(hbox, (2,2), wx.GBSpan(1,1), wx.ALIGN_CENTER) 
-
-        self.SetSizer(sizer)
-        self.SetAutoLayout(1)
-        sizer.Fit(self)
+        self.sizer.Add(hbox, (2,2), wx.GBSpan(1,1), wx.ALIGN_CENTER) 
 
         # Load Data (if possible)
         self.loadData()
+        self.SetSizer(self.sizer)
+        self.SetAutoLayout(1)
+        self.sizer.Fit(self)
 
         # event handling
         wx.EVT_BUTTON(self, self.BT_LIMITS, self.doLimits)                
@@ -276,8 +123,85 @@ class NukeEditor(ToolPane):
         wx.EVT_BUTTON(self, self.BT_EXPORT, self.doExport) 
 
         wx.EVT_COMBOBOX(self, self.ID_IKTYPE, self.doIKType)
-        wx.EVT_COMBOBOX(self, self.ID_LEGCOUNT, self.doLegCount) 
+        wx.EVT_COMBOBOX(self, self.ID_IKOPT, self.doIkOpt) 
         wx.EVT_SPINCTRL(self, self.ID_ANY, self.save)         
+    
+    
+    ###########################################################################
+    # draw buttons, etc. 
+    def getModel(self):
+        modelClassName = iKmodels[self.ikChoice].folder
+        if "tools/models/"+modelClassName not in sys.path:
+            sys.path.append("tools/models/"+modelClassName)
+        modelModule = __import__(modelClassName, globals(), locals(), [modelClassName])
+        modelClass = getattr(modelModule, modelClassName)
+        # make instance            
+        self.model = modelClass(int(self.optChoice),True)    # dofORlegs/debug/GaitGen
+        return self.model
+
+    def makePanel(self):
+        if self.ikChoice == "":
+            return            
+        self.getModel()
+        try:
+            self.servoBox.Clear(True)
+            self.bodyBox.Clear(True)
+            self.sizer.Remove(self.servoBox)
+            self.sizer.Remove(self.bodyBox)
+        except:
+            pass
+
+        # Body Dimensions 
+        temp = wx.StaticBox(self, -1, 'Body Dimensions')
+        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
+        self.bodyBox = wx.StaticBoxSizer(temp,orient=wx.VERTICAL) 
+        bodySizer = wx.GridBagSizer(5,5)
+        index = 0
+        self.vars = list()
+        for group in self.model.vars_layout:
+            # each group has [label, elements, image] 
+            bodySizer.Add(wx.StaticText(self, -1, group[0]), (index,0), wx.GBSpan(1,1), wx.EXPAND | wx.TOP, 10)
+            index = index + 1
+            count = 0
+            for field in group[1:-1]:
+                d = self.model.vars[field]
+                bodySizer.Add(wx.StaticText(self, -1, d[0]), (index,0), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
+                self.vars.append(wx.SpinCtrl(self, self.ID_ANY, str(d[1]), min=-5000, max=5000))
+                bodySizer.Add(self.vars[-1], (index,1))
+                index = index + 1
+                count = count + 1
+            if group[-1] != "":
+                picture = wx.StaticBitmap(self, bitmap=wx.Bitmap("tools/models/"+iKmodels[self.ikChoice].folder+"/"+group[-1]))
+                bodySizer.Add(picture, (index - count,2), wx.GBSpan(count,1))
+        self.bodyBox.Add(bodySizer)
+        self.sizer.Add(self.bodyBox, (0,0), wx.GBSpan(2,1), wx.EXPAND)
+
+        # Servo ID Selections
+        temp = wx.StaticBox(self, -1, 'Servo Assignments')
+        temp.SetFont(wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.BOLD))
+        self.servoBox = wx.StaticBoxSizer(temp,orient=wx.VERTICAL) 
+        servoSizer = wx.GridBagSizer(5,5)
+        self.servos = list()
+        index = 0
+        for servo_name in self.model.servo_layout:
+            if servo_name != "":
+                servoSizer.Add(wx.StaticText(self, -1, servo_name), (index/2,(index%2)*2), wx.GBSpan(1,1),wx.ALIGN_CENTER_VERTICAL)
+                new_servo = wx.SpinCtrl(self, self.ID_ANY, str(self.model.servos[servo_name]), min=1, max=self.parent.project.count)
+                self.servos.append(new_servo)
+                servoSizer.Add(new_servo, (index/2,(index%2)*2+1), wx.GBSpan(1,1), wx.EXPAND)
+            index = index + 1
+        self.servoBox.Add(servoSizer)
+        self.sizer.Add(self.servoBox, (0,2), wx.GBSpan(2,1), wx.EXPAND)
+
+        self.model.config(self.optChoice)
+        self.model.adjustPanel(self)
+
+        self.SetSizer(self.sizer)
+        self.SetAutoLayout(1)
+        self.sizer.Fit(self)
+        self.parent.sizer.Fit(self.parent)
+        self.Refresh()
+
 
     ###########################################################################
     # sitrep checks
@@ -296,7 +220,7 @@ class NukeEditor(ToolPane):
                     self.parent.timer.Start(30)
                     return 0
             elif c == "ik":
-                 if self.legCount.GetValue == "":
+                 if self.ikOpt.GetValue() == "":
                     self.parent.sb.SetBackgroundColour('RED')
                     self.parent.sb.SetStatusText('Please fill in IK variables...')
                     self.parent.timer.Start(30)
@@ -305,6 +229,213 @@ class NukeEditor(ToolPane):
                 print "Unknown System Check:", c
         # all systems go!        
         return 1 
+
+    ###########################################################################
+    # data management
+    def loadData(self):        
+        """ Load the NUKE string from our project, configure screen/model. """
+        if self.parent.project.name == "":
+            # Disable it all
+            self.ikType.Disable()
+            self.ikOpt.Disable()
+        elif self.parent.project.nuke == "":
+            self.ikOpt.Disable()     # Allow selection of ikType
+        else:
+            nukeStr = self.parent.project.nuke.rstrip()
+            # primary data
+            self.ikChoice = nukeStr[0:nukeStr.find(",")]
+            self.ikType.SetValue(self.ikChoice)
+            self.ikType.Disable()   # Can't change type - breaks templates
+            nukeStr = nukeStr[nukeStr.find(",")+1:]
+            self.optChoice = nukeStr[0:nukeStr.find(",")]
+            self.ikOpt.SetValue(self.optChoice)            
+            nukeStr = nukeStr[nukeStr.find(",")+1:]
+            self.signs = nukeStr[0:nukeStr.find(",")]
+            nukeStr = nukeStr[nukeStr.find(",")+1:]
+            self.makePanel()
+            # load vars
+            for i in range(len(self.vars)):
+                self.vars[i].SetValue(int(nukeStr[0:nukeStr.find(",")]))
+                nukeStr = nukeStr[nukeStr.find(",")+1:]
+            # load servos
+            for i in range(len(self.servos)-1):
+                self.servos[i].SetValue(int(nukeStr[0:nukeStr.find(",")]))
+                nukeStr = nukeStr[nukeStr.find(",")+1:]
+            self.servos[len(self.servos)-1].SetValue(int(nukeStr))
+            # Data loaded, now Enable/Disable as needed
+            if self.ikType.GetValue() == "": 
+                self.ikOpt.Disable()
+            else:
+                self.ikOpt.SetItems([str(c) for c in iKmodels[self.ikType.GetValue()].options])
+                self.ikOpt.Enable()        
+            if self.ikType.GetValue() == "" or self.ikOpt.GetValue() == "":
+                # Disable it all
+                for var in self.vars:  
+                    var.Disable()
+                for servo in self.servos:        
+                    servo.Disable()
+            else:
+                self.model.opt = int(self.optChoice)
+                self.model.adjustPanel(self)
+
+    def save(self, e=None):     
+        """ Export the NUKE string to our project, mark project as needing a save. """
+        if self.ikType.GetValue() == "" or self.ikOpt.GetValue() == "":
+            return
+        nukeStr = self.ikChoice + "," + str(self.ikOpt.GetValue()) + "," + self.signs + ","
+        # vars
+        for var in self.vars:
+            nukeStr = nukeStr + str(var.GetValue()) + ","
+        # servos
+        for servo in self.servos:
+            nukeStr = nukeStr + str(servo.GetValue()) + ","
+        nukeStr = nukeStr[0:-1]  # trim last ','
+        self.parent.project.nuke = nukeStr
+        self.parent.project.save = True
+    
+    def configModel(self):
+        """ Load the model for our IK solution. """
+        modelClassName = iKmodels[self.ikChoice].folder
+        if "tools/models/"+modelClassName not in sys.path:
+            sys.path.append("tools/models/"+modelClassName)
+        modelModule = __import__(modelClassName, globals(), locals(), [modelClassName])
+        modelClass = getattr(modelModule, modelClassName)
+        # make instance            
+        model = modelClass(int(self.optChoice),True)    # dofORlegs/debug/GaitGen
+        model.config( [int(v.GetValue()) for v in self.vars], [int(s.GetValue()) for s in self.servos])
+        model.mins = [512,] + self.parent.project.poses["ik_min"]
+        model.maxs = [512,] + self.parent.project.poses["ik_max"]
+        model.neutrals = [512,] + self.parent.project.poses["ik_neutral"]
+        model.signs = [1,] + [1+(-2*(t=="-")) for t in self.signs]    
+        self.model = model
+
+    ###########################################################################
+    # holla back -- the simple callbacks 
+    def writePose(self, pose, dt):
+        # set pose size -- IMPORTANT!
+        self.port.execute(253, 7, [self.parent.project.count])
+        # download the pose
+        self.port.execute(253, 8, [0] + project.extract(pose))                 
+        self.port.execute(253, 9, [0, dt%256, dt>>8,255,0,0])                
+        self.port.execute(253, 10, list())
+    def doSignTest(self, e=None):
+        """ Do the sign test, let's hope we pass. This is handled by the model. """
+        if self.doChecks(["project","port","ik"]) > 0:
+            self.loadModel()
+            self.signs = self.model.doSignTest(self) 
+            self.save()
+    def doWalkTest(self, e=None):
+        """ Load a virtual commander, to drive around. """
+        # TODO: Popup box telling you not to do this with the PyPose sketch!
+        if self.doChecks(["port"]) > 0:
+            comm = Commander(self, self.port.ser)    
+            comm.Center()    
+    def doIKType(self, e=None):
+        """ Set IKType, make leg box visible """
+        self.ikChoice = self.ikType.GetValue()
+        self.optLabel.SetLabel(iKmodels[self.ikChoice].optiondesc)
+        self.ikOpt.SetItems([str(c) for c in iKmodels[self.ikChoice].options])
+        self.ikOpt.Enable()
+        self.optChoice = "4"
+        self.makePanel()
+    def doIkOpt(self, e=None):
+        """ Set the # of legs (or DOF), make everything else visible. """
+        self.ikType.Disable()        
+        self.optChoice = self.ikOpt.GetValue()
+        self.model.config(self.optChoice)
+        self.makePanel()
+        self.model.adjustPanel(self)
+        self.save()
+
+    ###########################################################################
+    # Limit & Neutral capture
+    def doLimits(self, e=None):
+        if self.doChecks(["project","port"]) == 0:
+            return
+        else:
+            print "Relax servos for capture..."
+            self.parent.doRelax()
+            print "Capturing limits..."
+            self.parent.project.poses["ik_min"] = project.pose("",self.parent.project.count)
+            self.parent.project.poses["ik_max"] = project.pose("",self.parent.project.count)
+            self.parent.project.save = True
+            self.captureLimits(1)
+    def captureLimits(self, servoID, end=0, prev=0, error=0):
+        """ Capture the limits of this servo, recursively call next. """
+        if servoID <= self.parent.project.count:
+            if end == 0:
+                result = wx.ID_OK
+                if error == 0:      # first time through, ask user to prepare
+                    dlg = NukeDialog(self.parent, 'Capture Limits', 'Click OK when you have moved\n   servo ' + str(servoID) + ' to one extreme')
+                    result = dlg.ShowModal()      
+                    dlg.Destroy()                 
+                if result == wx.ID_OK:
+                    try:
+                        # read in servo position
+                        a = self.port.getReg(servoID,P_PRESENT_POSITION_L, 2)
+                        a = a[0] + (a[1]<<8) 
+                        # get other limit
+                        self.captureLimits(servoID,1,a)
+                    except:
+                        if error < 3:   # try again
+                            self.captureLimits(servoID, 0, 0, error+1)
+                        else:           # fail and move on
+                            dlg = wx.MessageDialog(self.parent, 'Unable to read servo ' + str(servoID), 'Capture Error', wx.OK)
+                            dlg.ShowModal()
+                            self.captureLimits(servoID+1)  
+                elif result == 42:
+                    self.captureLimits(servoID-1)
+            else:
+                result = wx.ID_OK
+                if error == 0:      # first time through, ask user to prepare
+                    dlg = NukeDialog(self.parent, 'Capture Limits', 'Click OK when you have moved\n    servo ' + str(servoID) + ' to the other extreme')
+                    result = dlg.ShowModal()                   
+                    dlg.Destroy()               
+                if result == wx.ID_OK:
+                    # read in other position
+                    try:
+                        a = self.port.getReg(servoID,P_PRESENT_POSITION_L, 2)
+                        a = a[0] + (a[1]<<8)
+                        # do our update to pose
+                        if prev > a:
+                            self.parent.project.poses["ik_max"][servoID-1] = prev
+                            self.parent.project.poses["ik_min"][servoID-1] = a  
+                            print "Capture Limits", servoID, ":", a, " to ", prev                
+                        else:
+                            self.parent.project.poses["ik_max"][servoID-1] = a
+                            self.parent.project.poses["ik_min"][servoID-1] = prev
+                            print "Capture Limits", servoID, ":", prev, ",", a  
+                        self.captureLimits(servoID+1)
+                    except:
+                        if error < 3:   # try again
+                            self.captureLimits(servoID, 1, prev, error+1)
+                        else:           # fail and move on
+                            dlg = wx.MessageDialog(self.parent, 'Unable to read servo ' + str(servoID), 'Capture Error', wx.OK)
+                            dlg.ShowModal()
+                            self.captureLimits(servoID+1)  
+                elif result == 42:
+                    self.captureLimits(servoID)
+    def doNeutral(self, e = None):
+        """ Capture the Neutral Position. """
+        if self.doChecks(["project","port"]) > 0:
+            print "Relax servos for capture..."
+            self.parent.doRelax()
+            print "Capturing neutral..."
+            # show dialog with what neutral should like for this bot
+            modelClassName = iKmodels[self.ikType.GetValue()].folder
+            dlg = NeutralDialog(self.parent, 'Capture Neutral Position', "tools/models/"+modelClassName+"/neutral.jpg")
+            #dlg = wx.MessageDialog(self.parent, 'Click OK when ready!', 'Capture Neutral Position', wx.OK | wx.CANCEL)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.parent.project.poses["ik_neutral"] = project.pose("",self.parent.project.count)
+                errors = "could not read servos: "
+                for servo in range(self.parent.project.count):
+                    pos = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
+                    if pos != -1:
+                        self.parent.project.poses["ik_neutral"][servo] = pos[0] + (pos[1]<<8)
+                    else: 
+                        errors = errors + str(servo+1) + ", "
+                if errors != "could not read servos: ":
+                    self.parent.sb.SetStatusText(errors[0:-2],0)  
 
     ###########################################################################
     # export
@@ -328,7 +459,7 @@ class NukeEditor(ToolPane):
             servoMap["RF_COXA"] = int(self.servos[3].GetValue())
             servoMap["RF_FEMUR"] = int(self.servos[4].GetValue())
             servoMap["RF_TIBIA"] = int(self.servos[5].GetValue())
-            if str(self.legCount.GetValue()) == "6":
+            if str(self.ikOpt.GetValue()) == "6":
                 servoMap["LM_COXA"] = int(self.servos[6].GetValue())
                 servoMap["LM_FEMUR"] = int(self.servos[7].GetValue())
                 servoMap["LM_TIBIA"] = int(self.servos[8].GetValue())
@@ -344,7 +475,8 @@ class NukeEditor(ToolPane):
             
             # setup model parameters
             params = dict()
-            params["legs"] = str(self.legCount.GetValue())
+            params["legs"] = str(self.ikOpt.GetValue())
+            params["dof"] = str(self.ikOpt.GetValue())
             params["@VAL_LCOXA"] = str(self.vars[0].GetValue())
             params["@VAL_LFEMUR"] = str(self.vars[1].GetValue())
             params["@VAL_LTIBIA"] = str(self.vars[2].GetValue())
@@ -433,17 +565,17 @@ class NukeEditor(ToolPane):
                         val = line[line.find(" ")+1:].strip().rstrip()
                         i = i + 1   
                         if params[var] == val:
-                            while template[i].find("@ELSE") < 0 and template[i].find("@END") < 0:
+                            while template[i].find("@ELSE") < 0 and template[i].find("@END_IF") < 0:
                                 print>>out, template[i].rstrip()
                                 i = i + 1
-                            while template[i].find("@END") < 0:
+                            while template[i].find("@END_IF") < 0:
                                 i = i + 1
                         else:
-                            while template[i].find("@ELSE") < 0 and template[i].find("@END") < 0:
+                            while template[i].find("@ELSE") < 0 and template[i].find("@END_IF") < 0:
                                 i = i + 1
                             if template[i].find("@ELSE") >= 0:
                                 i = i + 1 # don't output @ELSE
-                            while template[i].find("@END") < 0:
+                            while template[i].find("@END_IF") < 0:
                                 print>>out, template[i].rstrip()
                                 i = i + 1
                     else:
@@ -451,278 +583,6 @@ class NukeEditor(ToolPane):
                     i = i + 1
                 out.close()
 
-    ###########################################################################
-    # data management
-    def loadData(self):        
-        # read in from project
-        if self.parent.project.name == "":
-            # Disable it all
-            self.ikType.Disable()
-            self.legCount.Disable()
-            for i in range(8):  
-                self.vars[i].Disable()
-            for i in range(18):
-                self.servos[i].Disable()
-        elif self.parent.project.nuke == "":
-            # Disable, but save defaults to project
-            self.legCount.Disable()
-            for i in range(8):  
-                self.vars[i].Disable()
-            for i in range(18):
-                self.servos[i].Disable()
-            self.save()
-        else:
-            nukeStr = self.parent.project.nuke.rstrip()
-            # primary data
-            self.ikType.SetValue(nukeStr[0:nukeStr.find(",")])
-            nukeStr = nukeStr[nukeStr.find(",")+1:]
-            self.legCount.SetValue(nukeStr[0:nukeStr.find(",")])            
-            nukeStr = nukeStr[nukeStr.find(",")+1:]
-            self.signs = nukeStr[0:nukeStr.find(",")]
-            nukeStr = nukeStr[nukeStr.find(",")+1:]
-            # vars
-            for i in range(8):
-                self.vars[i].SetValue(int(nukeStr[0:nukeStr.find(",")]))
-                nukeStr = nukeStr[nukeStr.find(",")+1:]
-            # servos
-            for i in range(17):
-                self.servos[i].SetValue(int(nukeStr[0:nukeStr.find(",")]))
-                nukeStr = nukeStr[nukeStr.find(",")+1:]
-            self.servos[17].SetValue(int(nukeStr))
-            # Data loaded, now Enable/Disable as needed
-            if self.ikType.GetValue() == "":
-                # Disable it all    
-                self.legCount.Disable()
-                for i in range(8):  
-                    self.vars[i].Disable()
-                for i in range(18):        
-                    self.servos[i].Disable()
-            else:
-                self.legCount.SetItems([str(c) for c in iKmodels[self.ikType.GetValue()].legoptions])
-                self.legCount.Enable()        
-                if self.legCount.GetValue() == "":
-                    # Disable all but legCount
-                    for i in range(8):  
-                        self.vars[i].Disable()
-                    for i in range(18):        
-                        self.servos[i].Disable()
-                else:
-                    # Enable all
-                    for i in range(8):  
-                        self.vars[i].Enable()
-                    for i in range(18):        
-                        self.servos[i].Enable()
-                    if self.legCount.GetValue() == "4":
-                        # disable those few
-                        for i in range(6):
-                            self.servos[i+6].Disable()
-                        self.vars[5].Disable()  
-
-    def save(self, e=None):     
-        """ Export the NUKE string to our project, mark project as needing a save. """
-        nukeStr = self.ikType.GetValue() + "," + str(self.legCount.GetValue()) + "," + self.signs + ","
-        # vars
-        for i in range(8):
-            nukeStr = nukeStr + str(self.vars[i].GetValue()) + ","
-        # servos
-        for i in range(17):
-            nukeStr = nukeStr + str(self.servos[i].GetValue()) + ","
-        nukeStr = nukeStr + str(self.servos[17].GetValue())
-        self.parent.project.nuke = nukeStr
-        self.parent.project.save = True
-
-    ###########################################################################
-    # Limit & Neutral capture
-    def doLimits(self, e=None):
-        if self.doChecks(["project","port"]) == 0:
-            return
-        else:
-            print "Relax servos for capture..."
-            self.parent.doRelax()
-            print "Capturing limits..."
-            self.parent.project.poses["ik_min"] = project.pose("",self.parent.project.count)
-            self.parent.project.poses["ik_max"] = project.pose("",self.parent.project.count)
-            self.parent.project.save = True
-            self.captureLimits(1)
-    def captureLimits(self, servoID, end=0, prev=0, error=0):
-        """ Capture the limits of this servo, recursively call next. """
-        if servoID <= self.parent.project.count:
-            if end == 0:
-                result = wx.ID_OK
-                if error == 0:      # first time through, ask user to prepare
-                    #dlg = wx.MessageDialog(self.parent, 'Click OK when you have moved servo ' + str(servoID) + ' to one extreme', 'Capture Limits', wx.OK | wx.CANCEL)
-                    dlg = NukeDialog(self.parent, 'Capture Limits', 'Click OK when you have moved\n   servo ' + str(servoID) + ' to one extreme')
-                    result = dlg.ShowModal()      
-                    dlg.Destroy()                 
-                if result == wx.ID_OK:
-                    try:
-                        # read in servo position
-                        a = self.port.getReg(servoID,P_PRESENT_POSITION_L, 2)
-                        a = a[0] + (a[1]<<8) 
-                        # get other limit
-                        self.captureLimits(servoID,1,a)
-                    except:
-                        if error < 3:   # try again
-                            self.captureLimits(servoID, 0, 0, error+1)
-                        else:           # fail and move on
-                            dlg = wx.MessageDialog(self.parent, 'Unable to read servo ' + str(servoID), 'Capture Error', wx.OK)
-                            dlg.ShowModal()
-                            self.captureLimits(servoID+1)  
-                elif result == 42:
-                    self.captureLimits(servoID-1)
-            else:
-                result = wx.ID_OK
-                if error == 0:      # first time through, ask user to prepare
-                    dlg = NukeDialog(self.parent, 'Capture Limits', 'Click OK when you have moved\n    servo ' + str(servoID) + ' to the other extreme')
-                    result = dlg.ShowModal()                   
-                    dlg.Destroy()               
-                if result == wx.ID_OK:
-                    # read in other position
-                    try:
-                        a = self.port.getReg(servoID,P_PRESENT_POSITION_L, 2)
-                        a = a[0] + (a[1]<<8)
-                        # do our update to pose
-                        if prev > a:
-                            self.parent.project.poses["ik_max"][servoID-1] = prev
-                            self.parent.project.poses["ik_min"][servoID-1] = a  
-                            print "Capture Limits", servoID, ":", a, " to ", prev                
-                        else:
-                            self.parent.project.poses["ik_max"][servoID-1] = a
-                            self.parent.project.poses["ik_min"][servoID-1] = prev
-                            print "Capture Limits", servoID, ":", prev, ",", a  
-                        self.captureLimits(servoID+1)
-                    except:
-                        if error < 3:   # try again
-                            self.captureLimits(servoID, 1, prev, error+1)
-                        else:           # fail and move on
-                            dlg = wx.MessageDialog(self.parent, 'Unable to read servo ' + str(servoID), 'Capture Error', wx.OK)
-                            dlg.ShowModal()
-                            self.captureLimits(servoID+1)  
-                elif result == 42:
-                    self.captureLimits(servoID)
-    def doNeutral(self, e = None):
-        """ Capture the Neutral Position. """
-        if self.doChecks(["project","port"]) > 0:
-            print "Relax servos for capture..."
-            self.parent.doRelax()
-            print "Capturing neutral..."
-            # show dialog with what neutral should like for this bot
-            modelClassName = iKmodels[self.ikType.GetValue()].folder
-            dlg = NeutralDialog(self.parent, 'Capture Neutral Position', "tools/models/"+modelClassName+"/neutral.jpg")
-            #dlg = wx.MessageDialog(self.parent, 'Click OK when ready!', 'Capture Neutral Position', wx.OK | wx.CANCEL)
-            if dlg.ShowModal() == wx.ID_OK:
-                self.parent.project.poses["ik_neutral"] = project.pose("",self.parent.project.count)
-                errors = "could not read servos: "
-                for servo in range(self.parent.project.count):
-                    pos = self.port.getReg(servo+1,P_PRESENT_POSITION_L, 2)
-                    if pos != -1:
-                        self.parent.project.poses["ik_neutral"][servo] = pos[0] + (pos[1]<<8)
-                    else: 
-                        errors = errors + str(servo+1) + ", "
-                if errors != "could not read servos: ":
-                    self.parent.sb.SetStatusText(errors[0:-2],0)  
-
-    def loadModel(self):
-        """ Load the model for our IK solution. """
-        modelClassName = iKmodels[self.ikType.GetValue()].folder
-        if "tools/models/"+modelClassName not in sys.path:
-            sys.path.append("tools/models/"+modelClassName)
-        modelModule = __import__(modelClassName, globals(), locals(), [modelClassName])
-        modelClass = getattr(modelModule, modelClassName)
-        # make instance            
-        self.legChoice = self.legCount.GetValue()
-        model = modelClass(int(self.legChoice),True)    # legs/debug/GaitGen
-        # VARS = coxaLen, femurLen, tibiaLen, xBody, yBody, midyBody, xCOG, yCOG
-        model.L_COXA = int(self.vars[0].GetValue())
-        model.L_FEMUR = int(self.vars[1].GetValue())
-        model.L_TIBIA = int(self.vars[2].GetValue())
-        model.X_COXA = int(self.vars[3].GetValue())
-        model.Y_COXA = int(self.vars[4].GetValue())
-        model.Y_MID = int(self.vars[5].GetValue())
-
-        # SERVOS = Coxa, Femur, Tibia (LF, RF, LM, RM, LR, RR)
-        model["RF_COXA"] = int(self.servos[3].GetValue())-1
-        model["RF_FEMUR"] = int(self.servos[4].GetValue())-1
-        model["RF_TIBIA"] = int(self.servos[5].GetValue())-1
-        model["LF_COXA"] = int(self.servos[0].GetValue())-1
-        model["LF_FEMUR"] = int(self.servos[1].GetValue())-1
-        model["LF_TIBIA"] = int(self.servos[2].GetValue())-1
-        model["RR_COXA"] = int(self.servos[15].GetValue())-1
-        model["RR_FEMUR"] = int(self.servos[16].GetValue())-1
-        model["RR_TIBIA"] = int(self.servos[17].GetValue())-1
-        model["LR_COXA"] = int(self.servos[12].GetValue())-1
-        model["LR_FEMUR"] = int(self.servos[13].GetValue())-1
-        model["LR_TIBIA"] = int(self.servos[14].GetValue())-1
-        model["RIGHT_FRONT"] = [60,90,100]
-        model["RIGHT_REAR"] = [-60,90,100]
-        model["LEFT_FRONT"] = [60,-90,100]
-        model["LEFT_REAR"] = [-60,-90,100]
-
-        model["RM_COXA"] = int(self.servos[9].GetValue())-1
-        model["RM_FEMUR"] = int(self.servos[10].GetValue())-1
-        model["RM_TIBIA"] = int(self.servos[11].GetValue())-1
-        model["LM_COXA"] = int(self.servos[6].GetValue())-1
-        model["LM_FEMUR"] = int(self.servos[7].GetValue())-1
-        model["LM_TIBIA"] = int(self.servos[8].GetValue())-1
-        model["RIGHT_MIDDLE"] = [0,90,100]
-        model["LEFT_MIDDLE"] = [0,-90,100]
-      
-        model.mins = self.parent.project.poses["ik_min"]
-        model.maxs = self.parent.project.poses["ik_max"]
-        model.neutrals = self.parent.project.poses["ik_neutral"]
-        model.signs = [1+(-2*(t=="-")) for t in self.signs]
-    
-        self.model = model
-
-
-    ###########################################################################
-    # here's your sign!
-    def writePose(self, pose, dt):
-        # set pose size -- IMPORTANT!
-        self.port.execute(253, 7, [self.parent.project.count])
-        # download the pose
-        self.port.execute(253, 8, [0] + project.extract(pose))                 
-        self.port.execute(253, 9, [0, dt%256, dt>>8,255,0,0])                
-        self.port.execute(253, 10, list())
-    def doSignTest(self, e=None):
-        if self.doChecks(["project","port","ik"]) > 0:
-            self.loadModel()
-            self.signs = self.model.doSignTest(self) 
-            self.save()
-    def doWalkTest(self, e=None):
-        if self.doChecks(["port"]) > 0:
-            comm = Commander(self, self.port.ser)    
-            comm.Center()    
-        #if self.doChecks(["project","port","ik"]) > 0:
-        #    self.loadModel()
-        #    self.model.gaitGen = self.model.defaultGait
-        #    for i in range(24):
-        #        self.model.doIK()
-        #        self.writePose(self.model.nextPose, 50)
-        #        #time.sleep(0.001)
-        #    self.model.gaitGen = None
-
-        
-    ###########################################################################
-    # holla back -- the callbacks    
-    def doIKType(self, e=None):
-        """ Set IKType, make leg box visible """
-        self.save()
-        self.legCount.SetItems([str(c) for c in iKmodels[self.ikType.GetValue()].legoptions])
-        self.legCount.Enable()
-
-    def doLegCount(self, e=None):
-        """ Set the # of legs, make everything else visible. """
-        self.legChoice = self.legCount.GetValue()
-        for i in range(8):  
-            self.vars[i].Enable()
-        for i in range(18):        
-            self.servos[i].Enable()
-        if str(self.legCount.GetValue()) == "4":
-            for i in range(6):
-                self.servos[i+6].Disable()
-            self.vars[5].Disable()  
-        self.save()
         
 ###########################################################################
 # A message box, with backup ability

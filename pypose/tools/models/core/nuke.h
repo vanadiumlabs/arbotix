@@ -20,7 +20,7 @@
 #define X_COXA      @VAL_XCOXA  // MM between front and back legs /2
 #define Y_COXA      @VAL_YCOXA  // MM between front/back legs /2
 #define M_COXA      @VAL_MCOXA  // MM between two middle legs /2
-@END
+@END_IF
 
 /* Legs */
 #define L_COXA      @VAL_LCOXA  // MM distance from coxa servo to femur servo 
@@ -53,7 +53,7 @@ extern ik_req_t endpoints[LEG_COUNT];
 @IF legs 6
 #define RIGHT_MIDDLE   4
 #define LEFT_MIDDLE    5
-@END
+@END_IF
 
 extern BioloidController bioloid;
 
@@ -83,10 +83,8 @@ int radToServo(float rads);
 /* select a gait pattern to use */
 void gaitSelect(int GaitType);
 
-/* find the translation of the endpoint (x,y,z) given our gait parameters */
-extern ik_req_t (*gaitGen)(int leg);
-extern void (*gaitSetup)();
-@GAIT_GENERATORS
+#include "gaits.h"
+
 /* find the translation of the coxa point (x,y) in 3-space, given our rotations */
 ik_req_t bodyIK(int X, int Y, int Z, int Xdisp, int Ydisp, float Zrot);
 /* given our leg offset (x,y,z) from the coxa point, calculate servo values */

@@ -36,12 +36,12 @@ FEMUR = 1
 TIBIA = 2
 
 class lizard3(dict):
-    X_COXA = 29     # MM between front and back legs /2
-    Y_COXA = 29     # MM between front/back legs /2
+    X_COXA = 50     # MM between front and back legs /2
+    Y_COXA = 50     # MM between front/back legs /2
 
-    L_COXA = 52     # MM distance from coxa servo to femur servo 
-    L_FEMUR = 47    # MM distance from femur servo to tibia servo 
-    L_TIBIA = 125   # MM distance from tibia servo to foot 
+    L_COXA = 50     # MM distance from coxa servo to femur servo 
+    L_FEMUR = 50    # MM distance from femur servo to tibia servo 
+    L_TIBIA = 50    # MM distance from tibia servo to foot 
 
     bodyRotX = 0.0
     bodyRotY = 0.0
@@ -53,52 +53,90 @@ class lizard3(dict):
     def setNextPose(self, servo, pos):
         self.nextPose[servo] = pos
 
-    def __init__(self, legs=4, debug=False, gaitGen = None):
-        self.legs = legs
-        self.debug = debug
-        self.gaitGen = gaitGen
-        self["RF_COXA"] = 1
-        self["RF_FEMUR"] = 3
-        self["RF_TIBIA"] = 5
-        self["LF_COXA"] = 2
-        self["LF_FEMUR"] = 4
-        self["LF_TIBIA"] = 6
-        self["RR_COXA"] = 7
-        self["RR_FEMUR"] = 9
-        self["RR_TIBIA"] = 11
-        self["LR_COXA"] = 8
-        self["LR_FEMUR"] = 10
-        self["LR_TIBIA"] = 12
+    def __init__(self, opt=4, debug=False, gaitGen = None):
+        self.legs = int(opt)    # option here corresponds to leg count
+        self.debug = debug      # do we print debug messages or not?
+        self.gaitGen = gaitGen  # any gait generation? 
+
+        # Column 1 = Body Dimensions, need both specification of layout and data.
+        self.vars_layout = [["Leg", 0, 1, 2, "leg.jpg"], ["Offsets",3,4,5,"body.jpg"], ["COG Offsets",6,7,""]]
+        self.vars = { 0:["Coxa(mm)",50],1:["Femur(mm)",50],2:["Tibia(mm)",50],3:["X(mm)",50],4:["Y(mm)",50],5:["Mid-Y(mm)",50],6:["X(mm)",0],7:["Y(mm)",0] }
+        
+        # Column 3 = Servo Values, need both specification of layout and data. 
+        self.servo_layout = ["LF Coxa","RF Coxa","LF Femur","RF Femur","LF Tibia","RF Tibia","","","LM Coxa","RM Coxa","LM Femur","RM Femur","LM Tibia","RM Tibia","","","LR Coxa","RR Coxa","LR Femur","RR Femur","LR Tibia","RR Tibia"]
+        self.servos = { "RF Coxa":1, "RF Femur":3, "RF Tibia":5, "LF Coxa":2,"LF Femur": 4,"LF Tibia":6,"RR Coxa":7, "RR Femur":9, "RR Tibia":11, "LR Coxa":8, "LR Femur":10, "LR Tibia":12, "RM Coxa":13,"RM Femur":15,"RM Tibia":17,"LM Coxa":14,"LM Femur":16, "LM Tibia":18}
+
+        # Used for gait generation.
         self["RIGHT_FRONT"] = [60,90,100]
         self["RIGHT_REAR"] = [-60,90,100]
         self["LEFT_FRONT"] = [60,-90,100]
         self["LEFT_REAR"] = [-60,-90,100]
-
-        if self.legs > 4:
-            self["RM_COXA"] = 13
-            self["RM_FEMUR"] = 15
-            self["RM_TIBIA"] = 17
-            self["LM_COXA"] = 14
-            self["LM_FEMUR"] = 16
-            self["LM_TIBIA"] = 18
-            self["RIGHT_MIDDLE"] = [0,90,100]
-            self["LEFT_MIDDLE"] = [0,-90,100]
-
+        self["RIGHT_MIDDLE"] = [0,90,100]
+        self["LEFT_MIDDLE"] = [0,-90,100]
         self["RF_GAIT"] = [0,0,0,0]
         self["LF_GAIT"] = [0,0,0,0]
         self["RR_GAIT"] = [0,0,0,0]
         self["LR_GAIT"] = [0,0,0,0]
         self["RM_GAIT"] = [0,0,0,0]
         self["LM_GAIT"] = [0,0,0,0]
-
         self.order = {"RF_GAIT":0,"LR_GAIT":2,"LF_GAIT":4,"RR_GAIT":6}
 
-        self.mins = [512 for i in range(3*legs)]
-        self.maxs = [512 for i in range(3*legs)]
-        self.neutrals = [512 for i in range(3*legs)]
-        self.nextPose = [0 for i in range(3*legs)]
-        self.signs = [1 for i in range(3*legs)]
+        # Used to generate servo values for IK
+        self.mins = [512 for i in range(3*self.legs+1)]
+        self.maxs = [512 for i in range(3*self.legs+1)]
+        self.neutrals = [512 for i in range(3*self.legs+1)]
+        self.nextPose = [512 for i in range(3*self.legs+1)]
+        self.signs = [1 for i in range(3*self.legs+1)]
         self.step = 0
+
+    def config(self, opt, dims=None, servos=None):
+        self.legs = int(opt)
+
+        # VARS = coxaLen, femurLen, tibiaLen, xBody, yBody, midyBody, xCOG, yCOG
+        if dims != None:
+            self.L_COXA = dims[0]
+            self.L_FEMUR = dims[1]
+            self.L_TIBIA = dims[2]
+            self.X_COXA = dims[3]
+            self.Y_COXA = dims[4]
+            self.Y_MID = dims[5]
+            # cogs? 
+
+        # SERVOS = Coxa, Femur, Tibia (LF, RF, LM, RM, LR, RR)
+        if servos != None:
+            self.servos["LF Coxa"] = servos[0]
+            self.servos["RF Coxa"] = servos[1]
+            self.servos["LF Femur"] = servos[2]
+            self.servos["RF Femur"] = servos[3]
+            self.servos["LF Tibia"] = servos[4]
+            self.servos["RF Tibia"] = servos[5]
+
+            self.servos["LM Coxa"] = servos[6]
+            self.servos["RM Coxa"] = servos[7]
+            self.servos["LM Femur"] = servos[8]
+            self.servos["RM Femur"] = servos[9]
+            self.servos["LM Tibia"] = servos[10]
+            self.servos["RM Tibia"] = servos[11]
+
+            self.servos["LR Coxa"] = servos[12]
+            self.servos["RR Coxa"] = servos[13]
+            self.servos["LR Femur"] = servos[14]
+            self.servos["RR Femur"] = servos[15]
+            self.servos["LR Tibia"] = servos[16]
+            self.servos["RR Tibia"] = servos[17]
+    
+    def adjustPanel(self, panel):
+        for var in panel.vars:  
+            var.Enable()
+        if self.legs > 4:
+            for servo in panel.servos:
+                servo.Enable()
+        else:
+            panel.vars[5].Disable()
+            for i in range(6):
+                panel.servos[i].Enable()
+                panel.servos[6+i].Disable()
+                panel.servos[12+i].Enable()
 
     def bodyIK(self, X, Y, Z, Xdisp, Ydisp, Zrot):
         """ Compute offsets based on Body positions. 
@@ -166,7 +204,7 @@ class lizard3(dict):
             print "RIGHT_FRONT: ", [self["RIGHT_FRONT"][i] + gait[i] for i in range(3)]
         req = self.bodyIK(self["RIGHT_FRONT"][0]+gait[0], self["RIGHT_FRONT"][1]+gait[1], self["RIGHT_FRONT"][2]+gait[2], self.X_COXA, self.Y_COXA, gait[3])
         sol = self.legIK(self["RIGHT_FRONT"][0]+req[0]+gait[0],self["RIGHT_FRONT"][1]+req[1]+gait[1],self["RIGHT_FRONT"][2]+req[2]+gait[2])
-        servo = self["RF_COXA"]        
+        servo = self.servos["RF Coxa"]        
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -174,7 +212,7 @@ class lizard3(dict):
             if self.debug:
                 print "RF_COXA FAIL: ", output
             fail = fail + 1
-        servo = self["RF_FEMUR"]
+        servo = self.servos["RF Femur"]
         output = self.neutrals[servo]+self.signs[servo]*sol[FEMUR]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -182,7 +220,7 @@ class lizard3(dict):
             if self.debug:
                 print "RF_FEMUR FAIL: ", output
             fail = fail + 1
-        servo = self["RF_TIBIA"]
+        servo = self.servos["RF Tibia"]
         output = self.neutrals[servo]+self.signs[servo]*sol[TIBIA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -198,7 +236,7 @@ class lizard3(dict):
             print "RIGHT_REAR: ", [self["RIGHT_REAR"][i] + gait[i] for i in range(3)]
         req = self.bodyIK(self["RIGHT_REAR"][0]+gait[0],self["RIGHT_REAR"][1]+gait[1],self["RIGHT_REAR"][2]+gait[2], -self.X_COXA, self.Y_COXA, gait[3])
         sol = self.legIK(-self["RIGHT_REAR"][0]-req[0]-gait[0],self["RIGHT_REAR"][1]+req[1]+gait[1],self["RIGHT_REAR"][2]+req[2]+gait[2]);
-        servo = self["RR_COXA"]
+        servo = self.servos["RR Coxa"]
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -206,7 +244,7 @@ class lizard3(dict):
             if self.debug:
                 print "RR_COXA FAIL: ", output
             fail = fail + 1
-        servo = self["RR_FEMUR"]
+        servo = self.servos["RR Femur"]
         output = self.neutrals[servo]+self.signs[servo]*sol[FEMUR]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -214,7 +252,7 @@ class lizard3(dict):
             if self.debug:
                 print "RR_FEMUR FAIL:", output
             fail = fail + 1
-        servo = self["RR_TIBIA"]
+        servo = self.servos["RR Tibia"]
         output = self.neutrals[servo]+self.signs[servo]*sol[TIBIA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -230,7 +268,7 @@ class lizard3(dict):
             print "LEFT_FRONT: ", [self["LEFT_FRONT"][i] + gait[i] for i in range(3)]
         req = self.bodyIK(self["LEFT_FRONT"][0]+gait[0],self["LEFT_FRONT"][1]+gait[1],self["LEFT_FRONT"][2]+gait[2], self.X_COXA, -self.Y_COXA, gait[3])
         sol = self.legIK(self["LEFT_FRONT"][0]+req[0]+gait[0],-self["LEFT_FRONT"][1]-req[1]-gait[1],self["LEFT_FRONT"][2]+req[2]+gait[2]);
-        servo = self["LF_COXA"]
+        servo = self.servos["LF Coxa"]
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -238,7 +276,7 @@ class lizard3(dict):
             if self.debug:
                 print "LF_COXA FAIL:", output
             fail = fail + 1
-        servo = self["LF_FEMUR"]
+        servo = self.servos["LF Femur"]
         output = self.neutrals[servo]+self.signs[servo]*sol[FEMUR]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -246,7 +284,7 @@ class lizard3(dict):
             if self.debug:
                 print"LF_FEMUR FAIL:", output
             fail = fail + 1
-        servo = self["LF_TIBIA"]
+        servo = self.servos["LF Tibia"]
         output = self.neutrals[servo]+self.signs[servo]*sol[TIBIA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -262,7 +300,7 @@ class lizard3(dict):
             print "LEFT_REAR: ", [self["LEFT_REAR"][i] + gait[i] for i in range(3)] 
         req = self.bodyIK(self["LEFT_REAR"][0]+gait[0],self["LEFT_REAR"][1]+gait[1],self["LEFT_REAR"][2]+gait[2], -self.X_COXA, -self.Y_COXA, gait[3])
         sol = self.legIK(-self["LEFT_REAR"][0]-req[0]-gait[0],-self["LEFT_REAR"][1]-req[1]-gait[1],self["LEFT_REAR"][2]+req[2]+gait[2])
-        servo = self["LR_COXA"]
+        servo = self.servos["LR Coxa"]
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -270,7 +308,7 @@ class lizard3(dict):
             if self.debug:
                 print "LR_COXA FAIL:", output
             fail = fail + 1
-        servo = self["LR_FEMUR"]
+        servo = self.servos["LR Femur"]
         output = self.neutrals[servo]+self.signs[servo]*sol[FEMUR]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -278,7 +316,7 @@ class lizard3(dict):
             if self.debug:
                 print "LR_FEMUR FAIL:",output
             fail = fail + 1
-        servo = self["LR_TIBIA"]        
+        servo = self.servos["LR Tibia"]        
         output = self.neutrals[servo]+self.signs[servo]*sol[TIBIA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -295,7 +333,7 @@ class lizard3(dict):
                 print "RIGHT_MIDDLE: ", [self["RIGHT_MIDDLE"][i] + gait[i] for i in range(3)] 
             req = self.bodyIK(self["RIGHT_MIDDLE"][0]+gait[0],self["RIGHT_MIDDLE"][1]+gait[1],self["RIGHT_MIDDLE"][2]+gait[2], 0, self.Y_MID, gait[3])
             sol = self.legIK(+self["RIGHT_MIDDLE"][0]+req[0]+gait[0],self["RIGHT_MIDDLE"][1]+req[1]+gait[1],self["RIGHT_MIDDLE"][2]+req[2]+gait[2])
-            servo = self["RM_COXA"]
+            servo = self.servos["RM Coxa"]
             output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -303,7 +341,7 @@ class lizard3(dict):
                 if self.debug:
                     print "RM_COXA FAIL:", output
                 fail = fail + 1
-            servo = self["RM_FEMUR"]
+            servo = self.servos["RM Femur"]
             output = self.neutrals[servo]+self.signs[servo]*sol[FEMUR]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -311,7 +349,7 @@ class lizard3(dict):
                 if self.debug:
                     print"RM_FEMUR FAIL:", output
                 fail = fail + 1
-            servo = self["RM_TIBIA"]
+            servo = self.servos["RM Tibia"]
             output = self.neutrals[servo]+self.signs[servo]*sol[TIBIA]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -327,7 +365,7 @@ class lizard3(dict):
                 print "LEFT_MIDDLE: ", [self["LEFT_MIDDLE"][i] + gait[i] for i in range(3)] 
             req = self.bodyIK(self["LEFT_MIDDLE"][0]+gait[0],self["LEFT_MIDDLE"][1]+gait[1],self["LEFT_MIDDLE"][2]+gait[2], 0, -self.Y_MID, gait[3])
             sol = self.legIK(self["LEFT_MIDDLE"][0]+req[0]+gait[0],-self["LEFT_MIDDLE"][1]-req[1]-gait[1],self["LEFT_MIDDLE"][2]+req[2]+gait[2])
-            servo = self["LM_COXA"]
+            servo = self.servos["LM Coxa"]
             output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -335,7 +373,7 @@ class lizard3(dict):
                 if self.debug:
                     print "LM_COXA FAIL:", output
                 fail = fail + 1
-            servo = self["LM_FEMUR"]
+            servo = self.servos["LM Femur"]
             output = self.neutrals[servo]+self.signs[servo]*sol[FEMUR]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -343,7 +381,7 @@ class lizard3(dict):
                 if self.debug:
                     print "LM_FEMUR FAIL:",output
                 fail = fail + 1
-            servo = self["LM_TIBIA"]        
+            servo = self.servos["LM Tibia"]        
             output = self.neutrals[servo]+self.signs[servo]*sol[TIBIA]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -405,7 +443,7 @@ class lizard3(dict):
             if dlg.ShowModal() == wx.ID_OK:    
                 return self.doSignTest(parent,1)
             else:
-                return "".join([self.strRep(t) for t in self.signs])   
+                return "".join([self.strRep(t) for t in self.signs[1:]])   
         else:
             msg = ""            # message to display to user
             servo = -1          # servo ID to reverse if we get a NCK    
@@ -413,75 +451,71 @@ class lizard3(dict):
                 # SET COXAS FIRST
                 self["RIGHT_FRONT"][0] = self.L_COXA/2
                 msg = "Did my RF leg move forward?"
-                servo = "RF_COXA"
+                servo = "RF Coxa"
             elif step == 2:
                 self["LEFT_FRONT"][0] = self.L_COXA/2
                 msg = 'Did my LF leg move forward?'
-                servo = "LF_COXA"
+                servo = "LF Coxa"
             elif step == 3:
                 self["RIGHT_REAR"][0] = -self.L_COXA/2
                 msg = 'Did my RR leg move backward?'
-                servo = "RR_COXA"
+                servo = "RR Coxa"
             elif step == 4:
                 self["LEFT_REAR"][0] = -self.L_COXA/2
                 msg = 'Did my LR leg move backward?'
-                servo = "LR_COXA"
+                servo = "LR Coxa"
             elif step == 5:
                 # Now FEMURs and TIBIAs
                 self["RIGHT_FRONT"][2] = self["RIGHT_FRONT"][2] - 20
                 msg = 'Did my RF leg move upward?'
-                servo = "RF_FEMUR"
+                servo = "RF Femur"
             elif step == 6: 
                 msg = 'Is my RF tibia still straight up and down?'
-                #msg = 'Did my RF leg move inward or outward too?'
-                servo = "RF_TIBIA"
+                servo = "RF Tibia"
             elif step == 7:
                 self["LEFT_FRONT"][2] = self["LEFT_FRONT"][2] - 20
                 msg = 'Did my LF leg move upward?'
-                servo = "LF_FEMUR"
+                servo = "LF Femur"
             elif step == 8:
                 msg = 'Is my LF tibia still straight up and down?'
-                #msg = 'Did my LF leg move inward or outward too?'
-                servo = "LF_TIBIA"
+                servo = "LF Tibia"
             elif step == 9:
                 self["RIGHT_REAR"][2] = self["RIGHT_REAR"][2] - 20
                 msg = 'Did my RR leg move upward?'
-                servo = "RR_FEMUR"
+                servo = "RR Femur"
             elif step == 10:
                 msg = 'Is my RR tibia still straight up and down?'
-                #msg = 'Did my RR leg move inward or outward too?'
-                servo = "RR_TIBIA"
+                servo = "RR Tibia"
             elif step == 11:
                 self["LEFT_REAR"][2] = self["LEFT_REAR"][2] - 20
                 msg = 'Did my LR leg move upward?'
-                servo = "LR_FEMUR"
+                servo = "LR Femur"
             elif step == 12:
                 msg = 'Is my LR tibia still straight up and down?'
-                #msg = 'Did my LR leg move inward or outward too?'
-                servo = "LR_TIBIA"   
+                servo = "LR Tibia"   
             elif step == 13:
                 # middle legs
                 self["RIGHT_MIDDLE"][0] = self.L_COXA/2
                 msg = "Did my RM leg move forward?"
-                servo = "RM_COXA"
+                servo = "RM Coxa"
             elif step == 14:
                 self["LEFT_MIDDLE"][0] = self.L_COXA/2
                 msg = "Did my LM leg move forward?"
-                servo = "LM_COXA"
+                servo = "LM Coxa"
             elif step == 15:
                 self["RIGHT_MIDDLE"][2] = self["RIGHT_MIDDLE"][2] - 20
                 msg = 'Did my RM leg move upward?'
-                servo = "RM_FEMUR"
+                servo = "RM Femur"
             elif step == 16:
                 msg = 'Is my RM tibia still straight up and down?'
-                servo = "RM_TIBIA"
+                servo = "RM Tibia"
             elif step == 17:
                 self["LEFT_MIDDLE"][2] = self["LEFT_MIDDLE"][2] - 20
                 msg = 'Did my LM leg move upward?'
-                servo = "LM_FEMUR"
+                servo = "LM Femur"
             elif step == 18:
                 msg = 'Is my LM tibia still straight up and down?'
-                servo = "LM_TIBIA"  
+                servo = "LM Tibia"  
 
             # do IK and display dialog
             self.doIK()
@@ -490,17 +524,17 @@ class lizard3(dict):
             dlg = wx.MessageDialog(parent, msg, 'Sign Test', wx.YES | wx.NO)
             result = dlg.ShowModal()    
             if result == wx.ID_CANCEL:
-                return "".join([self.strRep(t) for t in self.signs])            
+                return "".join([self.strRep(t) for t in self.signs[1:]])            
             elif result == wx.ID_NO:
                 print "Reversing", servo, "sign"       
-                if self.signs[self[servo]] > 0:
-                    self.signs[self[servo]] = -1
+                if self.signs[self.servos[servo]] > 0:
+                    self.signs[self.servos[servo]] = -1
                 else:
-                    self.signs[self[servo]] = 1
+                    self.signs[self.servos[servo]] = 1
                 self.doIK()
                 parent.writePose(self.nextPose, 500)
             if step < (3*self.legs):
                 return self.doSignTest(parent,step+1)
             else:
-                return "".join([self.strRep(t) for t in self.signs])
+                return "".join([self.strRep(t) for t in self.signs[1:]])
 

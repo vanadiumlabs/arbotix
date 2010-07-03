@@ -48,7 +48,7 @@ void setupIK(){
   endpoints[LEFT_MIDDLE].x = 0;
   endpoints[LEFT_MIDDLE].y = -@Y_STANCE;
   endpoints[LEFT_MIDDLE].z = @Z_STANCE;  
-@END
+@END_IF
 
   endpoints[LEFT_FRONT].x = @X_STANCE;
   endpoints[LEFT_FRONT].y = -@Y_STANCE;
@@ -260,6 +260,6 @@ void doIK(){
         Serial.print("LM_TIBIA FAIL: ");
         Serial.println(servo);
     }
-@END
+@END_IF
     step = (step+1)%stepsInCycle;
 }
