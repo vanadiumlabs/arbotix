@@ -1,6 +1,6 @@
 /*
   Commander.h - Library for interfacing with arbotiX Commander
-  Copyright (c) 2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009-2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,6 @@ class Commander
 	Commander(); 
     void begin(int baud);
     void UseSouthPaw();     // enable southpaw configuration
-    void UseExtended();     // enable execution of extended instruction set
     int ReadMsgs();         // must be called regularly to clean out Serial buffer
 
     // joystick values are -125 to 125
@@ -45,6 +44,9 @@ class Commander
     signed char walkH;      // horizontal stick movement = sideways or angular speed
     signed char lookV;      // vertical stick movement = tilt    
     signed char lookH;      // horizontal stick movement = pan (when we run out of pan, turn body?)
+    // 0-1023, use in extended mode    
+    int pan;
+    int tilt;
     
     // buttons are 0 or 1 (PRESSED), and bitmapped
     unsigned char buttons;  // 

@@ -1,6 +1,6 @@
 /*
   Commander.cpp - Library for interfacing with arbotiX Commander
-  Copyright (c) 2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009-2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -33,10 +33,6 @@ void Commander::begin(int baud){
 /* SouthPaw Support */
 void Commander::UseSouthPaw(){
     status |= 0x01;
-}
-/* Extended Register Support */
-void Commander::UseExtended(){
-    status |= 0x02;
 }
 
 /* process messages coming from Commander 
@@ -75,13 +71,10 @@ int Commander::ReadMsgs(){
                         walkV = (signed char)( (int)vals[2]-128 );
                         walkH = (signed char)( (int)vals[3]-128 );
                     }
+                    pan = vals[0] + (vals[1]<<8);
+                    tilt = vals[2] + (vals[3]<<8);
                     buttons = vals[4];
                     ext = vals[5];
-                }
-                // if desired, process extended instruction set
-                if((status&0x02) > 0){
-
-
                 }
                 index = -1;
                 Serial.flush();
