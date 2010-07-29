@@ -2,7 +2,7 @@
 #define Servo_h
 
 /*
-  Servo.h - Hardware Servo Timer Library
+  HServo.h - Hardware Servo Timer Library
   Author: Jim Studt, jim@federated.com
   Copyright (c) 2007 David A. Mellis.  All right reserved.
 
@@ -23,7 +23,7 @@
 
 #include <inttypes.h>
 
-class Servo
+class HServo
 {
   private:
     uint8_t pin;
@@ -35,7 +35,7 @@ class Servo
     static uint8_t attachedA;
     static uint8_t attachedB;
   public:
-    Servo();
+    HServo();
     uint8_t attach(int);
                              // pulse length for 0 degrees in microseconds, 544uS default
                              // pulse length for 180 degrees in microseconds, 2400uS default

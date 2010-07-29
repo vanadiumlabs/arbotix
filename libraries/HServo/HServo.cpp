@@ -1,9 +1,9 @@
 #include <avr/interrupt.h>
 #include <wiring.h>
-#include <Servo.h>
+#include <HServo.h>
 
 /*
-  Servo.h - Hardware Servo Timer Library
+  HServo.h - Hardware Servo Timer Library
   Author: Jim Studt, jim@federated.com
   Copyright (c) 2007 David A. Mellis.  All right reserved.
 
@@ -31,10 +31,10 @@
 	#define SERVO_PIN_B 12
 #endif
 
-uint8_t Servo::attachedA = 0;
-uint8_t Servo::attachedB = 0;
+uint8_t HServo::attachedA = 0;
+uint8_t HServo::attachedB = 0;
 
-void Servo::seizeTimer1()
+void HServo::seizeTimer1()
 {
   uint8_t oldSREG = SREG;
 
@@ -57,18 +57,18 @@ void Servo::seizeTimer1()
   SREG = oldSREG;  // undo cli()    
 }
 
-void Servo::releaseTimer1() {}
+void HServo::releaseTimer1() {}
 
 #define NO_ANGLE (0xff)
 
-Servo::Servo() : pin(0), angle(NO_ANGLE) {}
+HServo::HServo() : pin(0), angle(NO_ANGLE) {}
 
-uint8_t Servo::attach(int pinArg)
+uint8_t HServo::attach(int pinArg)
 {
   return attach(pinArg, 544, 2400);
 }
 
-uint8_t Servo::attach(int pinArg, int min, int max)
+uint8_t HServo::attach(int pinArg, int min, int max)
 {
   if (pinArg != SERVO_PIN_A && pinArg != SERVO_PIN_B) return 0;
   
@@ -94,7 +94,7 @@ uint8_t Servo::attach(int pinArg, int min, int max)
   return 1;
 }
 
-void Servo::detach()
+void HServo::detach()
 {
   // muck with timer flags
   if (pin == SERVO_PIN_A) {
@@ -112,7 +112,7 @@ void Servo::detach()
   if (!attachedA && !attachedB) releaseTimer1();
 }
 
-void Servo::write(int angleArg)
+void HServo::write(int angleArg)
 {
   uint16_t p;
 
@@ -128,7 +128,7 @@ void Servo::write(int angleArg)
   if (pin == SERVO_PIN_B) OCR1B = p;
 }
 
-void Servo::writeMicroseconds(int us)
+void HServo::writeMicroseconds(int us)
 {
   uint16_t p;
 
@@ -141,12 +141,12 @@ void Servo::writeMicroseconds(int us)
   if (pin == SERVO_PIN_B) OCR1B = p;
 }
 
-uint8_t Servo::read()
+uint8_t HServo::read()
 {
   return angle;
 }
 
-uint8_t Servo::attached()
+uint8_t HServo::attached()
 {
   if (pin == SERVO_PIN_A && attachedA) return 1;
   if (pin == SERVO_PIN_B && attachedB) return 1;
