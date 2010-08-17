@@ -37,7 +37,7 @@ width = 300
 class Commander(wx.Frame):
     TIMER_ID = 100
 
-    def __init__(self, parent, ser):  
+    def __init__(self, parent, ser, debug = False):  
         wx.Frame.__init__(self, parent, -1, "ArbotiX Commander", style = wx.DEFAULT_FRAME_STYLE & ~ (wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
         self.ser = ser    
 
@@ -118,6 +118,8 @@ class Commander(wx.Frame):
             Buttons = BUT_LT
         #print Xspeed, Rspeed, Pan, Tilt
         self.sendPacket(Tilt, Pan, Xspeed, Rspeed, Buttons)
+        while self.ser.inWaiting() > 0:
+            print self.ser.read(),
         self.timer.Start(50)
         
     def sendPacket(self, Xspeed, Rspeed, Tilt, Pan, Buttons):
@@ -140,6 +142,6 @@ if __name__ == "__main__":
     ser.open()
     
     app = wx.PySimpleApp()
-    frame = Commander(None, ser)
+    frame = Commander(None, ser, True)
     app.MainLoop()
 
