@@ -216,7 +216,9 @@ class editor(wx.Frame):
                 self.dirname = dlg.GetDirectory()
                 dlg.Destroy()
             else:
-                return
+                return  
+        if self.filename[-4:] != ".ppr":
+            self.filename = self.filename + ".ppr"
         self.project.saveFile(self.filename)
         self.sb.SetStatusText('saved ' + self.filename)
 
