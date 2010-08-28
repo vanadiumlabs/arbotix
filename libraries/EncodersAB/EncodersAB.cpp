@@ -1,6 +1,6 @@
 /*
   EncodersAB.cpp - Hardware Encoder Library for Robocontrollers
-  Copyright (c) 2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009,2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,7 @@ EncodersAB::EncodersAB() : left(0), right(0) {};
 
 EncodersAB Encoders = EncodersAB(); 
 
-#if defined(__AVR_ATmega168__) //arduino
+#if defined(__AVR_ATmega168__) // mini/arduino
 void leftCounter(){
     // d2 & d8
     if(PINB&0x01)
@@ -41,7 +41,7 @@ void rightCounter(){
         Encoders.right--;
 }
 
-#elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) //sanguino
+#elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix/sanguino
 unsigned char lastx;
 ISR(PCINT2_vect){
     unsigned char x = PINC;
@@ -61,16 +61,35 @@ ISR(PCINT2_vect){
     }
     lastx = x;
 }
+
+#elif defined(__AVR_ATmega1280__) // arbotix+/mega
+void leftCounter(){
+    // PE6 (int 6) & PC2 (D35)
+    if(PINC&0x04)
+        Encoders.left++; // cw is PE6 == d35
+    else
+        Encoders.left--;
+}
+void rightCounter(){
+    // PE7 (int 7) & PC1 (D36)
+    if(PINC&0x02)
+        Encoders.right++; // cw is PE7 == d36
+    else
+        Encoders.right--;
+}
 #endif
 
 void EncodersAB::Begin(){
-#if defined(__AVR_ATmega168__) //arduino
+#if defined(__AVR_ATmega168__) // mini/arduino
 	attachInterrupt(0, leftCounter, RISING);
     attachInterrupt(1, rightCounter, RISING);
-#elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) //sanguino
+#elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix/sanguino
 	PCICR |= (1 << PCIE2);      // enable PC interrupt on port C
     PCMSK2 |= (1<<4) + (1<<6);    // enable interrupt on D20(C4),D22(C6)
     lastx = PINC;
+#elif defined(__AVR_ATmega1280__) // arbotix+/mega
+	attachInterrupt(6, leftCounter, RISING);
+    attachInterrupt(7, rightCounter, RISING);
 #endif
 }
 
