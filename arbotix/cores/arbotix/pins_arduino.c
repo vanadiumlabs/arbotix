@@ -19,7 +19,7 @@
   Free Software Foundation, Inc., 59 Temple Place, Suite 330,
   Boston, MA  02111-1307  USA
 
-  $Id: pins_arduino.c 804 2009-12-18 16:05:52Z dmellis $
+  $Id: pins_arduino.c 963 2010-05-16 04:05:40Z dmellis $
 */
 
 #include <avr/io.h>

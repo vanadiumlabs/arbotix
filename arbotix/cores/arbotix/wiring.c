@@ -19,7 +19,7 @@
   Free Software Foundation, Inc., 59 Temple Place, Suite 330,
   Boston, MA  02111-1307  USA
 
-  $Id: wiring.c 808 2009-12-18 17:44:08Z dmellis $
+  $Id: wiring.c 970 2010-05-25 20:16:15Z dmellis $
 */
 
 #include "wiring_private.h"
@@ -97,10 +97,14 @@ unsigned long micros() {
 
 void delay(unsigned long ms)
 {
-	unsigned long start = millis();
-	
-	while (millis() - start <= ms)
-		;
+	uint16_t start = (uint16_t)micros();
+
+	while (ms > 0) {
+		if (((uint16_t)micros() - start) >= 1000) {
+			ms--;
+			start += 1000;
+		}
+	}
 }
 
 /* Delay for the given number of microseconds.  Assumes a 8 or 16 MHz clock. */

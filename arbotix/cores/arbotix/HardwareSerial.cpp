@@ -22,6 +22,7 @@
   Modified 10 September 2010, Michael Ferguson, for ArbotiX+
 */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -176,9 +177,18 @@ void HardwareSerial::end()
   cbi(*_ucsrb, _rxcie);  
 }
 
-uint8_t HardwareSerial::available(void)
+int HardwareSerial::available(void)
 {
   return (RX_BUFFER_SIZE + _rx_buffer->head - _rx_buffer->tail) % RX_BUFFER_SIZE;
+}
+
+int HardwareSerial::peek(void)
+{
+  if (_rx_buffer->head == _rx_buffer->tail) {
+    return -1;
+  } else {
+    return _rx_buffer->buffer[_rx_buffer->tail];
+  }
 }
 
 int HardwareSerial::read(void)
@@ -225,7 +235,7 @@ HardwareSerial Serial(&rx_buffer, &UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UDR0, RXE
 
 // We turn off Serial1 on ArbotiX(+)
 #if defined(__AVR_ATmega644P__)
-//HardwareSerial Serial1 = HardwareSerial(1);
+//HardwareSerial Serial1(&rx_buffer1, &UBRR1H, &UBRR1L, &UCSR1A, &UCSR1B, &UDR1, RXEN1, TXEN1, RXCIE1, UDRE1, U2X1);
 #endif
 
 #if defined(__AVR_ATmega1280__)
