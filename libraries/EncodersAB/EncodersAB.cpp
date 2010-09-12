@@ -63,14 +63,16 @@ ISR(PCINT2_vect){
 }
 
 #elif defined(__AVR_ATmega1280__) // arbotix+/mega
-void leftCounter(){
+ISR(INT6_vect){
+//void leftCounter(){
     // PE6 (int 6) & PC2 (D35)
     if(PINC&0x04)
         Encoders.left++; // cw is PE6 == d35
     else
         Encoders.left--;
 }
-void rightCounter(){
+ISR(INT7_vect){
+//void rightCounter(){
     // PE7 (int 7) & PC1 (D36)
     if(PINC&0x02)
         Encoders.right++; // cw is PE7 == d36
@@ -88,8 +90,10 @@ void EncodersAB::Begin(){
     PCMSK2 |= (1<<4) + (1<<6);    // enable interrupt on D20(C4),D22(C6)
     lastx = PINC;
 #elif defined(__AVR_ATmega1280__) // arbotix+/mega
-	attachInterrupt(6, leftCounter, RISING);
-    attachInterrupt(7, rightCounter, RISING);
+	//attachInterrupt(6, leftCounter, RISING);
+    //attachInterrupt(7, rightCounter, RISING);
+    EICRB |= 0xf0;  // rising edge both 6 and 7
+    EIMSK |= 0xC0;  // enable 6 and 7
 #endif
 }
 
