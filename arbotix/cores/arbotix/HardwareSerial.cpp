@@ -96,6 +96,8 @@ SIGNAL(SIG_USART3_RECV)
 
 #if defined(__AVR_ATmega8__)
 SIGNAL(SIG_UART_RECV)
+#elif defined(__AVR_ATmega644P__)
+SIGNAL(USART0_RX_vect)
 #else
 SIGNAL(USART_RX_vect)
 #endif
