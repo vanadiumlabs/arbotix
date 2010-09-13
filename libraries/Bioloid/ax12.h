@@ -1,6 +1,6 @@
 /*
-  ax12.h - arbotiX Library for AX-12 Servos
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  ax12.h - ArbotiX library for AX/RX control.
+  Copyright (c) 2008-201 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -20,8 +20,11 @@
 #ifndef ax12_h
 #define ax12_h
 
-// Uncomment the following line if you wish to use the RX-Bridge
-//#define RX_PROTOCOL 1
+// Select the appropriate board for configuration
+#define ARBOTIX
+//#define ARBOTIX_WITH_RX
+//#define ARBOTIX_PLUS
+//#define SERVO_STIK
 
 #define AX12_MAX_SERVOS             18
 #define AX12_BUFFER_SIZE            32
@@ -103,8 +106,19 @@
 
 void ax12Init(long baud);
 
-void setTX();
-void setRX();
+#if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+  // Need to stow type of servo (which bus it's on)
+  extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
+  // Read and write to a bus requires setup
+  void setRX_WR();
+  void setRX_RD();
+  void setAX_WR();
+  void setAX_RD();
+#endif
+void setTXall();     // for sync write
+void setTX(int id);
+void setRX(int id);
+
 void ax12write(unsigned char data);
 void ax12writeB(unsigned char data);
 

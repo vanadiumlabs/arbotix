@@ -53,7 +53,7 @@ void BioloidController::writePose(){
     int count = poseSize;
     int length = 4 + (poseSize * 3);   // 3 = id + pos(2byte)
     int checksum = 254 + length + AX_SYNC_WRITE + 2 + AX_GOAL_POSITION_L;
-    setTX();
+    setTXall();
     ax12write(0xFF);
     ax12write(0xFF);
     ax12write(0xFE);
@@ -70,7 +70,7 @@ void BioloidController::writePose(){
         ax12write(temp>>8);
     } 
     ax12write(0xff - (checksum % 256));
-    setRX();
+    setRX(0);
 }
 
 /* set up for an interpolation from pose to nextpose over TIME 

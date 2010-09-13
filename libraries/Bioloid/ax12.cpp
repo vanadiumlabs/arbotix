@@ -1,6 +1,6 @@
 /*
-  ax12.cpp - arbotiX Library for AX-12 Servos
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  ax12.cpp - ArbotiX library for AX/RX control.
+  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -36,31 +36,128 @@ volatile int ax_rx_Pointer;
 volatile int ax_tx_Pointer;
 volatile int ax_rx_int_Pointer;
 
-/** helper functions to emulate half-duplex */
-void setTX(){
-#ifdef RX_PROTOCOL
-    PORTD |= 0x10;
+#if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+  /* Write to RX bus */
+  void setRX_WR(){
+    #ifdef SERVO_STIK
+      PORTC |= 0x40;
+    #else
+      PORTG |= 0x08;
+    #endif
+      bitClear(UCSR1B, RXEN1);    
+      ax_tx_Pointer = 0;
+  }
+  /* Write to AX bus */
+  void setAX_WR(){
+    #ifdef SERVO_STIK
+      PORTC |= 0x80;
+    #else
+      PORTG |= 0x10;
+    #endif
+      bitClear(UCSR1B, RXEN1);    
+      ax_tx_Pointer = 0;
+  }
+  /* Read from RX bus */
+  void setRX_RD(){
+      int i;
+      // Need to wait for last byte to be sent before turning the bus around.
+      // Check the Transmit complete flag
+      while (bit_is_clear(UCSR1A, UDRE1));
+      for(i=0; i<20; i++)    
+          asm("nop");
+    #ifdef SERVO_STIK
+      PORTC = 0x80;
+    #else
+      PORTG = 0x10; //= ( (PORTG&0xE7) | 0x10 );
+    #endif
+      asm("nop");
+      asm("nop");
+      asm("nop");
+      //bitClear(UCSR1B, TXEN1);
+      bitSet(UCSR1B, RXEN1);
+      ax_rx_int_Pointer = 0;
+      ax_rx_Pointer = 0;
+  }
+  /* Read from AX bus */
+  void setAX_RD(){
+      int i;
+      // Need to wait for last byte to be sent before turning the bus around.
+      // Check the Transmit complete flag
+      while (bit_is_clear(UCSR1A, UDRE1));
+      for(i=0; i<25; i++)    
+          asm("nop");
+    #ifdef SERVO_STIK
+      PORTC = 0x40;
+    #else
+      PORTG = 0x08; //( (PORTG&0xE7) | 0x08 );
+    #endif
+      asm("nop");
+      asm("nop");
+      asm("nop");
+      //bitClear(UCSR1B, TXEN1);
+      bitSet(UCSR1B, RXEN1);
+      ax_rx_int_Pointer = 0;
+      ax_rx_Pointer = 0;
+  }
+  unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
 #endif
+
+/** helper functions to switch direction of comms */
+void setTX(int id){
+  #if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+    if(dynamixel_bus_config[id-1] > 0)
+        setRX_WR();
+    else
+        setAX_WR();
+  #else
+    // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
+    #ifdef ARBOTIX_WITH_RX
+      PORTD |= 0x10;
+    #endif
     bitClear(UCSR1B, RXEN1);    
     bitSet(UCSR1B, TXEN1);
     bitClear(UCSR1B, RXCIE1);
     ax_tx_Pointer = 0;
+  #endif
 }
-void setRX(){
-#ifdef RX_PROTOCOL
-    int i;
-    // Need to wait for last byte to be sent before turning the bus around.
-    // Check the Transmit complete flag
-    while (bit_is_clear(UCSR1A, UDRE1));
-    for(i=0; i<25; i++)    
-        asm("nop");
-    PORTD &= 0xEF;
-#endif 
+void setRX(int id){ 
+  #if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+    if(dynamixel_bus_config[id-1] > 0)
+        setRX_RD();
+    else
+        setAX_RD();
+  #else
+    // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
+    #ifdef ARBOTIX_WITH_RX
+      int i;
+      // Need to wait for last byte to be sent before turning the bus around.
+      // Check the Transmit complete flag
+      while (bit_is_clear(UCSR1A, UDRE1));
+      for(i=0; i<25; i++)    
+          asm("nop");
+      PORTD &= 0xEF;
+    #endif 
     bitClear(UCSR1B, TXEN1);
     bitSet(UCSR1B, RXEN1);
     bitSet(UCSR1B, RXCIE1);
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
+  #endif  
+}
+// for sync write
+void setTXall(){
+  #if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+    setRX_WR();
+    setAX_WR();
+  #else
+    #ifdef ARBOTIX_WITH_RX
+      PORTD |= 0x10;
+    #endif
+    bitClear(UCSR1B, RXEN1);    
+    bitSet(UCSR1B, TXEN1);
+    bitClear(UCSR1B, RXCIE1);
+    ax_tx_Pointer = 0;
+  #endif
 }
 
 /** Sends a character out the serial port. */
@@ -125,12 +222,25 @@ void ax12Init(long baud){
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
     ax_tx_Pointer = 0;
-#ifdef RX_PROTOCOL
+#if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+  #if defined(ARBOTIX_PLUS)
+    DDRG |= 0x18;
+    PORTG |= 0x18;  // enable all out
+  #else
+    DDRC |= 0xC0;
+    PORTC |= 0xC0;  // enable all out
+  #endif
+    bitSet(UCSR1B, TXEN1);
+    bitSet(UCSR1B, RXEN1);
+    bitSet(UCSR1B, RXCIE1);
+#else
+  #ifdef ARBOTIX_WITH_RX
     DDRD |= 0x10;   // Servo B = output
     PORTD &= 0xEF;  // Servo B low
-#endif
+  #endif
     // enable rx
-    setRX();    
+    setRX(0);    
+#endif
 }
 
 /******************************************************************************
@@ -139,7 +249,7 @@ void ax12Init(long baud){
 
 /** Read register value(s) */
 int ax12GetRegister(int id, int regstart, int length){  
-    setTX();
+    setTX(id);
     // 0xFF 0xFF ID LENGTH INSTRUCTION PARAM... CHECKSUM    
     int checksum = ~((id + 6 + regstart + length)%256);
     ax12writeB(0xFF);
@@ -150,7 +260,7 @@ int ax12GetRegister(int id, int regstart, int length){
     ax12writeB(regstart);
     ax12writeB(length);
     ax12writeB(checksum);  
-    setRX();    
+    setRX(id);    
     if(ax12ReadPacket(length + 6) > 0){
         ax12Error = ax_rx_buffer[4];
         if(length == 1)
@@ -164,7 +274,7 @@ int ax12GetRegister(int id, int regstart, int length){
 
 /* Set the value of a single-byte register. */
 void ax12SetRegister(int id, int regstart, int data){
-    setTX();    
+    setTX(id);    
     int checksum = ~((id + 4 + AX_WRITE_DATA + regstart + (data&0xff)) % 256);
     ax12writeB(0xFF);
     ax12writeB(0xFF);
@@ -175,12 +285,12 @@ void ax12SetRegister(int id, int regstart, int data){
     ax12writeB(data&0xff);
     // checksum = 
     ax12writeB(checksum);
-    setRX();
+    setRX(id);
     //ax12ReadPacket();
 }
 /* Set the value of a double-byte register. */
 void ax12SetRegister2(int id, int regstart, int data){
-    setTX();    
+    setTX(id);    
     int checksum = ~((id + 5 + AX_WRITE_DATA + regstart + (data&0xFF) + ((data&0xFF00)>>8)) % 256);
     ax12writeB(0xFF);
     ax12writeB(0xFF);
@@ -192,7 +302,7 @@ void ax12SetRegister2(int id, int regstart, int data){
     ax12writeB((data&0xff00)>>8);
     // checksum = 
     ax12writeB(checksum);
-    setRX();
+    setRX(id);
     //ax12ReadPacket();
 }
 
