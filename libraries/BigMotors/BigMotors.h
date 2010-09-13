@@ -20,18 +20,7 @@
 #ifndef Motors_h
 #define Motors_h
 
-#if defined(__AVR_ATmega644P__)
-  // This works on ArbotiX
-  #define M1_A           4      // PC3 (D19)
-  #define M1_B                  // PD6 (D14)
-  #define M1_PWM         5      // PD5/OC1A (D12)
-
-  #define M2_A                  // PC2 (D18)
-  #define M2_B                  // PD7 (D15)
-  #define M2_PWM                // PD4/OC1B (D13)
-
-  #define M_EN                  //
-#elif defined(__AVR_ATmega1280__)
+//#if defined(__AVR_ATmega1280__)
   // ArbotiX+
   #define M1_A           29     // PA7 (D29)  -- LEFT SIDE
   #define M1_B           28     // PA6 (D28)
@@ -42,7 +31,7 @@
   #define M2_PWM         10     // PB4/OC2A (D10)
 
   #define M_EN           41     // PG0 (D41)
-#endif
+//#endif
 
 /* Motors Class */
 class BigMotors
