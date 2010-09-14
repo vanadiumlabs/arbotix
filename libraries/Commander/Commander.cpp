@@ -71,8 +71,8 @@ int Commander::ReadMsgs(){
                         walkV = (signed char)( (int)vals[2]-128 );
                         walkH = (signed char)( (int)vals[3]-128 );
                     }
-                    pan = vals[0] + (vals[1]<<8);
-                    tilt = vals[2] + (vals[3]<<8);
+                    pan = (vals[0]<<8) + vals[1];
+                    tilt = (vals[2]<<8) + vals[3];
                     buttons = vals[4];
                     ext = vals[5];
                 }
