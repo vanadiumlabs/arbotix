@@ -61,12 +61,12 @@ void BigMotors::left(int pwm){
 
 /** lock the wheel in place */
 void BigMotors::brakeLeft(int pwm){
-/*    digitalSetData(PIN_LEFT_A,AVRRA_LOW);
-	digitalSetData(PIN_LEFT_B,AVRRA_LOW);
+    digitalWrite(M1_A,LOW);
+    digitalWrite(M1_B,LOW);
     if(pwm > 255)
         pwm = 255;
-    M1_PWM = pwm;
-    m1_pwm = 0;*/
+    analogWrite(M1_PWM,pwm);
+    m1_pwm = 0;
 }
 
 /* pwm values can range from -255 (full-speed reverse)
@@ -86,12 +86,12 @@ void BigMotors::right(int pwm){
 
 /* lock the wheel in place */
 void BigMotors::brakeRight(int pwm){
-/*    digitalSetData(PIN_LEFT_A,AVRRA_LOW);
-	digitalSetData(PIN_LEFT_B,AVRRA_LOW);
-    if(pwm > 32768)
-        pwm = 32768;
-    M2_PWM = pwm;    
-    m2_pwm = 0;*/
+    digitalWrite(M2_A,LOW);
+    digitalWrite(M2_B,LOW);
+    if(pwm > 255)
+        pwm = 255;
+    analogWrite(M2_PWM,pwm);
+    m2_pwm = 0;
 }
 
 void BigMotors::set(int lpwm, int rpwm){
