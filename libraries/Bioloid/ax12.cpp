@@ -63,12 +63,12 @@ volatile int ax_rx_int_Pointer;
       // Need to wait for last byte to be sent before turning the bus around.
       // Check the Transmit complete flag
       while (bit_is_clear(UCSR1A, UDRE1));
-      for(i=0; i<20; i++)    
+      for(i=0; i<UBRR1L*20; i++)    
           asm("nop");
     #ifdef SERVO_STIK
       PORTC = 0x80;
     #else
-      PORTG = 0x10; //= ( (PORTG&0xE7) | 0x10 );
+      PORTG = ( (PORTG&0xE7) | 0x10 );
     #endif
       asm("nop");
       asm("nop");
@@ -84,12 +84,12 @@ volatile int ax_rx_int_Pointer;
       // Need to wait for last byte to be sent before turning the bus around.
       // Check the Transmit complete flag
       while (bit_is_clear(UCSR1A, UDRE1));
-      for(i=0; i<25; i++)    
+      for(i=0; i<UBRR1L*20; i++)    
           asm("nop");
     #ifdef SERVO_STIK
       PORTC = 0x40;
     #else
-      PORTG = 0x08; //( (PORTG&0xE7) | 0x08 );
+      PORTG = ( (PORTG&0xE7) | 0x08 );
     #endif
       asm("nop");
       asm("nop");
@@ -217,8 +217,11 @@ int ax12ReadPacket(int length){
 
 /** initializes serial1 transmit at baud, 8-N-1 */
 void ax12Init(long baud){
-    UBRR1H = ((F_CPU / 16 + baud / 2) / baud - 1) >> 8;
-    UBRR1L = ((F_CPU / 16 + baud / 2) / baud - 1);
+    //UBRR1H = ((F_CPU / 16 + baud / 2) / baud - 1) >> 8;
+    //UBRR1L = ((F_CPU / 16 + baud / 2) / baud - 1);
+    UBRR1H = (F_CPU / (8 * baud) - 1 ) >> 8;
+    UBRR1L = (F_CPU / (8 * baud) - 1 );
+    bitSet(UCSR1A, U2X1);
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
     ax_tx_Pointer = 0;
