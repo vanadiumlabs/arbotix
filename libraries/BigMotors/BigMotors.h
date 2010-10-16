@@ -22,8 +22,8 @@
 
 #if defined(__AVR_ATmega1280__)
   // ArbotiX+
-  #define M1_A           29     // PA7 (D29)  -- LEFT SIDE
-  #define M1_B           28     // PA6 (D28)
+  #define M1_A           28     // PA6 (D28)  -- LEFT SIDE
+  #define M1_B           29     // PA7 (D29)
   #define M1_PWM         9      // PH6/OC2B (D9)
 
   #define M2_A           40     // PG1 (D40)  -- RIGHT SIDE

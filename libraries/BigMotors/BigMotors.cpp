@@ -49,12 +49,12 @@ BigMotors::BigMotors(){
 void BigMotors::left(int pwm){
     m1_pwm = pwm;
     if(pwm >= 0){
-        digitalWrite(M1_A,HIGH);
-        digitalWrite(M1_B,LOW);
+        digitalWrite(M1_A,LOW);
+        digitalWrite(M1_B,HIGH);
         analogWrite(M1_PWM, pwm);
     }else{
-        digitalWrite(M1_B,HIGH);
-        digitalWrite(M1_A,LOW);
+        digitalWrite(M1_B,LOW);
+        digitalWrite(M1_A,HIGH);
         analogWrite(M1_PWM, -pwm);
     }  
 }
