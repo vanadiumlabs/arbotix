@@ -53,6 +53,20 @@ void PML::disable(){
   shutdown = 1;
 }
 
+/* adjust the scan range parameters */
+void PML::setupStep(int step_start, int step_value, int step_count){
+  start = step_start;
+  ticks = step_value;  
+  steps = step_count;
+  while( (start + ticks*index) > position ){
+    index--;
+  }
+  while( (start + ticks*index) < position){
+    index++;  
+  }
+  position = start + ticks*index;
+}
+
 /* take our next reading */
 void PML::step(){
   if(enabled > 0){

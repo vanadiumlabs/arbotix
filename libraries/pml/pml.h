@@ -39,8 +39,8 @@ class PML
     void setServo(int id);
     void setSensor(int id){sensor_id = id;};
     void step();
-    // returns which scan buffer is complete and should be read
-    int getScanID();
+    void setupStep(int step_start, int step_value, int step_count);
+    int getScanID(); // returns which scan buffer is complete and should be read
 
     unsigned char data_up[2*MAX_READINGS];  // up count buffer
     unsigned char data_dn[2*MAX_READINGS];  // down count buffer
