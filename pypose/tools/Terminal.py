@@ -2,7 +2,7 @@
 
 """ 
   PyPose: Bioloid pose system for arbotiX robocontroller
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,16 +25,18 @@ from driver import Driver
 from ToolPane import ToolPane
 
 # help phrases
-help = ["\rPyPose Terminal VA.0",
+help = ["\rPyPose Terminal VA.1",
 "\r",
 "\rvalid commands:",
-"\rls [baud] - list the servos found on the bus, default baud = 1MBps",
+"\rls - list the servos found on the bus at current baud",
 "\rmv id id2 - rename any servo with ID=id, to id2",
 "\rset param id val - set parameter on servo ID=id to val",
 "\rget param id - get a parameter value from a servo",
+"\rbaud b - set baud rate of bus to b",
 "\r",
 "\rvalid parameters",
 "\rpos - current position of a servo, 0-1023",
+"\rbaud - baud rate",
 "\rtemp - current temperature, degrees C, READ ONLY"]
 
 class shell(wx.TextCtrl):
@@ -125,10 +127,20 @@ class shell(wx.TextCtrl):
                 elif l[0] == u"mv":      # rename a servo
                     if self.parent.parent.port.setReg(int(l[1]),P_ID,[int(l[2])]) == 0:
                         self.write("\rOK")
-                elif l[0] == u"set":
-                    pass
+                #elif l[0] == u"baud":    # set bus baud rate
+                #    if self.parent.parent.port.setReg(253,P_BAUD_RATE, [self.convertBaud(int(l[1]))] )
+                #elif l[0] == u"set":
+                    #if l[1] == u"baud":
+                    #    self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]),P_BAUD_RATE, [self.convertBaud(int(l[3]))] ) )
+                    #elif l[1] == u"pos":
+                    #    pass
+                        #self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]),P_BAUD_RATE, [self.convertBaud(int(l[3]))] ) )
+                        #self.write("\r" + str(self.parent.parent.port.setReg(int(l[2]),P_PRESENT_POSITION,2)))
                 elif l[0] == u"get":
-                    pass
+                    if l[1] == u"temp":
+                        self.write("\r" + str(self.parent.parent.port.getReg(int(l[2]),P_PRESENT_TEMPERATURE,2)))
+                    elif l[1] == u"pos":
+                        self.write("\r" + str(self.parent.parent.port.getReg(int(l[2]),P_PRESENT_POSITION,2)))
             except:
                 self.write("\runrecognized command!")
             # new line!
@@ -138,6 +150,26 @@ class shell(wx.TextCtrl):
                 self.Remove(self.GetLastPosition()-1,self.GetLastPosition())
         else:
             self.write(unichr(keycode))
+    
+    def convertBaud(self, b):
+        if b == 500000:
+            return 3
+        elif b == 400000:
+            return 4
+        elif b == 250000:
+            return 7
+        elif b == 200000:
+            return 9
+        elif b == 115200:
+            return 16
+        elif b == 57600:
+            return 34
+        elif b == 19200:    
+            return 103
+        elif b == 9600:
+            return 207
+        else:
+            return 1    # default to 1Mbps
 
 class Terminal(ToolPane):
     """ arbotix/bioloid terminal. """

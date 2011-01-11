@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """ 
-  PyPose: Bioloid pose system for arbotiX robocontroller
+  PyPose: Bioloid pose system for ArbotiX robocontroller
   Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@ class PoseEditor(ToolPane):
     """ editor for the capture and creation of poses. """
     BT_DELTA_T = wx.NewId()
     BT_RELAX = wx.NewId()
+    BT_RELAX_ID = wx.NewId()
     BT_CAPTURE = wx.NewId()
     BT_SET = wx.NewId()
     BT_POSE_ADD = wx.NewId()
@@ -56,13 +57,13 @@ class PoseEditor(ToolPane):
         for i in range(self.parent.project.count):
             temp = wx.Panel(self,-1)
             hbox = wx.BoxSizer(wx.HORIZONTAL)
-
-            if (i+1)<10:
-                tempName = wx.StaticText(temp, -1, "ID 0"+str(i+1))   
+            if (i+1)<10: 
+                temp.enable = wx.CheckBox(temp, i, "ID 0"+str(i+1))
             else:
-                tempName = wx.StaticText(temp, -1, "ID "+str(i+1))
+                temp.enable = wx.CheckBox(temp, i, "ID "+str(i+1))
+            temp.enable.SetValue(True)
             temp.position = wx.Slider(temp, i, 512, 0, 1023, wx.DefaultPosition, (200, -1), wx.SL_HORIZONTAL | wx.SL_LABELS)
-            hbox.Add(tempName)
+            hbox.Add(temp.enable)
             hbox.Add(temp.position)
             temp.SetSizer(hbox)
             # multiple columns now:
@@ -103,6 +104,7 @@ class PoseEditor(ToolPane):
         sizer.Add(toolbar, (1,0), wx.GBSpan(1,1), wx.ALIGN_CENTER)
 
         self.Bind(wx.EVT_SLIDER, self.updatePose)
+        self.Bind(wx.EVT_CHECKBOX, self.relaxServo)
         wx.EVT_BUTTON(self, self.BT_RELAX, self.parent.doRelax)    
         wx.EVT_BUTTON(self, self.BT_CAPTURE, self.capturePose) 
         wx.EVT_BUTTON(self, self.BT_SET, self.setPose)   
@@ -127,13 +129,23 @@ class PoseEditor(ToolPane):
     ###########################################################################
     # Pose Manipulation
     def updatePose(self, e=None):
-        """ Save updates to a pose. """
+        """ Save updates to a pose, do live update if neeeded. """
         if self.curpose != "":
             self.parent.project.poses[self.curpose][e.GetId()] = e.GetInt()
             self.parent.project.save = True
-            if self.live:   # live update   
+            if self.live and self.servos[e.GetId()].enable.IsChecked():   # live update   
                 pos = e.GetInt()   
                 self.port.setReg(e.GetId()+1, P_GOAL_POSITION_L, [pos%256,pos>>8])
+
+    def relaxServo(self, e=None):
+        """ Relax or enable a servo. """
+        servo = e.GetId() + 1
+        checked = e.IsChecked()
+        if checked: 
+            self.port.setReg(servo, P_TORQUE_ENABLE, [1])
+        else:
+            self.port.setReg(servo, P_TORQUE_ENABLE, [0])
+
     def loadPose(self, posename):
         if self.curpose == "":   # if we haven't yet, enable servo editors
             for servo in self.servos:
@@ -143,6 +155,7 @@ class PoseEditor(ToolPane):
             self.servos[servo].position.SetValue(self.parent.project.poses[self.curpose][servo])
         self.parent.sb.SetStatusText('now editing pose: ' + self.curpose,0)
         self.parent.project.save = True
+
     def doPose(self, e=None):
         """ Load a pose into the slider boxes. """
         if e.IsSelection():
@@ -207,6 +220,7 @@ class PoseEditor(ToolPane):
                     # aww shucks...
                     #curPose = list() TODO: should we use a syncWrite here?
                     for servo in range(self.parent.project.count):
+                         
                          pos = self.servos[servo].position.GetValue()
                          self.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
                          self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
