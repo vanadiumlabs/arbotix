@@ -31,7 +31,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose/NUKE 2.0"
+VERSION = "PyPose/NUKE 0014"
 
 ###############################################################################
 # Main editor window

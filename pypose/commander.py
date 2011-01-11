@@ -109,29 +109,24 @@ class Commander(wx.Frame):
 
     def onTimer(self, event=None):
         # configure output
-        Xspeed = self.forward + 128
-        Rspeed = self.turn + 128
-        Pan = self.pan.GetValue()  + 128
-        Tilt = self.tilt.GetValue()  + 128
         Buttons = 0
         if self.selStrafe.GetValue():
             Buttons = BUT_LT
-        #print Xspeed, Rspeed, Pan, Tilt
-        self.sendPacket(Tilt, Pan, Xspeed, Rspeed, Buttons)
+        self.sendPacket(self.tilt.GetValue(), self.pan.GetValue(), self.forward, self.turn, Buttons)
         while self.ser.inWaiting() > 0:
             print self.ser.read(),
         self.timer.Start(50)
         
-    def sendPacket(self, Xspeed, Rspeed, Tilt, Pan, Buttons):
+    def sendPacket(self, right_vertical, right_horizontal, left_vertical, left_horizontal, Buttons):
         # send output
         self.ser.write('\xFF')
-        self.ser.write(chr(Xspeed))
-        self.ser.write(chr(Rspeed))
-        self.ser.write(chr(Tilt))
-        self.ser.write(chr(Pan))
+        self.ser.write(chr(right_vertical+128))
+        self.ser.write(chr(right_horizontal+128))
+        self.ser.write(chr(left_vertical+128))
+        self.ser.write(chr(left_horizontal+128))
         self.ser.write(chr(Buttons))
         self.ser.write(chr(0))
-        self.ser.write(chr(255 - ((Xspeed+Rspeed+Tilt+Pan+Buttons)%256)))
+        self.ser.write(chr(255 - ((right_vertical+right_horizontal+left_vertical+left_horizontal+Buttons)%256)))
             
 if __name__ == "__main__":
     # commander.py <serialport>
