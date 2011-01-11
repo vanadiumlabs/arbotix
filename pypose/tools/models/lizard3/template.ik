@@ -20,6 +20,8 @@
 @END_SECTION
 
 @LEG_IK
+/* Simple 3dof leg solver. X,Y,Z are the length from the Coxa rotate to the endpoint. */
+ik_sol_t legIK(int X, int Y, int Z){
     ik_sol_t ans;    
 
     // first, make this a 2DOF problem... by solving coxa
@@ -40,4 +42,5 @@
     ans.tibia = radToServo(acos((float)d1/(float)d2)-1.57);  
     
     return ans;
+}
 @END_SECTION

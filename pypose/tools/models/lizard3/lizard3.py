@@ -520,7 +520,6 @@ class lizard3(dict):
             # do IK and display dialog
             self.doIK()
             parent.writePose(self.nextPose, 500)
-            #dlg = SignDialog(parent, 'Sign Test', msg)
             dlg = wx.MessageDialog(parent, msg, 'Sign Test', wx.YES | wx.NO)
             result = dlg.ShowModal()    
             if result == wx.ID_CANCEL:
