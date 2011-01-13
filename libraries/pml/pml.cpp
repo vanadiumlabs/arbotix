@@ -58,11 +58,12 @@ void PML::setupStep(int step_start, int step_value, int step_count){
   start = step_start;
   ticks = step_value;  
   steps = step_count;
-  while( (start + ticks*index) > position ){
-    index--;
-  }
-  while( (start + ticks*index) < position){
-    index++;  
+  if( index >= step_count){
+    index = step_count-1;
+  }else if( position < start){
+    index = 0;
+  }else{
+    index = (position - start)/ticks;
   }
   position = start + ticks*index;
 }
@@ -91,7 +92,7 @@ void PML::step(){
         // otherwise, move head
         if(direction == UP_SCAN){
           index++;
-          if(index == steps){
+          if(index >= steps){
             index--;
             direction = DN_SCAN;
             data_dn_time = time;
