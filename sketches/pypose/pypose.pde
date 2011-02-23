@@ -1,5 +1,5 @@
 /* 
-  ArbotiX Test Program for use with PyPose 0013
+  ArbotiX Test Program for use with PyPose 0015
   Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -37,7 +37,7 @@ unsigned char id = 0;      // id of this frame
 unsigned char length = 0;  // length of this frame
 unsigned char ins = 0;     // instruction of this frame
 
-unsigned char params[50];  // parameters
+unsigned char params[AX12_MAX_SERVOS*2+10]; // parameters
 unsigned char index = 0;   // index in param buffer
 
 int checksum;              // checksum
@@ -63,7 +63,7 @@ void setup(){
  *
  * ID = 253 for these special commands!
  * Pose Size = 7, followed by single param: size of pose
- * Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size)
+ * Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size+1)
  * Seq Size = 9, followed by single param: size of seq
  * Load Seq = A, followed by index/times (# of parameters = 3*seq_size) 
  * Play Seq = B, no params
@@ -124,7 +124,7 @@ void loop(){
                         Serial.print(255-((2+id)%256),BYTE);
                         // special ArbotiX instructions
                         // Pose Size = 7, followed by single param: size of pose
-                        // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size)
+                        // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size+1)
                         // Load Seq = 9, followed by index/times (# of parameters = 3*seq_size) 
                         // Play Seq = A, no params
                         if(ins == ARB_SIZE_POSE){
