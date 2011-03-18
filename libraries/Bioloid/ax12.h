@@ -22,12 +22,31 @@
 
 // Select the appropriate board for configuration
 #define ARBOTIX
+//#define ARBOTIX2
 //#define ARBOTIX_WITH_RX
 //#define ARBOTIX_PLUS
 //#define SERVO_STIK
 
 #define AX12_MAX_SERVOS             18
 #define AX12_BUFFER_SIZE            32
+
+/** Configuration **/
+#if defined(ARBOTIX_PLUS)
+  #define AX_RX_SWITCHED
+  #define SET_RX_WR (PORTG |= 0x08)
+  #define SET_AX_WR (PORTG |= 0x10)
+  #define SET_RX_RD (PORTG = (PORTG&0xE7) | 0x10 )
+  #define SET_AX_RD (PORTG = (PORTG&0xE7) | 0x08 )
+  #define INIT_AX_RX DDRG |= 0x18; PORTG |= 0x18
+#endif
+#if defined(SERVO_STIK) || defined(ARBOTIX2)
+  #define AX_RX_SWITCHED
+  #define SET_RX_WR (PORTC |= 0x40)
+  #define SET_AX_WR (PORTC |= 0x80)
+  #define SET_RX_RD (PORTC = (PORTC & 0xBF) | 0x80)
+  #define SET_AX_RD (PORTC = (PORTC & 0x7F) | 0x40)
+  #define INIT_AX_RX DDRC |= 0xC0; PORTC |= 0xC0
+#endif
 
 /** EEPROM AREA **/
 #define AX_MODEL_NUMBER_L           0
@@ -106,15 +125,6 @@
 
 void ax12Init(long baud);
 
-#if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
-  // Need to stow type of servo (which bus it's on)
-  extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
-  // Read and write to a bus requires setup
-  void setRX_WR();
-  void setRX_RD();
-  void setAX_WR();
-  void setAX_RD();
-#endif
 void setTXall();     // for sync write
 void setTX(int id);
 void setRX(int id);
@@ -130,6 +140,10 @@ void ax12SetRegister2(int id, int regstart, int data);
 extern unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
 extern unsigned char ax_tx_buffer[AX12_BUFFER_SIZE];
 extern unsigned char ax_rx_int_buffer[AX12_BUFFER_SIZE];
+#if defined(AX_RX_SWITCHED)
+// Need to stow type of servo (which bus it's on)
+extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
+#endif
 
 #define SetPosition(id, pos) (ax12SetRegister2(id, AX_GOAL_POSITION_L, pos))
 #define TorqueOn(id) (ax12SetRegister(id, AX_TORQUE_ENABLE, 1))

@@ -35,97 +35,43 @@ unsigned char ax_rx_int_buffer[AX12_BUFFER_SIZE];
 volatile int ax_rx_Pointer;
 volatile int ax_tx_Pointer;
 volatile int ax_rx_int_Pointer;
-
-#if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
-  /* Write to RX bus */
-  void setRX_WR(){
-    #ifdef SERVO_STIK
-      PORTC |= 0x40;
-    #else
-      PORTG |= 0x08;
-    #endif
-      bitClear(UCSR1B, RXEN1);    
-      ax_tx_Pointer = 0;
-  }
-  /* Write to AX bus */
-  void setAX_WR(){
-    #ifdef SERVO_STIK
-      PORTC |= 0x80;
-    #else
-      PORTG |= 0x10;
-    #endif
-      bitClear(UCSR1B, RXEN1);    
-      ax_tx_Pointer = 0;
-  }
-  /* Read from RX bus */
-  void setRX_RD(){
-      int i;
-      // Need to wait for last byte to be sent before turning the bus around.
-      // Check the Transmit complete flag
-      while (bit_is_clear(UCSR1A, UDRE1));
-      for(i=0; i<UBRR1L*20; i++)    
-          asm("nop");
-    #ifdef SERVO_STIK
-      PORTC = 0x80;
-    #else
-      PORTG = ( (PORTG&0xE7) | 0x10 );
-    #endif
-      asm("nop");
-      asm("nop");
-      asm("nop");
-      //bitClear(UCSR1B, TXEN1);
-      bitSet(UCSR1B, RXEN1);
-      ax_rx_int_Pointer = 0;
-      ax_rx_Pointer = 0;
-  }
-  /* Read from AX bus */
-  void setAX_RD(){
-      int i;
-      // Need to wait for last byte to be sent before turning the bus around.
-      // Check the Transmit complete flag
-      while (bit_is_clear(UCSR1A, UDRE1));
-      for(i=0; i<UBRR1L*20; i++)    
-          asm("nop");
-    #ifdef SERVO_STIK
-      PORTC = 0x40;
-    #else
-      PORTG = ( (PORTG&0xE7) | 0x08 );
-    #endif
-      asm("nop");
-      asm("nop");
-      asm("nop");
-      //bitClear(UCSR1B, TXEN1);
-      bitSet(UCSR1B, RXEN1);
-      ax_rx_int_Pointer = 0;
-      ax_rx_Pointer = 0;
-  }
-  unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
+#if defined(AX_RX_SWITCHED)
+unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
 #endif
 
 /** helper functions to switch direction of comms */
 void setTX(int id){
-  #if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+    bitClear(UCSR1B, RXEN1); 
+  #if defined(AX_RX_SWITCHED)
     if(dynamixel_bus_config[id-1] > 0)
-        setRX_WR();
+        SET_RX_WR;
     else
-        setAX_WR();
+        SET_AX_WR;   
   #else
     // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
     #ifdef ARBOTIX_WITH_RX
       PORTD |= 0x10;
-    #endif
-    bitClear(UCSR1B, RXEN1);    
+    #endif   
     bitSet(UCSR1B, TXEN1);
     bitClear(UCSR1B, RXCIE1);
-    ax_tx_Pointer = 0;
   #endif
+    ax_tx_Pointer = 0;
 }
 void setRX(int id){ 
-  #if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
+  #if defined(AX_RX_SWITCHED)
+    int i;
+    // Need to wait for last byte to be sent before turning the bus around.
+    // Check the Transmit complete flag
+    while (bit_is_clear(UCSR1A, UDRE1));
+    for(i=0; i<UBRR1L*15; i++)    
+        asm("nop");
     if(dynamixel_bus_config[id-1] > 0)
-        setRX_RD();
+        SET_RX_RD;
     else
-        setAX_RD();
+        SET_AX_RD;
+    //asm("nop");
+    //asm("nop");
+    //asm("nop");
   #else
     // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
     #ifdef ARBOTIX_WITH_RX
@@ -138,26 +84,26 @@ void setRX(int id){
       PORTD &= 0xEF;
     #endif 
     bitClear(UCSR1B, TXEN1);
-    bitSet(UCSR1B, RXEN1);
     bitSet(UCSR1B, RXCIE1);
+  #endif  
+    bitSet(UCSR1B, RXEN1);
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
-  #endif  
 }
 // for sync write
 void setTXall(){
-  #if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
-    setRX_WR();
-    setAX_WR();
+    bitClear(UCSR1B, RXEN1);    
+  #if defined(AX_RX_SWITCHED)
+    SET_RX_WR;
+    SET_AX_WR;   
   #else
     #ifdef ARBOTIX_WITH_RX
       PORTD |= 0x10;
     #endif
-    bitClear(UCSR1B, RXEN1);    
     bitSet(UCSR1B, TXEN1);
     bitClear(UCSR1B, RXCIE1);
-    ax_tx_Pointer = 0;
   #endif
+    ax_tx_Pointer = 0;
 }
 
 /** Sends a character out the serial port. */
@@ -225,14 +171,8 @@ void ax12Init(long baud){
     ax_rx_int_Pointer = 0;
     ax_rx_Pointer = 0;
     ax_tx_Pointer = 0;
-#if defined(ARBOTIX_PLUS) || defined(SERVO_STIK)
-  #if defined(ARBOTIX_PLUS)
-    DDRG |= 0x18;
-    PORTG |= 0x18;  // enable all out
-  #else
-    DDRC |= 0xC0;
-    PORTC |= 0xC0;  // enable all out
-  #endif
+#if defined(AX_RX_SWITCHED)
+    INIT_AX_RX;
     bitSet(UCSR1B, TXEN1);
     bitSet(UCSR1B, RXEN1);
     bitSet(UCSR1B, RXCIE1);
