@@ -1,6 +1,6 @@
 /*
   EncodersAB.h - Hardware Encoder Library for Robocontrollers
-  Copyright (c) 2009,2010 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009-2011 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,8 @@
 
 #ifndef Encoders_h
 #define Encoders_h
+
+//#define ARBOTIX2
 
 class EncodersAB
 {
