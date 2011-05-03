@@ -1,5 +1,5 @@
 /*
-  BigMotors.h - Big Motor Library for ArbotiX+ using Timer2
+  BigMotors.h - Big Motor Library for ArbotiX using Timer2
   Copyright (c) 2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or

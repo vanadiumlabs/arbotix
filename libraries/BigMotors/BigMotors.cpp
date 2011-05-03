@@ -1,5 +1,5 @@
 /*
-  BigMotors.h - Big Motor Library for ArbotiX+ using Timer1
+  BigMotors.h - Big Motor Library for ArbotiX using Timer2
   Copyright (c) 2010 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
@@ -18,6 +18,7 @@
 */
 
 #include <wiring.h>
+#include <wiring_private.h>
 #include "BigMotors.h"
 
 /* we compare to OCR2A/B for R/L motor speeds */
@@ -34,7 +35,12 @@ BigMotors::BigMotors(){
     pinMode(M2_B,OUTPUT);
     pinMode(M2_PWM,OUTPUT);         // Right PWM
     pinMode(M_EN, OUTPUT);          // Motors Enable
-    digitalWrite(M_EN, HIGH);          // Motors Enable
+    digitalWrite(M_EN, HIGH);       // Motors Enable
+
+    /* change clock back to no divider */
+    cbi(TCCR2B, CS22);
+    cbi(TCCR2B, CS21);
+    sbi(TCCR2B, CS20);
 
     /* OCR2A/B are the values that the timer is compared to; a match will
        cause the output to change; small values mean the motor runs for a
