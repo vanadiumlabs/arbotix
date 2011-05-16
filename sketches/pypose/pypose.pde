@@ -1,6 +1,6 @@
 /* 
   ArbotiX Test Program for use with PyPose 0015
-  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2011 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -31,30 +31,30 @@ Motors2 drive = Motors2();
 #define ARB_LOOP_SEQ    11
 #define ARB_TEST        25
 
-int mode = 0;              // where we are in the frame
+int mode = 0;                   // where we are in the frame
 
-unsigned char id = 0;      // id of this frame
-unsigned char length = 0;  // length of this frame
-unsigned char ins = 0;     // instruction of this frame
+unsigned char id = 0;           // id of this frame
+unsigned char length = 0;       // length of this frame
+unsigned char ins = 0;          // instruction of this frame
 
-unsigned char params[AX12_MAX_SERVOS*2+10]; // parameters
-unsigned char index = 0;   // index in param buffer
+unsigned char params[143];      // parameters (match RX-64 buffer size)
+unsigned char index = 0;        // index in param buffer
 
-int checksum;              // checksum
+int checksum;                   // checksum
 
 typedef struct{
-    unsigned char pose;    // index of pose to transition to 
-    int time;              // time for transition
+    unsigned char pose;         // index of pose to transition to 
+    int time;                   // time for transition
 } sp_trans_t;
 
 //  pose and sequence storage
-int poses[30][30];         // poses [index][servo_id-1]
-sp_trans_t sequence[50];   // sequence
-int seqPos;                // step in current sequence
+int poses[30][AX12_MAX_SERVOS]; // poses [index][servo_id-1]
+sp_trans_t sequence[50];        // sequence
+int seqPos;                     // step in current sequence
 
 void setup(){
     Serial.begin(38400);    
-    pinMode(0,OUTPUT);     // status LED
+    pinMode(0,OUTPUT);          // status LED
 }
 
 /* 
