@@ -1,6 +1,6 @@
 /*
   ax12.cpp - ArbotiX library for AX/RX control.
-  Copyright (c) 2008-2010 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2011 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -69,9 +69,6 @@ void setRX(int id){
         SET_RX_RD;
     else
         SET_AX_RD;
-    //asm("nop");
-    //asm("nop");
-    //asm("nop");
   #else
     // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
     #ifdef ARBOTIX_WITH_RX
@@ -163,8 +160,6 @@ int ax12ReadPacket(int length){
 
 /** initializes serial1 transmit at baud, 8-N-1 */
 void ax12Init(long baud){
-    //UBRR1H = ((F_CPU / 16 + baud / 2) / baud - 1) >> 8;
-    //UBRR1L = ((F_CPU / 16 + baud / 2) / baud - 1);
     UBRR1H = (F_CPU / (8 * baud) - 1 ) >> 8;
     UBRR1L = (F_CPU / (8 * baud) - 1 );
     bitSet(UCSR1A, U2X1);
