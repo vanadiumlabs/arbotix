@@ -1,0 +1,14 @@
+Bioloid	KEYWORD1
+BioloidController	KEYWORD1
+BioloidIK	KEYWORD1
+ax12GetRegister	KEYWORD2
+ax12SetRegister	KEYWORD2
+ax12SetRegister2	KEYWORD2
+ax12SetPosition	KEYWORD2
+loadPose	KEYWORD2   
+readPose	KEYWORD2
+writePose	KEYWORD2   
+interpolateSetup	KEYWORD2
+interpolateStep	KEYWORD2
+interpolating	KEYWORD2
+
