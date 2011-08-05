@@ -1,6 +1,6 @@
 /*
   BioloidController.h - arbotiX Library for Bioloid Pose Engine
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2011 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -44,8 +44,12 @@ typedef struct{
 class BioloidController
 {
   public:
-    /* YOU SHOULD NOT USE Serial1 */
+    /* For compatibility with legacy code */
     BioloidController(long baud);               // baud usually 1000000
+    
+    /* New-style constructor/setup */ 
+    BioloidController() {};
+    void setup(int servo_cnt);
 
     /* Pose Manipulation */
     void loadPose( const unsigned int * addr ); // load a named pose from FLASH  
@@ -54,6 +58,8 @@ class BioloidController
     int getCurPose(int id);                     // get a servo value in the current pose
     int getNextPose(int id);                    // get a servo value in the next pose
     void setNextPose(int id, int pos);          // set a servo value in the next pose
+    void setId(int index, int id);              // set the id of a particular storage index
+    int getId(int index);                       // get the id of a particular storage index
     
     /* Pose Engine */
     void interpolateSetup(int time);            // calculate speeds for smooth transition
@@ -84,11 +90,12 @@ class BioloidController
      */
     
   private:  
-    unsigned int pose[AX12_MAX_SERVOS];         // the current pose, updated by Step(), set out by Sync()
-    unsigned int nextpose[AX12_MAX_SERVOS];     // the destination pose, where we put on load
-    int speed[AX12_MAX_SERVOS];                 // speeds for interpolation 
+    unsigned int * pose_;                       // the current pose, updated by Step(), set out by Sync()
+    unsigned int * nextpose_;                   // the destination pose, where we put on load
+    int * speed_;                               // speeds for interpolation 
+    unsigned char * id_;                        // servo id for this index
 
-    unsigned long lastframe;                    // time last frame was sent out  
+    unsigned long lastframe_;                   // time last frame was sent out  
     
     transition_t * sequence;                    // sequence we are running
     int transitions;                            // how many transitions we have left to load
