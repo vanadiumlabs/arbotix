@@ -24,72 +24,72 @@
 #include "Motors.h"
 
 /* we compare to OCR0A/B for R/L motor speeds */
-#define lPWM		OCR0B
-#define rPWM		OCR0A
+#define lPWM        OCR0B
+#define rPWM        OCR0A
 
 /* Constructor: sets up microprocessor for PWM control of motors */
-Motors::Motors(){
-  	/* set up ports */
-  	pinMode(RIGHT_DIR,OUTPUT);	// Right Dir
-  	pinMode(LEFT_PWM,OUTPUT);	// Left PWM
-  	pinMode(RIGHT_PWM,OUTPUT);	// Right PWM
-  	pinMode(LEFT_DIR,OUTPUT);	// Left Dir
+void Motors::init(){
+    /* set up ports */
+    pinMode(RIGHT_DIR,OUTPUT);    // Right Dir
+    pinMode(LEFT_PWM,OUTPUT);    // Left PWM
+    pinMode(RIGHT_PWM,OUTPUT);    // Right PWM
+    pinMode(LEFT_DIR,OUTPUT);    // Left Dir
 
-  	/* OCR0A/B are the values that the timer is compared to; a match will
+    /* OCR0A/B are the values that the timer is compared to; a match will
        cause the output to change; small values mean the motor runs for a
        short period (slower); larger values are longer times (faster)*/ 
     digitalWrite(LEFT_DIR,LOW);
     digitalWrite(RIGHT_DIR,LOW);
     analogWrite(LEFT_PWM,0);
     analogWrite(RIGHT_PWM,0);
-  	lPWM = rPWM = 0;	// (value is irrelevant since outputs are disconnected)
+    lPWM = rPWM = 0;    // (value is irrelevant since outputs are disconnected)
 }
 
 /* pwm values can range from -255 (full-speed reverse)
    to 255 (full-speed forward), with 0 indicating a stop */
 void Motors::left(int pwm){
-  	if (pwm == 0){
-		digitalWrite(LEFT_DIR, LOW);
-		TCCR0A &= ~((1<<COM0B1) | (1<<COM0B0));
-  	}else{
-    	if (pwm >= 0){
-			digitalWrite(LEFT_DIR,LOW);    		
-			TCCR0A |= (1<<COM0B1);
-			TCCR0A &= ~(1<<COM0B0); 
-    	}else{
-			digitalWrite(LEFT_DIR,HIGH);
-			TCCR0A |= ((1<<COM0B1) | (1<<COM0B0)); 
-      		pwm = -pwm;
-    	}
-    	if (pwm > 255)
-      		pwm = 255;
-      	lPWM = pwm;		// set width for PWM
+    if (pwm == 0){
+        digitalWrite(LEFT_DIR, LOW);
+        TCCR0A &= ~((1<<COM0B1) | (1<<COM0B0));
+    }else{
+        if (pwm >= 0){
+            digitalWrite(LEFT_DIR,LOW);            
+            TCCR0A |= (1<<COM0B1);
+            TCCR0A &= ~(1<<COM0B0); 
+        }else{
+            digitalWrite(LEFT_DIR,HIGH);
+            TCCR0A |= ((1<<COM0B1) | (1<<COM0B0)); 
+              pwm = -pwm;
+        }
+        if (pwm > 255)
+            pwm = 255;
+        lPWM = pwm;        // set width for PWM
     }
 }
 
 /* pwm values can range from -255 (full-speed reverse)
    to 255 (full-speed forward), with 0 indicating a stop */
 void Motors::right(int pwm){
-  	if (pwm == 0){
-		digitalWrite(RIGHT_DIR,LOW);
-		TCCR0A &= ~((1<<COM0A1) | (1<<COM0A0));
-	}else{
-    	if (pwm >= 0){
-			digitalWrite(RIGHT_DIR,LOW);
-			TCCR0A |= (1<<COM0A1);
-			TCCR0A &= ~(1<<COM0A0);    
-    	}else{
-			digitalWrite(RIGHT_DIR,HIGH);
-			TCCR0A |= ((1<<COM0A1) | (1<<COM0A0));
-      		pwm = -pwm;
-    	}
-    	if (pwm > 255)
-      		pwm = 255;
-      	rPWM = pwm;		// set width for PWM
-  	}
+    if (pwm == 0){
+        digitalWrite(RIGHT_DIR,LOW);
+        TCCR0A &= ~((1<<COM0A1) | (1<<COM0A0));
+    }else{
+        if (pwm >= 0){
+            digitalWrite(RIGHT_DIR,LOW);
+            TCCR0A |= (1<<COM0A1);
+            TCCR0A &= ~(1<<COM0A0);    
+        }else{
+            digitalWrite(RIGHT_DIR,HIGH);
+            TCCR0A |= ((1<<COM0A1) | (1<<COM0A0));
+            pwm = -pwm;
+        }
+        if (pwm > 255)
+            pwm = 255;
+        rPWM = pwm;        // set width for PWM
+    }
 }
 
 void Motors::set(int lpwm, int rpwm){
-	this->left(lpwm);
-	this->right(rpwm);
+    this->left(lpwm);
+    this->right(rpwm);
 }

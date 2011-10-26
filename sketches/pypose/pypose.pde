@@ -53,7 +53,8 @@ sp_trans_t sequence[50];        // sequence
 int seqPos;                     // step in current sequence
 
 void setup(){
-    Serial.begin(38400);    
+    Serial.begin(38400); 
+    drive.init();   
     pinMode(0,OUTPUT);          // status LED
 }
 

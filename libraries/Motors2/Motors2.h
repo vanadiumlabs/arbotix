@@ -38,10 +38,11 @@
 class Motors2
 {
   public:
-	Motors2();
+    Motors2() {};
+    void init();
     void left(int pwm);
     void right(int pwm);
-	void set(int lpwm, int rpwm);
+    void set(int lpwm, int rpwm);
     int getLeft();
     int getRight();
 

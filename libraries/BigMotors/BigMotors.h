@@ -1,6 +1,6 @@
 /*
   BigMotors.h - Big Motor Library for ArbotiX using Timer2
-  Copyright (c) 2010 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2010-2011 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -49,11 +49,12 @@
 class BigMotors
 {
   public:
-	BigMotors();
+    BigMotors(){};
+    void init();
     // Standard functions found in Motors libraries
     void left(int pwm);
     void right(int pwm);
-	void set(int lpwm, int rpwm);
+    void set(int lpwm, int rpwm);
     int getLeft();
     int getRight(); 
     // Only available in BigMotors

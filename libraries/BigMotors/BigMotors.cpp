@@ -22,14 +22,14 @@
 #include "BigMotors.h"
 
 /* we compare to OCR2A/B for R/L motor speeds */
-#define M1_TIMER		OCR2B
-#define M2_TIMER		OCR2A
+#define M1_TIMER        OCR2B
+#define M2_TIMER        OCR2A
 
 /* Constructor: sets up microprocessor for PWM control of motors */
-BigMotors::BigMotors(){
-  	/* set up ports */
-  	pinMode(M1_A,OUTPUT);           // Left Dir
-  	pinMode(M1_B,OUTPUT);	        
+void BigMotors::init(){
+    /* set up ports */
+    pinMode(M1_A,OUTPUT);           // Left Dir
+    pinMode(M1_B,OUTPUT);            
     pinMode(M1_PWM,OUTPUT);         // Left PWM
     pinMode(M2_A,OUTPUT);           // Right Dir
     pinMode(M2_B,OUTPUT);
@@ -46,8 +46,8 @@ BigMotors::BigMotors(){
        cause the output to change; small values mean the motor runs for a
        short period (slower); larger values are longer times (faster)*/
     analogWrite(M1_PWM,0);
-  	analogWrite(M2_PWM,0);
-    M1_TIMER = M2_TIMER = 0;	
+    analogWrite(M2_PWM,0);
+    M1_TIMER = M2_TIMER = 0;    
 }
 
 /* pwm values can range from -255 (full-speed reverse)
@@ -101,8 +101,8 @@ void BigMotors::brakeRight(int pwm){
 }
 
 void BigMotors::set(int lpwm, int rpwm){
-	this->left(lpwm);
-	this->right(rpwm);
+    this->left(lpwm);
+    this->right(rpwm);
 }
 
 int BigMotors::getLeft(){

@@ -11,6 +11,7 @@ Commander command = Commander();
 Motors2 motors = Motors2(); 
 
 void setup(){
+  motors.init();
   // make our LED output
   pinMode(0,OUTPUT);
   // setup commander

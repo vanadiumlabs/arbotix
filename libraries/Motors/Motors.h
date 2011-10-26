@@ -31,10 +31,11 @@
 class Motors
 {
   public:
-	Motors();
+    Motors() {};
+    void init();
     void left(int pwm);
     void right(int pwm);
-	void set(int lpwm, int rpwm);
+    void set(int lpwm, int rpwm);
   private:
     unsigned char lastx;
 };
