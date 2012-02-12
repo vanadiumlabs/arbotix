@@ -1,16 +1,9 @@
-#####################################################################
-## ORIGINAL ARBOTIX
+##############################################################
+
 arbotix.name=ArbotiX
-arbotix.build.mcu=atmega644p
-arbotix.build.f_cpu=16000000L
-arbotix.build.core=arbotix
-
-# To use an ISP: uncomment the next line, comment out the protocol line
-arbotix.upload.using=avrispmkii
-#arbotix.upload.protocol=stk500
-
-arbotix.upload.speed=38400
+arbotix.upload.protocol=arduino
 arbotix.upload.maximum_size=65536
+arbotix.upload.speed=38400
 arbotix.bootloader.low_fuses=0xFF
 arbotix.bootloader.high_fuses=0xDC
 arbotix.bootloader.extended_fuses=0xFD
@@ -18,28 +11,44 @@ arbotix.bootloader.path=atmega644p
 arbotix.bootloader.file=ATmegaBOOT_644P.hex
 arbotix.bootloader.unlock_bits=0x3F
 arbotix.bootloader.lock_bits=0x0F
+arbotix.build.mcu=atmega644p
+arbotix.build.f_cpu=16000000L
 arbotix.build.core=arbotix
-arbotix.verbose=false
+arbotix.build.variant=standard
 
 #####################################################################
-## ARBOTIX PLUS
-plus.name=ArbotiX+
-plus.build.mcu=atmega1280
-plus.build.f_cpu=16000000L
-plus.build.core=arbotix
 
-# To use an ISP: uncomment the next line, comment out the protocol line
-plus.upload.using=avrispmkii
-#plus.upload.protocol=stk500
+#arbotix2.name=ArbotiX2
+#arbotix2.upload.protocol=arduino
+#arbotix2.upload.maximum_size=65536
+#arbotix2.upload.speed=38400
+#arbotix2.bootloader.low_fuses=0xFF
+#arbotix2.bootloader.high_fuses=0xDC
+#arbotix2.bootloader.extended_fuses=0xFD
+#arbotix2.bootloader.path=atmega644p
+#arbotix2.bootloader.file=ATmegaBOOT_644P.hex
+#arbotix2.bootloader.unlock_bits=0x3F
+#arbotix2.bootloader.lock_bits=0x0F
+#arbotix2.build.mcu=atmega644p
+#arbotix2.build.f_cpu=16000000L
+#arbotix2.build.core=arbotix
+#arbotix2.build.variant=arbotix2
 
-plus.upload.maximum_size=126976
-plus.upload.speed=57600
-plus.bootloader.low_fuses=0xFF
-plus.bootloader.high_fuses=0xDA
-plus.bootloader.extended_fuses=0xF5
-plus.bootloader.path=arduino:atmega
-plus.bootloader.file=ATmegaBOOT_168_atmega1280.hex
-plus.bootloader.unlock_bits=0x3F
-plus.bootloader.lock_bits=0x0F
+#####################################################################
 
+#plus1280.name=ArbotiX+ (1280)
+#plus1280.upload.protocol=stk500
+#plus1280.upload.maximum_size=126976
+#plus1280.upload.speed=57600
+#plus1280.bootloader.low_fuses=0xFF
+#plus1280.bootloader.high_fuses=0xDA
+#plus1280.bootloader.extended_fuses=0xF5
+#plus1280.bootloader.path=arduino:atmega
+#plus1280.bootloader.file=ATmegaBOOT_168_atmega1280.hex
+#plus1280.bootloader.unlock_bits=0x3F
+#plus1280.bootloader.lock_bits=0x0F
+#plus1280.build.mcu=atmega1280
+#plus1280.build.f_cpu=16000000L
+#plus1280.build.core=arbotix
+#plus1280.build.variant=arbotixPlus1280
 

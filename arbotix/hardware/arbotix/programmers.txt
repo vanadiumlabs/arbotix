@@ -1,4 +1,0 @@
-avrispmkii.name=AVRISP mkII (arbotix)
-avrispmkii.communication=serial
-avrispmkii.protocol=stk500v2
-
