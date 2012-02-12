@@ -83,7 +83,6 @@ ISR(PCINT2_vect){
     }
 }
 #else 
-unsigned char lastx;
 ISR(PCINT2_vect){
     unsigned char x = PINC;
     if((lastx&0x10) != (x&0x10)){
