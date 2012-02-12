@@ -3,7 +3,7 @@
   This sketch will allow you to drive around a 4-legged, 3DOF per leg, quad, using
   the PyMech program. 
   
-  Copyright (c) 2008,2009 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2008-2012 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
