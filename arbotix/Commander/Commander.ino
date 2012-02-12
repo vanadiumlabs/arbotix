@@ -1,6 +1,6 @@
 /*
-  Commander.pde - default firmware for arbotiX Commander (V1.1)
-  Copyright (c) 2009, 2010 Michael E. Ferguson.  All right reserved.
+  Commander.ino - default firmware for arbotiX Commander (V1.1)
+  Copyright (c) 2009-2012 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -15,9 +15,7 @@
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  
-  Arduino IDE Configuration:
-  
+
 */
 
 #define RIGHT_V   0
@@ -82,13 +80,13 @@ void loop(){
     if(digitalRead(BUT_LT) == LOW) buttons += 128;
  
     Serial.print(0xff,BYTE);
-    Serial.print((unsigned char) right_V,BYTE);
-    Serial.print((unsigned char) right_H,BYTE);
-    Serial.print((unsigned char) left_V,BYTE);
-    Serial.print((unsigned char) left_H,BYTE);
-    Serial.print(buttons,BYTE);  // buttons
-    Serial.print(0,BYTE);        // extra
-    Serial.print((unsigned char)(255 - (right_V+right_H+left_V+left_H+buttons)%256),BYTE);
+    Serial.print((unsigned char) right_V);
+    Serial.print((unsigned char) right_H);
+    Serial.print((unsigned char) left_V);
+    Serial.print((unsigned char) left_H);
+    Serial.print(buttons);              // buttons
+    Serial.print((unsigned char)0);     // extra
+    Serial.print((unsigned char)(255 - (right_V+right_H+left_V+left_H+buttons)%256));
     
     if(i > 10){
       digitalWrite(10,HIGH-digitalRead(10));
@@ -99,6 +97,7 @@ void loop(){
 }
 
 /* Revisions 
+ *  V1.2 - Feb 11, 2012 - Updated for Arduino 1.0
  *  V1.1 - Feb 19, 2010 - Replaced Walk/Look with Right/Left 
  *         (since apparently, I used something called "southpaw")
  *  V1.0 - Feb 10, 2010 - Firmware Finalized
