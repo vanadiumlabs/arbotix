@@ -79,7 +79,7 @@ void loop(){
     if(digitalRead(BUT_RT) == LOW) buttons += 64;
     if(digitalRead(BUT_LT) == LOW) buttons += 128;
  
-    Serial.print(0xff,BYTE);
+    Serial.print(0xff);
     Serial.print((unsigned char) right_V);
     Serial.print((unsigned char) right_H);
     Serial.print((unsigned char) left_V);
