@@ -1,7 +1,6 @@
 #include <ax12.h>
 #include <BioloidController.h>
-#include <WProgram.h>
-#include <math.h>
+#include <Arduino.h>
 #include "nuke.h"
 
 /* min and max positions for each servo */
