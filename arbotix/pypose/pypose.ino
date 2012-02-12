@@ -108,21 +108,21 @@ void loop(){
                 mode = 0;
                 if((checksum%256) != 255){ 
                     // return a packet: FF FF id Len Err params=None check
-                    Serial.print(0xff,BYTE);
-                    Serial.print(0xff,BYTE);
-                    Serial.print(id,BYTE);
-                    Serial.print(2,BYTE);
-                    Serial.print(64,BYTE);
-                    Serial.print(255-((66+id)%256),BYTE);
+                    Serial.write(0xff);
+                    Serial.write(0xff);
+                    Serial.write(id);
+                    Serial.write(2);
+                    Serial.write(64);
+                    Serial.write(255-((66+id)%256));
                 }else{
                     if(id == 253){
                         // return a packet: FF FF id Len Err params=None check
-                        Serial.print(0xff,BYTE);
-                        Serial.print(0xff,BYTE);
-                        Serial.print(id,BYTE);
-                        Serial.print(2,BYTE);
-                        Serial.print(0,BYTE);
-                        Serial.print(255-((2+id)%256),BYTE);
+                        Serial.write(0xff);
+                        Serial.write(0xff);
+                        Serial.write(id);
+                        Serial.write(2);
+                        Serial.write((unsigned char)0);
+                        Serial.write(255-((2+id)%256));
                         // special ArbotiX instructions
                         // Pose Size = 7, followed by single param: size of pose
                         // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size+1)
@@ -241,7 +241,7 @@ void loop(){
                             // return a packet: FF FF id Len Err params check
                             if(ax_rx_buffer[3] > 0){
                             for(i=0;i<ax_rx_buffer[3]+4;i++)
-                                Serial.print(ax_rx_buffer[i],BYTE);
+                                Serial.write(ax_rx_buffer[i]);
                             }
                             ax_rx_buffer[3] = 0;
                         }else if(ins == AX_WRITE_DATA){
@@ -252,12 +252,12 @@ void loop(){
                                 ax12SetRegister2(id, params[0], x);
                             }
                             // return a packet: FF FF id Len Err params check
-                            Serial.print(0xff,BYTE);
-                            Serial.print(0xff,BYTE);
-                            Serial.print(id,BYTE);
-                            Serial.print(2,BYTE);
-                            Serial.print(0,BYTE);
-                            Serial.print(255-((2+id)%256),BYTE);
+                            Serial.write(0xff);
+                            Serial.write(0xff);
+                            Serial.write(id);
+                            Serial.write(2);
+                            Serial.write((unsigned char)0);
+                            Serial.write(255-((2+id)%256));
                         }
                     }
                 }
