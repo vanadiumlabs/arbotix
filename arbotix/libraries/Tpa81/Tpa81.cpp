@@ -17,7 +17,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "wiring.h"
+#include "Arduino.h"
 #include "Wire.h"
 #include "Tpa81.h"
 
@@ -31,7 +31,7 @@ int Tpa81::getData(unsigned char * pixels){
     int ambient;
     // ask for data data
     Wire.beginTransmission(TPA_ADDR+_device);
-    Wire.send(TPA_AMBIENT);
+    Wire.write(TPA_AMBIENT);
     Wire.endTransmission();
     // read back data
     Wire.requestFrom(TPA_ADDR+_device, (int) 9);
@@ -39,14 +39,14 @@ int Tpa81::getData(unsigned char * pixels){
         // need some sort of timeout!
     }
     // fill our data    
-    ambient = Wire.receive();
-    pixels[0] = Wire.receive();
-    pixels[1] = Wire.receive();
-    pixels[2] = Wire.receive();
-    pixels[3] = Wire.receive();
-    pixels[4] = Wire.receive();
-    pixels[5] = Wire.receive();
-    pixels[6] = Wire.receive();
-    pixels[7] = Wire.receive();
+    ambient = Wire.read();
+    pixels[0] = Wire.read();
+    pixels[1] = Wire.read();
+    pixels[2] = Wire.read();
+    pixels[3] = Wire.read();
+    pixels[4] = Wire.read();
+    pixels[5] = Wire.read();
+    pixels[6] = Wire.read();
+    pixels[7] = Wire.read();
     return ambient;
 }

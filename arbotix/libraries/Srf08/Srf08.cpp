@@ -17,7 +17,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "wiring.h"
+#include "Arduino.h"
 #include "Wire.h"
 #include "Srf08.h"
 
@@ -30,7 +30,7 @@ Srf08::Srf08(unsigned char device){
 /** = version of sonar sonar */
 int Srf08::getVersion(){
     Wire.beginTransmission(SRF_ADDR+_device);
-    Wire.send(SRF_COMMAND);
+    Wire.write(SRF_COMMAND);
     Wire.endTransmission();
     // read back data
     Wire.requestFrom(SRF_ADDR+_device, (int) 1);
@@ -38,15 +38,15 @@ int Srf08::getVersion(){
         // need some sort of timeout!
     }
     // fill our data    
-    return (int) Wire.receive();
+    return (int) Wire.read();
 }
 
 /** We must ping the sonar before we can read it back. */
 void Srf08::ping(){
     // write command to read in CM
     Wire.beginTransmission(SRF_ADDR+_device);
-    Wire.send(SRF_COMMAND);
-    Wire.send(SRF_CMD_CM);
+    Wire.write(SRF_COMMAND);
+    Wire.write(SRF_CMD_CM);
     Wire.endTransmission();
 }
 
@@ -54,15 +54,15 @@ void Srf08::ping(){
 int Srf08::getData(){
     int distance
     Wire.beginTransmission(SRF_ADDR+_device);
-    Wire.send(SRF_ECHO_H);
+    Wire.write(SRF_ECHO_H);
     Wire.endTransmission();
     // read back data
     Wire.requestFrom(SRF_ADDR+_device, (int) 1);
     while(Wire.available() < 2){
         // need some sort of timeout!
     }
-    distance = Wire.receive() << 8;
-    distance += Wire.recieve();
+    distance = Wire.read() << 8;
+    distance += Wire.read();
     return distance;
 }
 

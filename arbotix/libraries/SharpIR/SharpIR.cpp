@@ -17,7 +17,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <wiring.h>
+#include <Arduino.h>
 #include "SharpIR.h"
 
 /** = the distance to the nearest object on the requested channel in CM.*/
@@ -103,6 +103,7 @@ int SharpIR::getSmoothData(){
 }
 
 /* Revisions
+ * 2-11-12 Update to Arduino 1.0
  * 5-5-09 Modified to use CM rather than inch 
  * 10-20-09 Added getSmoothData()
  */
