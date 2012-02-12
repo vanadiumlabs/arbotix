@@ -65,10 +65,10 @@ void setup(){
 }
 
 void Response(unsigned char command, unsigned char value){
-  Serial.print(0xff);
-  Serial.print(command);
-  Serial.print(value);
-  Serial.print((unsigned char)(255 - (command+value)%256));
+  Serial.write(0xff);
+  Serial.write(command);
+  Serial.write(value);
+  Serial.write((unsigned char)(255 - (command+value)%256));
 }
  
 void loop(){
