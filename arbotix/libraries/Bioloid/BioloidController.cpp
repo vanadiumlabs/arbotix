@@ -1,6 +1,6 @@
 /*
-  BioloidController.cpp - arbotiX Library for Bioloid Pose Engine
-  Copyright (c) 2008-2011 Michael E. Ferguson.  All right reserved.
+  BioloidController.cpp - ArbotiX Library for Bioloid Pose Engine
+  Copyright (c) 2008-2012 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -17,9 +17,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "wiring.h" // we need this for the serial port defines
-
-#include <avr/pgmspace.h>
 #include "BioloidController.h"
 
 /* initializes serial1 transmit at baud, 8-N-1 */

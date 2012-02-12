@@ -1,6 +1,6 @@
 /*
-  BioloidController.h - arbotiX Library for Bioloid Pose Engine
-  Copyright (c) 2008-2011 Michael E. Ferguson.  All right reserved.
+  BioloidController.h - ArbotiX Library for Bioloid Pose Engine
+  Copyright (c) 2008-2012 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public

@@ -17,35 +17,31 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <Arduino.h>
+
 #ifndef ax12_h
 #define ax12_h
-
-// Select the appropriate board for configuration
-#define ARBOTIX
-//#define ARBOTIX2
-//#define ARBOTIX_WITH_RX
-//#define ARBOTIX_PLUS
-//#define SERVO_STIK
 
 #define AX12_MAX_SERVOS             30
 #define AX12_BUFFER_SIZE            32
 
 /** Configuration **/
-#if defined(ARBOTIX_PLUS)
-  #define AX_RX_SWITCHED
-  #define SET_RX_WR (PORTG |= 0x08)
-  #define SET_AX_WR (PORTG |= 0x10)
-  #define SET_RX_RD (PORTG = (PORTG&0xE7) | 0x10 )
-  #define SET_AX_RD (PORTG = (PORTG&0xE7) | 0x08 )
-  #define INIT_AX_RX DDRG |= 0x18; PORTG |= 0x18
-#endif
-#if defined(SERVO_STIK) || defined(ARBOTIX2)
+#if defined(ARBOTIX)
+  // no config needed
+#elif defined(SERVO_STIK) || defined(ARBOTIX2)
   #define AX_RX_SWITCHED
   #define SET_RX_WR (PORTC |= 0x40)
   #define SET_AX_WR (PORTC |= 0x80)
   #define SET_RX_RD (PORTC = (PORTC & 0xBF) | 0x80)
   #define SET_AX_RD (PORTC = (PORTC & 0x7F) | 0x40)
   #define INIT_AX_RX DDRC |= 0xC0; PORTC |= 0xC0
+#elif defined(ARBOTIX_1280)
+  #define AX_RX_SWITCHED
+  #define SET_RX_WR (PORTG |= 0x08)
+  #define SET_AX_WR (PORTG |= 0x10)
+  #define SET_RX_RD (PORTG = (PORTG&0xE7) | 0x10 )
+  #define SET_AX_RD (PORTG = (PORTG&0xE7) | 0x08 )
+  #define INIT_AX_RX DDRG |= 0x18; PORTG |= 0x18
 #endif
 
 /** EEPROM AREA **/
@@ -100,10 +96,12 @@
 #define AX_LOCK                     47
 #define AX_PUNCH_L                  48
 #define AX_PUNCH_H                  49
+
 /** Status Return Levels **/
 #define AX_RETURN_NONE              0
 #define AX_RETURN_READ              1
 #define AX_RETURN_ALL               2
+
 /** Instruction Set **/
 #define AX_PING                     1
 #define AX_READ_DATA                2
@@ -112,6 +110,15 @@
 #define AX_ACTION                   5
 #define AX_RESET                    6
 #define AX_SYNC_WRITE               131
+
+/** Error Levels **/
+#define ERR_VOLTAGE                 1
+#define ERR_ANGLE_LIMIT             2
+#define ERR_OVERHEATING             4
+#define ERR_RANGE                   8
+#define ERR_CHECKSUM                16
+#define ERR_OVERLOAD                32
+#define ERR_INSTRUCTION             64
 
 /** AX-S1 **/
 #define AX_LEFT_IR_DATA             26

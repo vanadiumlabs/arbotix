@@ -17,10 +17,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "wiring.h" // we need this for the serial port defines
-
 #include "ax12.h"
-#include <avr/interrupt.h>
 
 /******************************************************************************
  * Hardware Serial Level, this uses the same stuff as Serial1, therefore 
