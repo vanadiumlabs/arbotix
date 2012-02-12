@@ -1,6 +1,6 @@
 /*
   EncodersAB.cpp - Hardware Encoder Library for Robocontrollers
-  Copyright (c) 2009-2011 Michael E. Ferguson.  All right reserved.
+  Copyright (c) 2009-2012 Michael E. Ferguson.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,33 @@
 */
 
 #include <avr/interrupt.h>
-#include <wiring.h>
+#include <Arduino.h>
 #include "EncodersAB.h"
 
 EncodersAB::EncodersAB() : left(0), right(0) {};
 
 EncodersAB Encoders = EncodersAB(); 
+
+unsigned char lastx;
+void EncodersAB::Begin(){
+  #if defined(__AVR_ATmega168__) // mini/arduino
+	attachInterrupt(0, leftCounter, RISING);
+    attachInterrupt(1, rightCounter, RISING);
+  #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix
+    #if defined(ARBOTIX2)
+	PCICR |= (1 << PCIE1) | (1 << PCIE2) ;  // enable PC interrupt on port B/C
+    PCMSK1 |= (1<<6);    // enable interrupt D6 (B6)
+    PCMSK2 |= (1<<4);    // enable interrupt D20(C4)
+    #else
+	PCICR |= (1 << PCIE2);      // enable PC interrupt on port C
+    PCMSK2 |= (1<<4) + (1<<6);    // enable interrupt on D20(C4),D22(C6)
+    lastx = PINC;
+    #endif
+  #elif defined(__AVR_ATmega1280__) // arbotix+/mega
+	attachInterrupt(6, leftCounter, RISING);
+    attachInterrupt(7, rightCounter, RISING);
+  #endif
+}
 
 #if defined(__AVR_ATmega168__) // mini/arduino
 void leftCounter(){
@@ -84,45 +105,19 @@ ISR(PCINT2_vect){
 #endif
 
 #elif defined(__AVR_ATmega1280__) // arbotix+/mega
-ISR(INT6_vect){
-//void leftCounter(){
-    // PE6 (int 6) & PC2 (D35)
+void leftCounter(){
     if(PINC&0x04)
         Encoders.left++; // cw is PE6 == d35
     else
         Encoders.left--;
 }
-ISR(INT7_vect){
-//void rightCounter(){
-    // PE7 (int 7) & PC1 (D36)
+void rightCounter(){
     if(PINC&0x02)
         Encoders.right++; // cw is PE7 == d36
     else
         Encoders.right--;
 }
 #endif
-
-void EncodersAB::Begin(){
-#if defined(__AVR_ATmega168__) // mini/arduino
-	attachInterrupt(0, leftCounter, RISING);
-    attachInterrupt(1, rightCounter, RISING);
-#elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix/sanguino
-  #if defined(ARBOTIX2)
-	PCICR |= (1 << PCIE1) | (1 << PCIE2) ;  // enable PC interrupt on port B/C
-    PCMSK1 |= (1<<6);    // enable interrupt D6 (B6)
-    PCMSK2 |= (1<<4);    // enable interrupt D20(C4)
-  #else
-	PCICR |= (1 << PCIE2);      // enable PC interrupt on port C
-    PCMSK2 |= (1<<4) + (1<<6);    // enable interrupt on D20(C4),D22(C6)
-    lastx = PINC;
-  #endif
-#elif defined(__AVR_ATmega1280__) // arbotix+/mega
-	//attachInterrupt(6, leftCounter, RISING);
-    //attachInterrupt(7, rightCounter, RISING);
-    EICRB |= 0xf0;  // rising edge both 6 and 7
-    EIMSK |= 0xC0;  // enable 6 and 7
-#endif
-}
 
 void EncodersAB::Reset(){
     left = 0;
