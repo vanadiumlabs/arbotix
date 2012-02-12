@@ -143,6 +143,7 @@ int ax12ReadPacket(int length);
 int ax12GetRegister(int id, int regstart, int length);
 void ax12SetRegister(int id, int regstart, int data);
 void ax12SetRegister2(int id, int regstart, int data);
+int ax12GetLastError();
 
 extern unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
 extern unsigned char ax_tx_buffer[AX12_BUFFER_SIZE];

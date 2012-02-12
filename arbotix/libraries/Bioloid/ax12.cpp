@@ -119,6 +119,7 @@ ISR(USART1_RX_vect){
 
 /** read back the error code for our latest packet read */
 int ax12Error;
+int ax12GetLastError(){ return ax12Error; }
 /** > 0 = success */
 int ax12ReadPacket(int length){
     unsigned long ulCounter;
