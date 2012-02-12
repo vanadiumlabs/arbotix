@@ -1,5 +1,4 @@
-#include <avr/interrupt.h>
-#include <wiring.h>
+#include <Arduino.h>
 #include <HServo.h>
 
 /*

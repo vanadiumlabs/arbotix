@@ -1,5 +1,5 @@
-#ifndef Servo_h
-#define Servo_h
+#ifndef HServo_h
+#define HServo_h
 
 /*
   HServo.h - Hardware Servo Timer Library
