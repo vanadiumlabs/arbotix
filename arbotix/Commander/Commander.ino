@@ -79,14 +79,14 @@ void loop(){
     if(digitalRead(BUT_RT) == LOW) buttons += 64;
     if(digitalRead(BUT_LT) == LOW) buttons += 128;
  
-    Serial.print(0xff);
-    Serial.print((unsigned char) right_V);
-    Serial.print((unsigned char) right_H);
-    Serial.print((unsigned char) left_V);
-    Serial.print((unsigned char) left_H);
-    Serial.print(buttons);              // buttons
-    Serial.print((unsigned char)0);     // extra
-    Serial.print((unsigned char)(255 - (right_V+right_H+left_V+left_H+buttons)%256));
+    Serial.write(0xff);
+    Serial.write((unsigned char) right_V);
+    Serial.write((unsigned char) right_H);
+    Serial.write((unsigned char) left_V);
+    Serial.write((unsigned char) left_H);
+    Serial.write(buttons);              // buttons
+    Serial.write((unsigned char)0);     // extra
+    Serial.write((unsigned char)(255 - (right_V+right_H+left_V+left_H+buttons)%256));
     
     if(i > 10){
       digitalWrite(10,HIGH-digitalRead(10));
