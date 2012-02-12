@@ -1,9 +1,6 @@
 /*
   HardwareSerial.h - Hardware serial library for Wiring
   Copyright (c) 2006 Nicholas Zambetti.  All right reserved.
-  Modified 29 January 2009, Marius Kintel for Sanguino - http://www.sanguino.cc/
-  Modified 1 June 2009, Michael Ferguson, for arbotiX - http://arbotix.googlecode.com
-  Modified 10 September 2010, Michael Ferguson, for ArbotiX+
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -18,6 +15,9 @@
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+  Modified 28 September 2010 by Mark Sproul
+  Modified 22 November 2011 by Michael Ferguson (for ArbotiX)
 */
 
 #ifndef HardwareSerial_h
@@ -33,6 +33,7 @@ class HardwareSerial : public Stream
 {
   private:
     ring_buffer *_rx_buffer;
+    ring_buffer *_tx_buffer;
     volatile uint8_t *_ubrrh;
     volatile uint8_t *_ubrrl;
     volatile uint8_t *_ucsra;
@@ -41,34 +42,41 @@ class HardwareSerial : public Stream
     uint8_t _rxen;
     uint8_t _txen;
     uint8_t _rxcie;
-    uint8_t _udre;
+    uint8_t _udrie;
     uint8_t _u2x;
   public:
-    HardwareSerial(ring_buffer *rx_buffer,
+    HardwareSerial(ring_buffer *rx_buffer, ring_buffer *tx_buffer,
       volatile uint8_t *ubrrh, volatile uint8_t *ubrrl,
       volatile uint8_t *ucsra, volatile uint8_t *ucsrb,
       volatile uint8_t *udr,
-      uint8_t rxen, uint8_t txen, uint8_t rxcie, uint8_t udre, uint8_t u2x);
-    void begin(long);
+      uint8_t rxen, uint8_t txen, uint8_t rxcie, uint8_t udrie, uint8_t u2x);
+    void begin(unsigned long);
     void end();
     virtual int available(void);
     virtual int peek(void);
     virtual int read(void);
     virtual void flush(void);
-    virtual void write(uint8_t);
+    virtual size_t write(uint8_t);
     using Print::write; // pull in write(str) and write(buf, size) from Print
 };
 
-extern HardwareSerial Serial;
-
-#if defined(__AVR_ATmega644P__)
-//extern HardwareSerial Serial1;
+#if defined(UBRRH) || defined(UBRR0H)
+  extern HardwareSerial Serial;
+#elif defined(USBCON)
+  #include "USBAPI.h"
+//  extern HardwareSerial Serial_;  
+#endif
+#if defined(UBRR1H)
+  //Provided in ax12 lib.
+  //extern HardwareSerial Serial1;
+#endif
+#if defined(UBRR2H)
+  extern HardwareSerial Serial2;
+#endif
+#if defined(UBRR3H)
+  extern HardwareSerial Serial3;
 #endif
 
-#if defined(__AVR_ATmega1280__)
-//extern HardwareSerial Serial1;
-extern HardwareSerial Serial2;
-extern HardwareSerial Serial3;
-#endif
+extern void serialEventRun(void) __attribute__((weak));
 
 #endif
