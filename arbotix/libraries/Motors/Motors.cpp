@@ -20,7 +20,7 @@
 */
 
 
-#include <wiring.h>
+#include <Arduino.h>
 #include "Motors.h"
 
 /* we compare to OCR0A/B for R/L motor speeds */
