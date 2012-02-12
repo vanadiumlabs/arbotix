@@ -1,6 +1,6 @@
 /* 
   ArbotiX Firmware - Commander Extended Instruction Set Example
-  Copyright (c) 2008-2010 Vanadium Labs LLC.  All right reserved.
+  Copyright (c) 2008-2012 Vanadium Labs LLC.  All right reserved.
  
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -65,10 +65,10 @@ void setup(){
 }
 
 void Response(unsigned char command, unsigned char value){
-  Serial.print(0xff,BYTE);
-  Serial.print(command,BYTE);
-  Serial.print(value,BYTE);
-  Serial.print((unsigned char)(255 - (command+value)%256),BYTE);
+  Serial.print(0xff);
+  Serial.print(command);
+  Serial.print(value);
+  Serial.print((unsigned char)(255 - (command+value)%256));
 }
  
 void loop(){
