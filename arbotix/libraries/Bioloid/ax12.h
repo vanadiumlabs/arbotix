@@ -24,7 +24,7 @@
 
 #define AX12_MAX_SERVOS             30
 #define AX12_BUFFER_SIZE            32
-
+#define ARBOTIX_1280
 /** Configuration **/
 #if defined(ARBOTIX)
   // no config needed
@@ -112,6 +112,7 @@
 #define AX_SYNC_WRITE               131
 
 /** Error Levels **/
+#define ERR_NONE                    0
 #define ERR_VOLTAGE                 1
 #define ERR_ANGLE_LIMIT             2
 #define ERR_OVERHEATING             4
