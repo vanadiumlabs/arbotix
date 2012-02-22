@@ -26,25 +26,6 @@ EncodersAB::EncodersAB() : left(0), right(0) {};
 EncodersAB Encoders = EncodersAB(); 
 
 unsigned char lastx;
-void EncodersAB::Begin(){
-  #if defined(__AVR_ATmega168__) // mini/arduino
-	attachInterrupt(0, leftCounter, RISING);
-    attachInterrupt(1, rightCounter, RISING);
-  #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix
-    #if defined(ARBOTIX2)
-	PCICR |= (1 << PCIE1) | (1 << PCIE2) ;  // enable PC interrupt on port B/C
-    PCMSK1 |= (1<<6);    // enable interrupt D6 (B6)
-    PCMSK2 |= (1<<4);    // enable interrupt D20(C4)
-    #else
-	PCICR |= (1 << PCIE2);      // enable PC interrupt on port C
-    PCMSK2 |= (1<<4) + (1<<6);    // enable interrupt on D20(C4),D22(C6)
-    lastx = PINC;
-    #endif
-  #elif defined(__AVR_ATmega1280__) // arbotix+/mega
-	attachInterrupt(6, leftCounter, RISING);
-    attachInterrupt(7, rightCounter, RISING);
-  #endif
-}
 
 #if defined(__AVR_ATmega168__) // mini/arduino
 void leftCounter(){
@@ -117,6 +98,26 @@ void rightCounter(){
         Encoders.right--;
 }
 #endif
+
+void EncodersAB::Begin(){
+  #if defined(__AVR_ATmega168__) // mini/arduino
+	attachInterrupt(0, leftCounter, RISING);
+    attachInterrupt(1, rightCounter, RISING);
+  #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix
+    #if defined(ARBOTIX2)
+	PCICR |= (1 << PCIE1) | (1 << PCIE2) ;  // enable PC interrupt on port B/C
+    PCMSK1 |= (1<<6);    // enable interrupt D6 (B6)
+    PCMSK2 |= (1<<4);    // enable interrupt D20(C4)
+    #else
+	PCICR |= (1 << PCIE2);      // enable PC interrupt on port C
+    PCMSK2 |= (1<<4) + (1<<6);    // enable interrupt on D20(C4),D22(C6)
+    lastx = PINC;
+    #endif
+  #elif defined(__AVR_ATmega1280__) // arbotix+/mega
+	attachInterrupt(6, leftCounter, RISING);
+    attachInterrupt(7, rightCounter, RISING);
+  #endif
+}
 
 void EncodersAB::Reset(){
     left = 0;
