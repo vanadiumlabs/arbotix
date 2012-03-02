@@ -29,7 +29,7 @@
 
 #define NUM_DIGITAL_PINS            32
 #define NUM_ANALOG_INPUTS           8
-#define analogInputToDigitalPin(p)  ((p < 8) ? 31 - (p) : -1)
+#define analogInputToDigitalPin(p)  ((p < 8) ? 24 + (p) : -1)
 
 #define digitalPinHasPWM(p)         ((p) == 3 || (p) == 4 || (p) == 12 || (p) == 13 || (p) == 14 || (p) == 15)
 
@@ -42,14 +42,14 @@ const static uint8_t SDA = 17;
 const static uint8_t SCL = 16;
 const static uint8_t LED_BUILTIN = 0;
 
-const static uint8_t A0 = 31;
-const static uint8_t A1 = 30;
-const static uint8_t A2 = 29;
-const static uint8_t A3 = 28;
-const static uint8_t A4 = 27;
-const static uint8_t A5 = 26;
-const static uint8_t A6 = 25;
-const static uint8_t A7 = 24;
+const static uint8_t A0 = 24;
+const static uint8_t A1 = 25;
+const static uint8_t A2 = 26;
+const static uint8_t A3 = 27;
+const static uint8_t A4 = 28;
+const static uint8_t A5 = 29;
+const static uint8_t A6 = 30;
+const static uint8_t A7 = 31;
 
 #define digitalPinToPCICR(p)    (((p) >= 0 && (p) <= 21) ? (&PCICR) : ((uint8_t *)0))
 #define digitalPinToPCICRbit(p) (((p) <= 7) ? 2 : (((p) <= 13) ? 0 : 1))
@@ -65,14 +65,14 @@ const static uint8_t A7 = 24;
 // ATMEL ATMEGA644P
 //
 //                   +---\/---+
-//  INT0 (D 0) PB0  1|        |40  PA0 (AI 0 / D31)
-//  INT1 (D 1) PB1  2|        |39  PA1 (AI 1 / D30)
-//  INT2 (D 2) PB2  3|        |38  PA2 (AI 2 / D29)
-//   PWM (D 3) PB3  4|        |37  PA3 (AI 3 / D28)
-//   PWM (D 4) PB4  5|        |36  PA4 (AI 4 / D27)
-//  MOSI (D 5) PB5  6|        |35  PA5 (AI 5 / D26)
-//  MISO (D 6) PB6  7|        |34  PA6 (AI 6 / D25)
-//   SCK (D 7) PB7  8|        |33  PA7 (AI 7 / D24)
+//  INT0 (D 0) PB0  1|        |40  PA0 (AI 0 / D24)
+//  INT1 (D 1) PB1  2|        |39  PA1 (AI 1 / D25)
+//  INT2 (D 2) PB2  3|        |38  PA2 (AI 2 / D26)
+//   PWM (D 3) PB3  4|        |37  PA3 (AI 3 / D27)
+//   PWM (D 4) PB4  5|        |36  PA4 (AI 4 / D28)
+//  MOSI (D 5) PB5  6|        |35  PA5 (AI 5 / D29)
+//  MISO (D 6) PB6  7|        |34  PA6 (AI 6 / D30)
+//   SCK (D 7) PB7  8|        |33  PA7 (AI 7 / D31)
 //             RST  9|        |32  AREF
 //             VCC 10|        |31  GND 
 //             GND 11|        |30  AVCC
@@ -175,14 +175,14 @@ const uint8_t PROGMEM digital_pin_to_bit_mask_PGM[] = {
 	_BV(5),
 	_BV(6),
 	_BV(7),
-	_BV(7), /* 24, port A */
-	_BV(6),
-	_BV(5),
-	_BV(4),
-	_BV(3),
-	_BV(2),
+	_BV(0), /* 24, port A */
 	_BV(1),
-	_BV(0)
+	_BV(2),
+	_BV(3),
+	_BV(4),
+	_BV(5),
+	_BV(6),
+	_BV(7)
 };
 
 const uint8_t PROGMEM digital_pin_to_timer_PGM[] = {
