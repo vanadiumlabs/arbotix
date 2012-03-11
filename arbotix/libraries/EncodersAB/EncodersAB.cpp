@@ -27,7 +27,7 @@ EncodersAB Encoders = EncodersAB();
 
 unsigned char lastx;
 
-#if defined(__AVR_ATmega168__) // mini/arduino
+#if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) // mini/arduino
 void leftCounter(){
     // d2 & d8
     if(PINB&0x01)
@@ -100,7 +100,7 @@ void rightCounter(){
 #endif
 
 void EncodersAB::Begin(){
-  #if defined(__AVR_ATmega168__) // mini/arduino
+  #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) // mini/arduino
 	attachInterrupt(0, leftCounter, RISING);
     attachInterrupt(1, rightCounter, RISING);
   #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__) // arbotix
