@@ -155,6 +155,7 @@ extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
 #endif
 
 #define SetPosition(id, pos) (ax12SetRegister2(id, AX_GOAL_POSITION_L, pos))
+#define GetPosition(id) (ax12GetRegister(id, AX_PRESENT_POSITION_L, 2))
 #define TorqueOn(id) (ax12SetRegister(id, AX_TORQUE_ENABLE, 1))
 #define Relax(id) (ax12SetRegister(id, AX_TORQUE_ENABLE, 0))
 
