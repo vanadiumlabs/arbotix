@@ -63,7 +63,7 @@ const static uint8_t A7 = 31;
 #define digitalPinToPCMSKbit(p) (((p) <= 7) ? (p) : \
                                 (((p) <= 15) ? ((p) - 8) : \
                                 (((p) <= 23) ? ((p) - 16) : \
-                                 ((p) - 24)))
+                                 ((p) - 24))))
 
 #ifdef ARDUINO_MAIN
 
