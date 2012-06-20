@@ -16,6 +16,24 @@ arbotix.build.f_cpu=16000000L
 arbotix.build.core=arbotix
 arbotix.build.variant=standard
 
+##############################################################
+
+arbotixrx.name=ArbotiX w/ RX Shield
+arbotixrx.upload.protocol=arduino
+arbotixrx.upload.maximum_size=65536
+arbotixrx.upload.speed=38400
+arbotixrx.bootloader.low_fuses=0xFF
+arbotixrx.bootloader.high_fuses=0xDC
+arbotixrx.bootloader.extended_fuses=0xFD
+arbotixrx.bootloader.path=atmega644p
+arbotixrx.bootloader.file=ATmegaBOOT_644P.hex
+arbotixrx.bootloader.unlock_bits=0x3F
+arbotixrx.bootloader.lock_bits=0x0F
+arbotixrx.build.mcu=atmega644p
+arbotixrx.build.f_cpu=16000000L
+arbotixrx.build.core=arbotix
+arbotixrx.build.variant=rxshield
+
 #####################################################################
 
 #arbotix2.name=ArbotiX2

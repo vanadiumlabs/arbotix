@@ -1,5 +1,5 @@
 /*
-  pins_arduino.h - Pin definition functions for ArbotiX2
+  pins_arduino.h - Pin definition functions for ArbotiX
   Part of Arduino - http://www.arduino.cc/
 
   Copyright (c) 2012 Michael Ferguson
@@ -23,7 +23,7 @@
 #ifndef Pins_Arduino_h
 #define Pins_Arduino_h
 
-#define ARBOTIX2
+#define ARBOTIX_WITH_RX
 
 #include <avr/pgmspace.h>
 
