@@ -67,7 +67,7 @@ void setupIK(){
 
 /* Convert radians to servo position offset. */
 int radToServo(float rads){ 
-  float val = (rads*100)/51 * 100;
+  float val = (rads*100)/51 * @RAD_TO_SERVO_RESOLUTION;
   return (int) val; 
 }
 

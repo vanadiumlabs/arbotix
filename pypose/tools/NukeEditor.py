@@ -305,6 +305,7 @@ class NukeEditor(ToolPane):
         model.config( [int(v.GetValue()) for v in self.vars], [int(s.GetValue()) for s in self.servos])
         model.mins = [512,] + self.parent.project.poses["ik_min"]
         model.maxs = [512,] + self.parent.project.poses["ik_max"]
+        model.resolution = [1024,] + self.parent.project.resolution
         model.neutrals = [512,] + self.parent.project.poses["ik_neutral"]
         model.signs = [1,] + [1+(-2*(t=="-")) for t in self.signs]    
         self.model = model
@@ -494,6 +495,12 @@ class NukeEditor(ToolPane):
             params["@Y_STANCE"] = str(self.vars[0].GetValue() + self.vars[1].GetValue())
             params["@Z_STANCE"] = str(int(0.75*self.vars[2].GetValue())) 
             params["@LIFT_HEIGHT"] = str(int(0.2*self.vars[2].GetValue()))
+            # 10 or 12-bit?
+            if self.parent.project.resolution[0] == 1024:
+                params["@RAD_TO_SERVO_RESOLUTION"] = str(100)
+            elif self.parent.project.resolution[0] == 4096:
+                params["@RAD_TO_SERVO_RESOLUTION"] = str(25)
+
             # load general parameters 
             template = open("tools/models/core/template.ik").readlines()
             code = dict()
@@ -530,7 +537,7 @@ class NukeEditor(ToolPane):
             templates["nuke.h"] = open("tools/models/core/nuke.h").read()
             templates["nuke.cpp"] = open("tools/models/core/nuke.cpp").read() 
             sketch = os.path.split(skDir)[1]        
-            templates[sketch+".pde"] = open("tools/models/core/default.pde").read()     
+            templates[sketch+".ino"] = open("tools/models/core/default.pde").read()     
             # for each file
             for fileName in templates.keys():
                 # insert code blocks

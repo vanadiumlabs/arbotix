@@ -27,9 +27,13 @@ from NukeEditor import NukeDialog
 def sq(x):  
     return x*x
 # Convert radians to servo position offset.
-def radToServo(rads): 
-    val = (rads*100)/51 * 100;
-    return int(val) 
+def radToServo(rads, resolution = 1024):
+    if resolution == 4096:
+        val = (rads*100)/51 * 25;
+        return int(val)
+    else: 
+        val = (rads*100)/51 * 100;
+        return int(val)
 
 COXA = 0
 FEMUR = 1
@@ -84,12 +88,13 @@ class lizard3(dict):
         # Used to generate servo values for IK
         self.mins = [512 for i in range(3*self.legs+1)]
         self.maxs = [512 for i in range(3*self.legs+1)]
+        self.resolution = [1024 for i in range(3*self.legs+1)]
         self.neutrals = [512 for i in range(3*self.legs+1)]
         self.nextPose = [512 for i in range(3*self.legs+1)]
         self.signs = [1 for i in range(3*self.legs+1)]
         self.step = 0
 
-    def config(self, opt, dims=None, servos=None):
+    def config(self, opt, dims=None, servos=None, resolutions=None):
         self.legs = int(opt)
 
         # VARS = coxaLen, femurLen, tibiaLen, xBody, yBody, midyBody, xCOG, yCOG
@@ -124,6 +129,10 @@ class lizard3(dict):
             self.servos["RR Femur"] = servos[15]
             self.servos["LR Tibia"] = servos[16]
             self.servos["RR Tibia"] = servos[17]
+
+        # set resolution of each servo
+        if resolutions != None:
+            self.resolutions = resolutions
     
     def adjustPanel(self, panel):
         for var in panel.vars:  
@@ -161,13 +170,13 @@ class lizard3(dict):
             print "BodyIK:",ans
         return ans
 
-    def legIK(self, X, Y, Z):
+    def legIK(self, X, Y, Z, resolution):
         """ Compute leg servo positions. """
         ans = [0,0,0,0]    # (coxa, femur, tibia)
        
         try:
             # first, make this a 2DOF problem... by solving coxa
-            ans[0] = radToServo(atan2(X,Y))
+            ans[0] = radToServo(atan2(X,Y), resolution)
             trueX = int(sqrt(sq(X)+sq(Y))) - self.L_COXA
             im = int(sqrt(sq(trueX)+sq(Z)))  # length of imaginary leg
             
@@ -176,12 +185,12 @@ class lizard3(dict):
             d1 = sq(self.L_FEMUR)-sq(self.L_TIBIA)+sq(im)
             d2 = 2*self.L_FEMUR*im
             q2 = acos(d1/float(d2))
-            ans[1] = radToServo(q1+q2)  
+            ans[1] = radToServo(q1+q2, resolution)  
         
             # and tibia angle from femur...
             d1 = sq(self.L_FEMUR)-sq(im)+sq(self.L_TIBIA)
             d2 = 2*self.L_TIBIA*self.L_FEMUR;
-            ans[2] = radToServo(acos(d1/float(d2))-1.57)
+            ans[2] = radToServo(acos(d1/float(d2))-1.57, resolution)
         except:
             if self.debug:
                 "LegIK FAILED"
@@ -202,9 +211,9 @@ class lizard3(dict):
             gait = self.gaitGen("RF_GAIT")    
         if self.debug:
             print "RIGHT_FRONT: ", [self["RIGHT_FRONT"][i] + gait[i] for i in range(3)]
+        servo = self.servos["RF Coxa"]  
         req = self.bodyIK(self["RIGHT_FRONT"][0]+gait[0], self["RIGHT_FRONT"][1]+gait[1], self["RIGHT_FRONT"][2]+gait[2], self.X_COXA, self.Y_COXA, gait[3])
-        sol = self.legIK(self["RIGHT_FRONT"][0]+req[0]+gait[0],self["RIGHT_FRONT"][1]+req[1]+gait[1],self["RIGHT_FRONT"][2]+req[2]+gait[2])
-        servo = self.servos["RF Coxa"]        
+        sol = self.legIK(self["RIGHT_FRONT"][0]+req[0]+gait[0],self["RIGHT_FRONT"][1]+req[1]+gait[1],self["RIGHT_FRONT"][2]+req[2]+gait[2], self.resolutions[servo])
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -234,9 +243,9 @@ class lizard3(dict):
             gait = self.gaitGen("RR_GAIT")    
         if self.debug:
             print "RIGHT_REAR: ", [self["RIGHT_REAR"][i] + gait[i] for i in range(3)]
-        req = self.bodyIK(self["RIGHT_REAR"][0]+gait[0],self["RIGHT_REAR"][1]+gait[1],self["RIGHT_REAR"][2]+gait[2], -self.X_COXA, self.Y_COXA, gait[3])
-        sol = self.legIK(-self["RIGHT_REAR"][0]-req[0]-gait[0],self["RIGHT_REAR"][1]+req[1]+gait[1],self["RIGHT_REAR"][2]+req[2]+gait[2]);
         servo = self.servos["RR Coxa"]
+        req = self.bodyIK(self["RIGHT_REAR"][0]+gait[0],self["RIGHT_REAR"][1]+gait[1],self["RIGHT_REAR"][2]+gait[2], -self.X_COXA, self.Y_COXA, gait[3])
+        sol = self.legIK(-self["RIGHT_REAR"][0]-req[0]-gait[0],self["RIGHT_REAR"][1]+req[1]+gait[1],self["RIGHT_REAR"][2]+req[2]+gait[2], self.resolutions[servo])
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -266,9 +275,9 @@ class lizard3(dict):
             gait = self.gaitGen("LF_GAIT")    
         if self.debug:
             print "LEFT_FRONT: ", [self["LEFT_FRONT"][i] + gait[i] for i in range(3)]
-        req = self.bodyIK(self["LEFT_FRONT"][0]+gait[0],self["LEFT_FRONT"][1]+gait[1],self["LEFT_FRONT"][2]+gait[2], self.X_COXA, -self.Y_COXA, gait[3])
-        sol = self.legIK(self["LEFT_FRONT"][0]+req[0]+gait[0],-self["LEFT_FRONT"][1]-req[1]-gait[1],self["LEFT_FRONT"][2]+req[2]+gait[2]);
         servo = self.servos["LF Coxa"]
+        req = self.bodyIK(self["LEFT_FRONT"][0]+gait[0],self["LEFT_FRONT"][1]+gait[1],self["LEFT_FRONT"][2]+gait[2], self.X_COXA, -self.Y_COXA, gait[3])
+        sol = self.legIK(self["LEFT_FRONT"][0]+req[0]+gait[0],-self["LEFT_FRONT"][1]-req[1]-gait[1],self["LEFT_FRONT"][2]+req[2]+gait[2], self.resolutions[servo])
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -297,10 +306,10 @@ class lizard3(dict):
         if self.gaitGen != None:
             gait = self.gaitGen("LR_GAIT")   
         if self.debug:
-            print "LEFT_REAR: ", [self["LEFT_REAR"][i] + gait[i] for i in range(3)] 
-        req = self.bodyIK(self["LEFT_REAR"][0]+gait[0],self["LEFT_REAR"][1]+gait[1],self["LEFT_REAR"][2]+gait[2], -self.X_COXA, -self.Y_COXA, gait[3])
-        sol = self.legIK(-self["LEFT_REAR"][0]-req[0]-gait[0],-self["LEFT_REAR"][1]-req[1]-gait[1],self["LEFT_REAR"][2]+req[2]+gait[2])
+            print "LEFT_REAR: ", [self["LEFT_REAR"][i] + gait[i] for i in range(3)]
         servo = self.servos["LR Coxa"]
+        req = self.bodyIK(self["LEFT_REAR"][0]+gait[0],self["LEFT_REAR"][1]+gait[1],self["LEFT_REAR"][2]+gait[2], -self.X_COXA, -self.Y_COXA, gait[3])
+        sol = self.legIK(-self["LEFT_REAR"][0]-req[0]-gait[0],-self["LEFT_REAR"][1]-req[1]-gait[1],self["LEFT_REAR"][2]+req[2]+gait[2], self.resolutions[servo])
         output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
         if output < self.maxs[servo] and output > self.mins[servo]:
             self.setNextPose(servo, output)
@@ -330,10 +339,10 @@ class lizard3(dict):
             if self.gaitGen != None:
                 gait = self.gaitGen("RM_GAIT")    
             if self.debug:
-                print "RIGHT_MIDDLE: ", [self["RIGHT_MIDDLE"][i] + gait[i] for i in range(3)] 
-            req = self.bodyIK(self["RIGHT_MIDDLE"][0]+gait[0],self["RIGHT_MIDDLE"][1]+gait[1],self["RIGHT_MIDDLE"][2]+gait[2], 0, self.Y_MID, gait[3])
-            sol = self.legIK(+self["RIGHT_MIDDLE"][0]+req[0]+gait[0],self["RIGHT_MIDDLE"][1]+req[1]+gait[1],self["RIGHT_MIDDLE"][2]+req[2]+gait[2])
+                print "RIGHT_MIDDLE: ", [self["RIGHT_MIDDLE"][i] + gait[i] for i in range(3)]
             servo = self.servos["RM Coxa"]
+            req = self.bodyIK(self["RIGHT_MIDDLE"][0]+gait[0],self["RIGHT_MIDDLE"][1]+gait[1],self["RIGHT_MIDDLE"][2]+gait[2], 0, self.Y_MID, gait[3])
+            sol = self.legIK(+self["RIGHT_MIDDLE"][0]+req[0]+gait[0],self["RIGHT_MIDDLE"][1]+req[1]+gait[1],self["RIGHT_MIDDLE"][2]+req[2]+gait[2], self.resolutions[servo])
             output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)
@@ -362,10 +371,10 @@ class lizard3(dict):
             if self.gaitGen != None:
                 gait = self.gaitGen("LM_GAIT")    
             if self.debug:
-                print "LEFT_MIDDLE: ", [self["LEFT_MIDDLE"][i] + gait[i] for i in range(3)] 
+                print "LEFT_MIDDLE: ", [self["LEFT_MIDDLE"][i] + gait[i] for i in range(3)]
+            servo = self.servos["LM Coxa"] 
             req = self.bodyIK(self["LEFT_MIDDLE"][0]+gait[0],self["LEFT_MIDDLE"][1]+gait[1],self["LEFT_MIDDLE"][2]+gait[2], 0, -self.Y_MID, gait[3])
-            sol = self.legIK(self["LEFT_MIDDLE"][0]+req[0]+gait[0],-self["LEFT_MIDDLE"][1]-req[1]-gait[1],self["LEFT_MIDDLE"][2]+req[2]+gait[2])
-            servo = self.servos["LM Coxa"]
+            sol = self.legIK(self["LEFT_MIDDLE"][0]+req[0]+gait[0],-self["LEFT_MIDDLE"][1]-req[1]-gait[1],self["LEFT_MIDDLE"][2]+req[2]+gait[2], self.resolutions[servo])
             output = self.neutrals[servo]+self.signs[servo]*sol[COXA]
             if output < self.maxs[servo] and output > self.mins[servo]:
                 self.setNextPose(servo, output)

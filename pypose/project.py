@@ -69,6 +69,7 @@ class project:
     def __init__(self):
         self.name = ""
         self.count = 18
+        self.resolution = [1024 for i in range(self.count)]
         self.poses = dict()
         self.sequences = dict()
         self.nuke = ""    
@@ -80,7 +81,11 @@ class project:
         prjFile = open(filename, "r").readlines()    
         # load robot name and servo count
         self.name = prjFile[0].split(":")[0]
-        self.count = int(prjFile[0].split(":")[1])    
+        self.count = int(prjFile[0].split(":")[1])
+        # load resolution of each servo in count
+        self.resolution = [int(x) for x in prjFile[0].split(":")[2:]]
+        if len(self.resolution) != self.count:
+            self.resolution = [1024 for x in range(self.count)]
         # load poses and sequences
         for line in prjFile[1:]:  
             if line[0:5] == "Pose=":
@@ -96,7 +101,7 @@ class project:
 
     def saveFile(self, filename):
         prjFile = open(filename, "w")
-        print>>prjFile, self.name + ":" + str(self.count)
+        print>>prjFile, self.name + ":" + str(self.count) + ":" + ":".join([str(x) for x in self.resolution])
         for p in self.poses.keys():            
             print>>prjFile, "Pose=" + p + ":" + str(self.poses[p])
         for s in self.sequences.keys():
@@ -105,12 +110,13 @@ class project:
             print>>prjFile, "Nuke=" + self.nuke
         self.save = False
 
-    def new(self, nName, nCount):
+    def new(self, nName, nCount, nResolution):
         self.poses = dict()
         self.sequences = dict()
         self.filename = ""
         self.count = nCount
         self.name = nName
+        self.resolution = [nResolution for i in range(self.count)]
         self.save = True
 
     ###########################################################################

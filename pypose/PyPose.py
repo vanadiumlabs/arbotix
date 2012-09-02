@@ -31,7 +31,7 @@ from PoseEditor import *
 from SeqEditor import *
 from project import *
 
-VERSION = "PyPose/NUKE 0014"
+VERSION = "PyPose/NUKE 0015"
 
 ###############################################################################
 # Main editor window
@@ -186,7 +186,7 @@ class editor(wx.Frame):
         """ Open a dialog that asks for robot name and servo count. """ 
         dlg = NewProjectDialog(self, -1, "Create New Project")
         if dlg.ShowModal() == wx.ID_OK:
-            self.project.new(dlg.name.GetValue(), dlg.count.GetValue())
+            self.project.new(dlg.name.GetValue(), dlg.count.GetValue(), int(dlg.resolution.GetValue()))
             self.loadTool()      
             self.sb.SetStatusText('created new project ' + self.project.name + ', please create a pose...')
             self.SetTitle(VERSION+" - " + self.project.name)
@@ -380,16 +380,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA)
 # New Project Dialog
 class NewProjectDialog(wx.Dialog):
     def __init__(self, parent, id, title):
-        wx.Dialog.__init__(self, parent, id, title, size=(270, 180))  
+        wx.Dialog.__init__(self, parent, id, title, size=(310, 180))  
 
         panel = wx.Panel(self, -1)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        wx.StaticBox(panel, -1, 'Project Parameters', (5, 5), (260, 80))
+        wx.StaticBox(panel, -1, 'Project Parameters', (5, 5), (300, 120))
         wx.StaticText(panel, -1, 'Name:', (15,30))
         self.name = wx.TextCtrl(panel, -1, '', (105,25)) 
         wx.StaticText(panel, -1, '# of Servos:', (15,55))
         self.count = wx.SpinCtrl(panel, -1, '18', (105, 50), min=1, max=30)
+        wx.StaticText(panel, -1, 'Resolution:', (15,80))
+        self.resolution =  wx.ComboBox(panel, -1, '1024', (105, 75), choices=['1024','4096'])
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         okButton = wx.Button(self, wx.ID_OK, 'Ok', size=(70, 30))
@@ -400,7 +402,7 @@ class NewProjectDialog(wx.Dialog):
         vbox.Add(panel)
         vbox.Add(hbox, 1, wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, 10)
 
-        self.SetSizer(vbox)    
+        self.SetSizer(vbox)
 
 
 if __name__ == "__main__":

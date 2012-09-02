@@ -62,7 +62,7 @@ class PoseEditor(ToolPane):
             else:
                 temp.enable = wx.CheckBox(temp, i, "ID "+str(i+1))
             temp.enable.SetValue(True)
-            temp.position = wx.Slider(temp, i, 512, 0, 1023, wx.DefaultPosition, (200, -1), wx.SL_HORIZONTAL | wx.SL_LABELS)
+            temp.position = wx.Slider(temp, i, 512, 0, self.parent.project.resolution[i]-1, wx.DefaultPosition, (200, -1), wx.SL_HORIZONTAL | wx.SL_LABELS)
             hbox.Add(temp.enable)
             hbox.Add(temp.position)
             temp.SetSizer(hbox)
@@ -220,7 +220,6 @@ class PoseEditor(ToolPane):
                     # aww shucks...
                     #curPose = list() TODO: should we use a syncWrite here?
                     for servo in range(self.parent.project.count):
-                         
                          pos = self.servos[servo].position.GetValue()
                          self.port.setReg(servo+1, P_GOAL_POSITION_L, [pos%256, pos>>8])
                          self.parent.project.poses[self.curpose][servo] = self.servos[servo].position.GetValue()                 
