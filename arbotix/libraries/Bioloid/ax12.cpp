@@ -141,6 +141,8 @@ int ax12ReadPacket(int length){
         ax_rx_buffer[bcount] = ax_rx_int_buffer[bcount + offset];
         if((bcount == 0) && (ax_rx_buffer[0] != 0xff))
             offset++;
+        else if((bcount == 2) && (ax_rx_buffer[2] == 0xff))
+            offset++;
         else
             bcount++;
     }
@@ -174,8 +176,10 @@ void ax12Init(long baud){
     DDRD |= 0x10;   // Servo B = output
     PORTD &= 0xEF;  // Servo B low
   #endif
+    // set RX as pull up to hold bus to a known level
+    PORTD |= (1<<2);
     // enable rx
-    setRX(0);    
+    setRX(0);
 #endif
 }
 
