@@ -35,7 +35,7 @@ class Commander
 {    
   public:
     Commander(); 
-    void begin(int baud);
+    void begin(unsigned long baud);
     void UseSouthPaw();     // enable southpaw configuration
     int ReadMsgs();         // must be called regularly to clean out Serial buffer
 
