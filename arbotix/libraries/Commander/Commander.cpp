@@ -25,7 +25,7 @@ Commander::Commander(){
     index = -1;
     status = 0;
 }
-void Commander::begin(int baud){
+void Commander::begin(unsigned long baud){
     Serial.begin(baud);
 }
 
