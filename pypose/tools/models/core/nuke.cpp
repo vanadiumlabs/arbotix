@@ -1,6 +1,6 @@
 #include <ax12.h>
 #include <BioloidController.h>
-#include <WProgram.h>
+#include <Arduino.h>
 #include <math.h>
 #include "nuke.h"
 

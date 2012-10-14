@@ -10,7 +10,7 @@ class IkModel:
 
 iKmodels = dict()
 iKmodels["Lizard 3DOF"] = IkModel("lizard3")
-iKmodels["Mammal 3DOF"] = IkModel("mammal3")
-iKmodels["Biped 4/5/6"] = IkModel("biped",[4,5,6], "# of DOF")
+#iKmodels["Mammal 3DOF"] = IkModel("mammal3")
+#iKmodels["Biped 4/5/6"] = IkModel("biped",[4,5,6], "# of DOF")
 #iKmodels["Linear-Lift + 2DOF"] = IkModel("linear2")
 
