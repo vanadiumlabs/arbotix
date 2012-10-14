@@ -322,7 +322,7 @@ class NukeEditor(ToolPane):
     def doSignTest(self, e=None):
         """ Do the sign test, let's hope we pass. This is handled by the model. """
         if self.doChecks(["project","port","ik"]) > 0:
-            self.loadModel()
+            self.configModel()
             self.signs = self.model.doSignTest(self) 
             self.save()
     def doWalkTest(self, e=None):
