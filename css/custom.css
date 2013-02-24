@@ -1,0 +1,41 @@
+body {
+  padding: 0px;
+  margin: auto;
+  max-width: 1000px;
+}
+
+h1 {
+  color: #ffffff;
+  padding: 0px;
+  margin: 5px;
+}
+
+#intro {
+  background-color: #000000;
+  padding: 25px;
+}
+
+#started {
+  background-color: #ff9900;
+  padding: 25px;
+}
+
+#libraries {
+  background-color: #424242;
+  padding: 25px;
+}
+
+#license {
+  background-color: #000000;
+  padding: 25px;
+}
+
+.content {
+  border-radius: 10px;
+  background-color: #ffffff;
+  max-width: 1000px;
+  margin: 25px;
+  padding: 10px;
+}
+
+

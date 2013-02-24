@@ -1,19 +1,131 @@
 <!DOCTYPE html>
 <html>
-<head>
 
-</head>
+  <head>
+    <link rel="stylesheet" href="css/custom.css">
+    <title>ArbotiX RoboController</title>
+  </head>
 
-<h1>Arbotix RoboController</h1>
+  <body>
+    <!-- TODO: toolbar -->
+    <div id="intro">
+      <h1>ArbotiX RoboController</h1>
+      <div class="content">
+        <img style="float:left; margin:5px;width:200px;" src="img/arbotix.jpg"/>
 
-<img src="img/arbotix.jpg" align="right"/>
+        <h3>
+        The ArbotiX robocontroller is an Arduino compatible microcontroller board, designed to control small-to-medium sized robots, especially walkers that use Dynamixel AX or MX-series servos.
+        </h3>
+        <p>
+        Support is typically handled through the very active user community found in the <a href="http://forums.trossenrobotics.com"> Trossen Robotics Community</a> Forums. You can purchase an ArbotiX from <a href="http://www.trossenrobotics.com/p/ArbotiX-robot-controller.aspx">Trossen Robotics</a>.
+        </p>
 
-<p>The Arbotix robocontroller is an Arduino compatible microcontroller board, designed to control small-to-medium sized robots, especially walkers that use Bioloid AX-12 servos. Support is typically handled through the <a href="http://forums.trossenrobotics.com"> Trossen Robotics Community</a> Forum. You can purchase an Arbotix from <a href="http://www.trossenrobotics.com/p/arbotix-robot-controller.aspx">Trossen Robotics</a>. </p>
+        <p><a href="http://vanadiumlabs.github.com/pypose">PyPose</a> is a related project for an open-source pose capture program.</p>
+        <p style="clear:both;"></p>
+      </div>
+    </div>
 
-<p><a href="http://vanadiumlabs.github.com/pypose">PyPose</a> is a related project for an open-source pose capture program.</p>
+    <div id="started">
+      <h1>Getting Started</h1>
+      <div class="content">
 
-<h2>Documentation</h2>
-Coming Soon!
+This will take a few steps, but then you'll be set up to use your ArbotiX:
 
-<h2> Licensing </h2>
-All of the Arbotix libraries, robocontroller libraries, and Arduino extensions are licensed under the GNU Lesser General Public License v2.1. PyPose, and any other desktop software included (such as !PyMech), is released under the GNU General Public License v2.  
+<ul>
+<li><a href="#arduinosetup">Install Arduino Software</a> - the IDE for creating code for our controller.</li>
+<li><a href="#arbotixsetup">Install ArbotiX Distribution</a> - we'll also need to install some files to use the ArbotiX with the Arduino IDE.</li>
+<li><a href="#connectors">Learn About The Connectors</a> and how to apply power to your board</li>
+<li><a href="#testsetup">Test Your Setup</a> and update pypose sketch at the same time.</li>
+<li><a href="#installpypose">Install PyPose</a> - A simple pose and capture program for the ArbotiX.</li>
+</ul>
+
+<a id="arduinosetup"><h3>Arduino Software Setup</h3></a>
+<p>
+The ArbotiX software is based on <a href="http://arduino.cc">Arduino</a>. The first thing we need to do is to install the Arduino software:
+<ol>
+<li> Install the Arduino framework: follow these instructions at <a href="http://arduino.cc/en/Main/Software">to install Arduino 1.0.x</a>.</li>
+</ol>
+The rest of this document assumes familiarity with the Arduino environment. See the Arduino documents for details on using the Arduino IDE.
+<p>
+
+<a id="arbotixsetup"><h3>ArbotiX Software Setup</h3></a>
+<p>
+To use the ArbotiX with the Arduino IDE we need to add some files to our Arduino sketchbook folder.
+</p>
+<p>
+Most users will want to <a href="http://github.com/vanadiumlabs/arbotix/zipball/master">download the latest ArbotiX/PyPose release</a>, extract the zip file, and copy the contents of the arbotix folder into the sketchbook. This includes the hardware folder, libraries folder and a number of example sketches.
+</p>
+<p>
+Alternatively you can grab a zipball of the <a href="http://github.com/vanadiumlabs/arbotix/zipball/master">absolute latest</a>, bleeding edge source, or checkout from the <a href="http://github.com/vanadiumlabs/arbotix">github repository</a>, and then locate the files correctly as described above.
+</p>
+
+<a id="arbotixsetup"><h3>Connecting Power, Etc</h3></a>
+<p>
+Please see the downloadable ArbotiX manual for instructions and guidance in connecting external devices and power to the board. Although all boards ship with the pypose sketch already installed, we recommend always upgrading to the newest version, in case changes have been made since your board was produced.
+</p>
+<p><!-- TODO: add link here-->
+See the RX-Bridge page for details on setting up an RX Bridge.
+</p>
+
+<a id="installpypose"><h3>Upload PyPose Sketch</h3></a>
+<p>
+Now, let's test our Arduino installation and programmer. Before PyPose can interact with our robot, we need to download a program (or a <i>sketch</i> as the Arduino environment calls them) onto the ArbotiX. The "pypose" sketch provides a pass through from the ArbotiX to the Bioloid bus, by speaking the correct protocol with PyPose.
+
+<p>
+Open the Arduino IDE, from File -> Open select the PyPose sketch. From the Tools -> Board menu, select ArbotiX board to make sure all went well above. Connect your board via either the ISP or FTDI cable, select the correct port, and Upload it. While we ship each board with a version of pypose installed, it may not be the latest. Please Note: An FTDI cable should not be connected at the same time as an XBEE radio is in the board. Always remove the XBEE radio before connecting an FTDI cable
+</p>
+
+<p>
+Any time you load your own code onto the board, it will overwrite the pypose sketch, so you'll have to upload it before using pypose again.
+</p>
+
+<h4>Uploading with an ISP</h4>
+If you want to use an In-System Programmer (ISP), the usage has changed in Arduino 1.0. You now use File->Upload using Programmer and no longer have to manually edit files! The Arduino environment now includes a number of supported programmers, but we have added one for the Pololu Serial ISP which shows up as AVRISP mkII (serial).
+
+<h4>Wireless Uploading</h4>
+With a bootloader on the ArbotiX, you can do wireless uploading. The ArbotiX bootloader runs at a 38400 baud rate, so your XBEE radios need to be set to 38400 for wireless downloading. You'll also have to manually push the RESET button. A tutorial on getting around the reset button push is here: http://www.ladyada.net/make/xbee/arduino.html
+<p>
+Note: wireless uploading is dangerous, if you experience RF-interference something may go wrong. We do not recommend doing this unless you have an ISP to restore the bootloader, and also have enough experience to know how to restore the bootloader.
+</p>
+
+
+<h3>PyPose Setup</h3>
+PyPose is a pose and capture program, written in Python using wxPython. We of course will have to install Python, wxPython, PySerial to access serial ports, and then PyPose itself.
+
+
+<ul>
+<li>Download and install Python 2.x: http://www.python.org/download/releases/</li>
+<li>Download and install wxPython: http://www.wxpython.org/download.php</li>
+<li>Download and install PySerial: http://sourceforge.net/projects/pyserial/files/</li>
+<li>Put the PyPose software in an easy to use location, and start pypose.py to run PyPose.</li>
+</ul>
+If using Ubuntu, you can install items 1-3 of the above with: sudo apt-get install python python-serial python-wxgtk2.8.
+
+<h3>Connect with PyPose</h3>
+PyPose communicates over a serial link to the board, either through an FTDI cable or XBEEs. If using XBEEs, they must be set to 38400, and should be paired. See the XBEE tutorial on TRC for details:
+
+<p>
+Congratulations, your ArbotiX and PyPose are setup! Now you can go to the PyPose documentation page to start interacting with your robot.
+</p>
+
+      </div>
+    </div><!-- id=started -->
+
+    <div id="libraries">
+      <h1>Libraries</h1>
+      <div class="content">
+      blah
+      </div>
+    </div>
+
+
+    <div id="license">
+      <h1> Licensing </h1>
+      <div class="content">
+        All of the ArbotiX code, libraries, and Arduino extensions are licensed under the GNU Lesser General Public License v2.1. 
+        PyPose, and any other desktop software included (such as PyMech), is released under the GNU General Public License v2.
+      </div>
+    </div>
+
+  </body>
+</html>
