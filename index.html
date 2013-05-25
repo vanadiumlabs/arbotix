@@ -137,7 +137,312 @@ Congratulations, your ArbotiX and PyPose are setup! Now you can go to the PyPose
     <div id="libraries">
       <h1>Libraries</h1>
       <div class="content">
-      blah
+
+A number of the stock Arduino libraries will work on the ArbotiX, but there are also a couple of specific ones to use the on-board
+hardware:
+
+<ul>
+<li><a href="bioloid">BioloidController</a> - for interacting with AX/MX servos.</li>
+<li><a href="#commander">Commander</a> - library for communicating with a handheld ArbotiX Commander, or a PC.</li>
+<li><a href="#encoders">EncodersAB</a> - for using the onboard encoder headers.</li>
+<li><a href="#hservo">HServo</a> - a repackaged version of the older Servo library.</li>
+<li><a href="#motors2">Motors2</a> - for controlling the onboard dual 1Amp motor drivers (uses Timer2).</li>
+<li><a href="#sharpir">SharpIR</a> - for reading distance using any of the family of Sharp IR ranging sensors.</li>
+</ul>
+
+The default Serial library that comes with Arduino environment will work with either the FTDI cable or the XBEE radio
+on the ArbotiX (remember, don't connect both the FTDI and the XBEE at the same time). We suggest using 38400 as the baud rate,
+since all of our demos use that.
+
+<h2>Also check out the <a href="codebook.html">CodeBook</a></h2>
+
+<a id="bioloid"><h3>BioloidController</h3><a>
+<p>
+The BioloidController library is an easy way to interact with Bioloid servos. It consists of several files: 
+<ul>
+<li>ax12.h &amp; ax12.cpp - implement the low-level serial communications code for communicating with the Bioloid bus.</li>
+<li>BioloidController.h &amp; BioloidController.cpp - implement higher level functions, like loading a pose from
+FLASH memory, or manipulating poses.</li>
+</ul>
+</p>
+<h4>BioloidController: Getting Started</h4>
+<p>
+AX-12 servos are different from regular hobby servos. They connect to a serial bus, and each has an ID number. 
+Rather than receiving a PWM signal, we write to onboard memory locations through our serial protocol. For more 
+information about AX-12 servos please see the documentation from Robotis.
+</p>
+<p>
+The lowest-level of the BioloidController library is composed of simple functions to read/write register
+locations on the AX-12. We have also provided a number of special definitions to make the most common operations
+a simple function call:
+<pre class="source">
+// need to include header files, you can do this in the Arduino IDE, by selecting Sketch|Import Library|Bioloid.
+#include &lt;ax12.h&gt;
+#include &lt;BioloidController.h&gt;
+
+// we always need to create an instance of the bioloid control, usually with baud = 1Mbps.
+BioloidController bioloid = BioloidController(1000000);
+
+int i;
+void setup(){
+    i = 0;
+}
+
+void loop(){
+    // set AX-12 servo with ID=1, to position i, where 0=&lt;i&lt;1024
+    SetPosition(1,i);
+    i = (i++)%1024;
+}
+</pre>
+</p>
+<p>
+Helper function macros include:
+<ul>
+<li>SetPosition(servo_id, position) - set the position of a servo.</li>
+<li>TorqueOn(servo_id) - turns on the torque</li>
+<li>Relax(servo_id) - turns off the torque, allows hand-posing the servos.</li>
+</ul>
+</p>
+<p>
+However, you can access the full set of registers using:
+<ul>
+<li>ax12GetRegister(servo_id, regstart, length) - read a register value back, length should currently
+be either 1 or 2, regstart should be the name/memory location of the register. All these definitions are
+included in ax12.h, such as AX_GOAL_POSITION_L.</li>
+<li>ax12SetRegister(servo_id, regstart, data) - write the value of a single register within a servo. As above,
+regstart should be the name/memory location of the register, data is the byte to be written.</li>
+<li>ax12SetRegister2(servo_id, regstart, data) - write the value of a 2-byte register.</li>
+</ul>
+</p>
+
+<h4>BioloidController: Using Poses</h4>
+<p>
+Manipulating individual servos is nice, but when we have multi-servo legged robots, it can
+be slow and repetitive. A common solution is to use poses and to play the poses out to have
+the robot walk. If we have gathered our poses using PyPose, we will have exported a pose file that looks like:
+<pre class="source">
+#ifndef DROID_POSES
+#define DROID_POSES
+
+#include &lt;avr/pgmspace.h&gt;
+
+PROGMEM prog_uint16_t liftLeft[] = {4, 612, 620, 450, 380};
+PROGMEM prog_uint16_t plantRight[] = {4, 612, 620, 508, 516};
+PROGMEM prog_uint16_t swingRight[] = {4, 612, 620, 710, 593};
+PROGMEM prog_uint16_t swingLeft[] = {4, 413, 410, 450, 390};
+PROGMEM prog_uint16_t plantLeft[] = {4, 418, 411, 503, 516};
+PROGMEM prog_uint16_t liftRight[] = {4, 523, 520, 712, 592};
+
+PROGMEM transition_t forward[] = {{0,7} ,{plantLeft,250} , ...
+
+#endif
+</pre>
+Where droid was the name of our robot (PyPose automatically converts it to upper case during export),
+and liftLeft, plantRight, etc are the pose names. We will typically save our pose file as poses.h, in the
+directory where our sketch is located. This pose file is the example from our video of making the walking droid work
+with an ArbotiX. We'll discuss the transition sequence (forward) later.
+</p>
+<p>
+We can now load these poses from FLASH memory, and send them out to the servos using a bioloid-bus SyncWrite
+(which is much faster than setting the position of each servo individually).
+</p>
+<h4>BioloidController: Interpolation Engine</h4>
+<p>
+An important consideration is how fast should we move from one pose to another? If we move to fast,
+a walking robot will likely topple over. AX-12 servos are too fast to let them go directly to the new
+position, so if we want a gradual change, we will need to interpolate between our current pose and our
+next pose. The BioloidController library allows this to be done very easily:
+<pre class="source">
+#include &lt;ax12.h&gt;
+#include &lt;BioloidController.h&gt;
+#include "poses.h"  // pose file generated from PyPose
+
+BioloidController bioloid = BioloidController(1000000);
+
+#define frames 6
+int idx = 0;
+
+// stand up slowly
+void setup(){    
+    delay(100);                    // recommended pause
+    bioloid.loadPose(plantLeft);   // load the pose from FLASH, into the nextPose buffer
+    bioloid.readPose();            // read in current servo positions to the curPose buffer
+    bioloid.interpolateSetup(500); // setup for interpolation from current->next over 1/2 a second
+    while(bioloid.interpolating > 0){  // do this while we have not reached our new pose
+        bioloid.interpolateStep();     // move servos, if necessary. 
+        delay(3);
+    }
+}
+
+void loop(){}
+</pre>
+</p>
+<p>
+The interpolation engine is very simple. It writes a new frame out to the servos at about 30Hz. If your
+loop code gets really long, this could become problematic. Eventually, we will have an interpolation
+engine that is interrupt driven, so that the movement is more guaranteed to be smooth.
+</p>
+<p>
+An item I did not discuss above, was bioloid.readPose(), this queries each servo, and loads their
+positions into the curpose buffer. This is most useful for standing up gently, as shown above.
+bioloid.loadPose("pose_name") always loads into the nextpose buffer, and interpolation always
+happens from curpose to nextpose. Note that is recommended to have a delay of at least 100ms after
+startup before a readPose(), otherwise the AX-12s may not be ready and legs may jitter.
+</p>
+<h4>BioloidController: Walking with Sequences</h4>
+<p>
+We could manually handle loading pose after pose and writing them out to the servos, or we can use a
+sequence. A sequence can be constructed in PyPose and is exported inside our pose file. Each sequence
+contains several transitions, each transition is a pose name and an interpolation time to use when
+transitioning to that pose.
+<pre class="source">
+#include &lt;ax12.h&gt;
+#include &lt;BioloidController.h&gt;
+#include "poses.h"
+
+BioloidController bioloid = BioloidController(1000000);
+
+void setup(){
+    // stand up slowly
+    delay(100);                    // recommended pause
+    bioloid.loadPose(plantLeft);
+    bioloid.readPose();
+    bioloid.interpolateSetup(500);
+    while(bioloid.interpolating > 0){
+        bioloid.interpolateStep();
+        delay(3);
+    }
+    
+    // start our walking
+    bioloid.playSeq(forward);
+}
+
+void loop(){
+    bioloid.play();
+}
+</pre>
+We're using the same code to "stand" up, but then we call playSeq() with the name of a sequence, in our case,
+forward which will make the robot walk forward. playSeq() is somewhat like interpolateSetup(), it just bootstraps
+our system. We need to call play() just as we called interpolateStep(). Just like bioloid.interpolating, we have a
+variable that tells us when we're done, bioloid.playing.
+</p>
+
+<a id="motors2"><h3>Motors2</h3></a>
+<p>
+This library implements a dual motor driver using Timer2, it can be used to control the onboard motor driver on the ArbotiX.
+It has several functions:
+
+<pre class="source">
+void left(int pwm) - set the left motor speed.
+void right(int pwm) - set the right motor speed.
+void set(int lpwm, int rpwm) - set the left and right motor speeds at the same time.
+</pre>
+Motor speeds are between -255 and 255. -255 is full reverse, 0 is stopped, and 255 is full speed forward.
+<pre class="source">
+#include &lt;Motors2.h&gt;
+
+Motors2 drive = Motors2();
+
+void setup(){
+    drive.set(-255,-255); // drive backwards at full speed 
+    delay(1000);
+
+    drive.set(0,0); // stop
+    delay(1000);
+
+    drive.set(100,100); // drive forward at half speed
+    delay(1000);
+
+    drive.left(0); // stop the left motor, turn in place
+    delay(500);    
+    drive.right(50); // cut right motor speed in half
+    delay(500)
+    drive.right(0); // and stop
+}
+
+void loop(){
+    
+}
+</pre>
+</p>
+
+
+<a id="encoders"><h3>EncodersAB</h3></a>
+<p>
+The EncodersAB library will decode 2 pairs of quadrature signals using a set of interrupts. The library
+works with either the ArbotiX or the MINI. There is no need to create an instance of the library, it is
+automatically created by the system, named Encoders. The left & right count are long integers, but they
+could overrun if not read and cleared often enough.
+
+<pre class="source">
+/* This sketch will print encoder values every 5s, showing how 
+far the wheel has moved in the 5s interval -- the motors are 
+not running though, just move it with your hand. */
+#include &lt;EncodersAB.h&gt;
+
+void setup(){
+    Encoders.begin();
+    Serial.begin(38400);
+    Serial.println("Encoder Test!");
+}
+
+void loop(){
+    delay(5000);
+    Serial.print("L:");
+    Serial.print(Encoders.left);     // get the left side value
+    Serial.print(" R:");
+    Serial.println(Encoders.right);  // and right side
+    Encoders.reset();                // set left & right both to 0
+}
+</pre>
+Note that on the ArbotiX, the interrupt handlers are on a multiplexed channel, and thus are somewhat long 
+-- maximum count frequency is therefore limited.
+</p>
+
+<a id="hservo"><h3>HServo</h3></a>
+<p>
+The HServo library is basically a repackaged version of the old hardware-only Servo library. If your ArbotiX is 
+heavily loaded, you may find that the new software-extended Serial library causes glitches. This library will
+allow you to control servos without glitches -- however it is limited to only 2 servos, instead of the 12 that
+the new Servo library can do. The interface is the same as the Servo library, but can only be used on pins 12 and 13.
+</p>
+
+<a id="sharpir"><h3>SharpIR</h3></a>
+<p>
+This library allows easy usage of a number of Sharp IR ranging sensors. Each IR ranger uses on analog pin.
+The library function getData() converts the analog voltage into a distance in centimeters. The library
+function getSmoothData() takes multiple readings from the analog port and may yield better results when
+the sensor power supply is noisy.
+</p>
+<p>
+When creating a our SharpIR object, we need to pass both the type of sensor connected, and which analog
+pin it is connected to. The analog pins are numbered 0-7. The valid types are:
+<ul>
+<li>GP2D12 - The original analog IR ranger in the Sharp family of sensors. Mid range sensor, 4"-32" range.
+Use this for sensors marked as GP2D12 or GP2Y0A21YK (which is a newer ROHS version).</li>
+<li>GP2D120 - Short range sensor, 1.5"-12" range.</li>
+<li>GP2Y0A02YK - Long range sensor, 8"-60" range.</li>
+</ul>
+It is important to select the correct sensors type, or the conversion will be incorrect and you will
+receive incorrect and useless range data.
+<pre class="source">
+#include &lt;SharpIR.h&gt;
+
+// To create an object, we need to pass both the type, and the analog pin being used
+SharpIR myIR = SharpIR(GP2D120,0);
+
+void setup(){
+    Serial.begin(38400);
+}
+
+// print distance in CM, every second
+void loop(){            
+    Serial.println(myIR.getData());
+    delay(1000);        
+}
+</pre>
+</p>
+
       </div>
     </div>
 

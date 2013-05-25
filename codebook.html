@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <link rel="stylesheet" href="css/custom.css">
+    <title>ArbotiX RoboController - CodeBook</title>
+  </head>
+
+  <body>
+    <!-- TODO: toolbar -->
+    <div id="intro">
+      <h1>ArbotiX RoboController</h1>
+      <div class="content">
+        <img style="float:left; margin:5px;width:200px;" src="img/arbotix.jpg"/>
+
+        <h3>
+        The ArbotiX robocontroller is an Arduino compatible microcontroller board, designed to control small-to-medium sized robots,
+        especially walkers that use Dynamixel AX or MX-series servos.
+        </h3>
+        <p>
+        Support is typically handled through the very active user community found in the <a href="http://forums.trossenrobotics.com">
+        Trossen Robotics Community</a> Forums. You can purchase an ArbotiX from
+        <a href="http://www.trossenrobotics.com/p/ArbotiX-robot-controller.aspx">Trossen Robotics</a>. Please file tickets on
+        <a href="https://github.com/vanadiumlabs/arbotix/issues">GitHub</a>.
+        </p>
+
+        <p><a href="http://vanadiumlabs.github.com/pypose">PyPose</a> is a related project for an open-source pose capture program.</p>
+        <p style="clear:both;"></p>
+      </div>
+    </div>
+
+    <div id="started">
+      <h1>CodeBook</h1>
+      <div class="content">
+
+<ul>
+<li><a href="vmonitor">Voltage Monitoring</a></li>
+<li><a href="interbotix">Tips From the InterBotiX Kits</a></li>
+<li><a href="walk">Walking with Fewer Poses</a></li>
+<li><a href="hacking">Hacking BioloidController</a></li>
+<li><a href="other">Other Examples From Around the Web</a></li>
+</ul>
+
+
+<a id="vmonitor"><h3>Voltage Monitoring</h3><a>
+<p>
+It's a good idea to monitor the battery voltage, especially with LiPO chemistries. NOTE: Monitoring of batteries in
+software is no replacement for hardware-based monitoring.
+</p>
+<p>
+A simple check at startup can be implemented, which stops the robot from starting up. This piece of code could be
+inserted into the beginning of the setup() function, and will stop the robot from starting up if the voltage is
+less than 10V. It requires that an AX-12 servo is connected, and set to ID 1:
+<pre class="source">
+  // wait, then check the voltage (LiPO safety)
+  delay (1000);
+  float voltage = (ax12GetRegister (1, AX_PRESENT_VOLTAGE, 1)) / 10.0;
+  Serial.print ("System Voltage: ");
+  Serial.print (voltage);
+  Serial.println (" volts.");
+  if (voltage &lt; 10.0)
+    while(1);
+</pre>
+A more complete example can be found in the repository, as 
+<a href="https://raw.github.com/vanadiumlabs/arbotix/master/VoltTempMonitoring.pde">VoltTempMonitoring.pde</a>.
+</p>
+
+
+<a id="interbotix"><h3>Tips From the InterBotiX Kits</h3><a>
+<p>
+When using a Commander, you can easily change between gaits and speeds. This same code could be used on other robots:
+<pre class="source">
+// above setup/loop:
+int multiplier;
+
+#define RIPPLE_SPEED    1
+#define AMBLE_SPEED     3
+#define TRIPOD_SPEED    4
+#define TOP_SPEED       9   //8-9 for ax-12, 10ish for ax-18F
+
+// end of setup():
+multiplier = RIPPLE_SPEED;
+
+// loop() function:
+void loop(){
+  // take commands
+  if(command.ReadMsgs() > 0){
+    digitalWrite(0,HIGH-digitalRead(0));
+    // select gaits
+    if(command.buttons&BUT_R1){ gaitSelect(RIPPLE_SMOOTH); multiplier=RIPPLE_SPEED;}
+    if(command.buttons&BUT_R2){ gaitSelect(AMBLE_SMOOTH); multiplier=AMBLE_SPEED;}
+    if(command.buttons&BUT_R3){ gaitSelect(RIPPLE); multiplier=RIPPLE_SPEED;}
+    if(command.buttons&BUT_L4){ gaitSelect(AMBLE); multiplier=AMBLE_SPEED;}
+    if(command.buttons&BUT_L5){ gaitSelect(TRIPOD); multiplier=TRIPOD_SPEED;}
+    if(command.buttons&BUT_L6){ gaitSelect(TRIPOD); multiplier=TOP_SPEED;}
+    // set movement speed
+    Xspeed = multiplier*(command.walkV);
+    if((command.buttons&BUT_LT) > 0)
+      Yspeed = multiplier*(command.walkH/2);
+    else
+      Rspeed = -(command.walkH)*multiplier/300.0;
+    bodyRotY = (((float)command.lookV))/250.0;
+    if((command.buttons&BUT_RT) > 0)
+      bodyRotX = ((float)command.lookH)/250.0;
+    else
+      bodyRotZ = ((float)command.lookH)/250.0;
+  }
+  
+  // if our previous interpolation is complete, recompute the IK
+  if(bioloid.interpolating == 0){
+    doIK();
+    bioloid.interpolateSetup(tranTime);
+  }
+  
+  // update joints
+  bioloid.interpolateStep();
+}
+</pre>
+</p>
+
+
+<a id="walk"><h3>Walking With Fewer Poses</h3><a>
+<p>
+Issy used only 3 poses for walking, one for normal standing position, and 2 for picking up each of our pairs of legs, 
+but could do an unlimited number of step sizes. This was accomplished by basically parameterizing the length of the step.
+Here is a sample of Issy's code, showing only the walking part in the loop:
+<pre class="source">
+// servo numbers
+#define RIGHT_FRONT     5
+#define LEFT_FRONT      6
+#define RIGHT_REAR      11
+#define LEFT_REAR       12
+#define TILT_SERVO      13
+
+...
+
+void loop(){
+
+    // we read in serial port data here, to control Issy via the XBEE radio....
+
+    // update walking gait parameters
+    if(bioloid.interpolating == 0){
+        if((rstep != 0) || (lstep != 0)){    // do nothing if we are stopped
+        if(walkMode == 0){
+            bioloid.loadPose(walk0);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getNextPose(RIGHT_FRONT) - rstep);
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getNextPose(LEFT_FRONT) - lstep);
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getNextPose(RIGHT_REAR) + rstep);
+            bioloid.setNextPose(LEFT_REAR,bioloid.getNextPose(LEFT_REAR) + lstep);
+            walkMode = 1;
+            bioloid.interpolateSetup(75);   
+        }else if(walkMode == 1){
+            bioloid.loadPose(walkend);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT));
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT));
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR));
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
+            walkMode = 2;
+            bioloid.interpolateSetup(30);   
+        }else if(walkMode == 2){
+            bioloid.loadPose(walk1);
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getNextPose(RIGHT_FRONT) + rstep);
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getNextPose(LEFT_FRONT) + lstep);
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getNextPose(RIGHT_REAR) - rstep);
+            bioloid.setNextPose(LEFT_REAR,bioloid.getNextPose(LEFT_REAR) - lstep);
+            walkMode = 3;
+            bioloid.interpolateSetup(75);   
+        }else{
+            bioloid.loadPose(walkend);  
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT));
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT));
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR));
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
+            walkMode = 0;
+            bioloid.interpolateSetup(30);   
+        }
+        }else{
+            // stopped! put feet down!
+            bioloid.loadPose(walkend);  
+            bioloid.setNextPose(RIGHT_FRONT,bioloid.getCurPose(RIGHT_FRONT));
+            bioloid.setNextPose(LEFT_FRONT,bioloid.getCurPose(LEFT_FRONT));
+            bioloid.setNextPose(RIGHT_REAR,bioloid.getCurPose(RIGHT_REAR));
+            bioloid.setNextPose(LEFT_REAR,bioloid.getCurPose(LEFT_REAR));
+            bioloid.interpolateSetup(30);   
+        }   
+    }
+    
+    // update joints
+    bioloid.interpolateStep();
+}
+</pre>
+</p>
+
+
+<a id="hacking"><h3>Hacking BioloidController</h3><a>
+<p>
+You can change the speed of the interpolation engine, by changing the BIOLOID_FRAME_LENGTH in BioloidController.h.
+</p>
+<p>
+If using more than 18 servos, you will need to change AX12_MAX_SERVOS in ax12.h to increase the size of the pose buffers.
+Alternatively, if memory is running tight, and you are using less than 18 servos, you can change this to reduce the size of
+the pose buffers.
+</p>
+<p>
+Pose header files are very simple. We are using the program memory storage utilities of AVR-Libc in order to store
+the poses in the FLASH, rather than occupying RAM. Each pose is an array of integers, to put this array in program
+memory it is of type PROGMEM prog_uint16_t. The first element in the array is the servo count. The servo count can be
+1-255, in the example below, Issy has 12 servos:
+<pre class="source">
+PROGMEM prog_uint16_t stand[ ] = {12,512,512,482,542,662,362,512,512,542,482,362,662};
+</pre>
+</p>
+<p>
+Each number after the servo count is the position of the servo, starting with ID number 1. Positions are 0-1023,
+the same as what an AX-12 can actually take on.
+</p>
+<p>
+<i>Note: The upper byte of the servo count is reserved for special values that may be used later to define
+special new types of poses.</i>
+</p>
+
+
+<a id="other"><h3>Other Code from Around the Web</h3><a>
+<p>
+<ul>
+<li><a href="http://forums.trossenrobotics.com/showpost.php?p=44430&postcount=20">
+    Control a robot with plain text over XBEE</a></li>
+<li><a href="http://forums.trossenrobotics.com/showpost.php?p=44687&postcount=54">
+    Using poses with the Commander library</a></li>
+</ul>
+</p>
+
+
+      </div>
+    </div>
+
+    <div id="license">
+      <h1> Licensing </h1>
+      <div class="content">
+        All of the ArbotiX code, libraries, and Arduino extensions are licensed under the GNU Lesser General Public License v2.1. 
+        PyPose, and any other desktop software included (such as PyMech), is released under the GNU General Public License v2.
+      </div>
+    </div>
+
+  </body>
+</html>

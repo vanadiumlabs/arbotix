@@ -38,4 +38,11 @@ h1 {
   padding: 10px;
 }
 
+pre.source {
+  padding: 0.5em;
+  overflow: auto;
+  font-family: Monaco, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Lucida Console', monospace;
+  font-size: 80%;
+  background-color: #eee;
+}
 
