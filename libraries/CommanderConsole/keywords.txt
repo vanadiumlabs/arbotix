@@ -1,0 +1,8 @@
+CommanderConsole	KEYWORD1
+x_axis	KEYWORD2
+y_axis	KEYWORD2
+z_axis	KEYWORD2
+w_angle	KEYWORD2
+w_rot	KEYWORD2
+gripper	KEYWORD2
+buttons	KEYWORD2
