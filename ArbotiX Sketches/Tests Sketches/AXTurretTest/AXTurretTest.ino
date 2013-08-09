@@ -19,7 +19,7 @@ void setup(){
    IDCheck = 1;
    RunCheck = 0;
   //open serial port
-   Serial.begin(38400);
+   Serial.begin(9600);
    delay (500);   
     Serial.println("###########################");    
    Serial.println("Serial Communication Established.");    

@@ -19,16 +19,16 @@ void setup(){
    IDCheck = 1;
    RunCheck = 0;
   //open serial port
-   Serial.begin(38400);
+   Serial.begin(9600);
    delay (500);   
     Serial.println("###########################");    
    Serial.println("Serial Communication Established.");    
   //Check Lipo Battery Voltage
   CheckVoltage();
   //Scan Servos, return position.
-  ScanServo();
   
   MoveCenter();
+  ScanServo();
   
   LeftLegTest();
   
