@@ -51,7 +51,7 @@ class ArmControl
     // buttons are 0 or 1 (PRESSED), and bitmapped
     unsigned char buttons;  // 
     unsigned char ext;      // Extended function set
-	unsigned char dtime;	// Delta time interpolation	
+	unsigned char dtime;	// Delta time for interpolation	
     
 
     

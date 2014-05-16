@@ -7,3 +7,4 @@ W_rot	KEYWORD2
 Grip	KEYWORD2
 lookH	KEYWORD2
 buttons	KEYWORD2
+ext		KEYWORD2

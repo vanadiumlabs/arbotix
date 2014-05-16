@@ -27,6 +27,7 @@ ArmControl::ArmControl(){
     index = -1;
     status = 0;
 }
+
 void ArmControl::begin(int baud){
     Serial.begin(baud);
 }
@@ -57,10 +58,10 @@ int ArmControl::ReadMsgs(){
                     index = -1;
                     return 0;
                 }else{
-                    Xaxis = ((vals[0]<<8) + vals[1])-512;
+                    Xaxis = ((vals[0]<<8) + vals[1]);
                     Yaxis = (vals[2]<<8) + vals[3];
 					Zaxis = (vals[4]<<8) + vals[5];
-					W_ang = ((vals[6]<<8) + vals[7])-90;
+					W_ang = ((vals[6]<<8) + vals[7]);
 					W_rot = (vals[8]<<8) + vals[9];
 					Grip = (vals[10]<<8) + vals[11];
 					dtime = vals[12];
