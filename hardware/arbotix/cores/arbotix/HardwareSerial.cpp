@@ -365,7 +365,7 @@ try_again:
 void HardwareSerial::begin(unsigned long baud, byte config)
 {
   uint16_t baud_setting;
-  uint8_t current_config;
+//  uint8_t current_config;
   bool use_u2x = true;
 
 #if F_CPU == 16000000UL
@@ -426,7 +426,7 @@ void HardwareSerial::end()
 
 int HardwareSerial::available(void)
 {
-  return (unsigned int)(SERIAL_BUFFER_SIZE + _rx_buffer->head - _rx_buffer->tail) % SERIAL_BUFFER_SIZE;
+  return (int)(SERIAL_BUFFER_SIZE + _rx_buffer->head - _rx_buffer->tail) % SERIAL_BUFFER_SIZE;
 }
 
 int HardwareSerial::peek(void)
