@@ -1,4 +1,4 @@
-ArmControl	KEYWORD1
+ArmLink	KEYWORD1
 Xaxis	KEYWORD2
 Yaxis	KEYWORD2
 Zaxis	KEYWORD2

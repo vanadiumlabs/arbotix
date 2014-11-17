@@ -1,5 +1,5 @@
 /*
-  ArmControl.cpp - Library for interfacing with ArbotiX based Robotic Arms.
+  ArmLink.h - Library for interfacing with ArbotiX based Robotic Arms.
   Based on Commander Libraries written by:
   Copyright (c) 2009-2012 Michael E. Ferguson.  All right reserved.
   Copyright (c) 2013 Trossen Robotics. All right reserved.
@@ -19,8 +19,8 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef ArmControl_h
-#define ArmControl_h
+#ifndef ArmLink_h
+#define ArmLink_h
 
 /* bitmasks for buttons array */
 #define BUT_R1      0x01
@@ -32,11 +32,11 @@
 #define BUT_RT      0x40
 #define BUT_LT      0x80
 
-/* the ArmControl will send out a frame at about 30hz, this class helps decipher the output. */
-class ArmControl
+/* the ArmLink will send out a frame at about 30hz, this class helps decipher the output. */
+class ArmLink
 {    
   public:
-    ArmControl(); 
+    ArmLink(); 
     void begin(int baud);
     int ReadMsgs();         // must be called regularly to clean out Serial buffer
 	
