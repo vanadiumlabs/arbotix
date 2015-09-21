@@ -140,6 +140,7 @@ void setRX(int id);
 void ax12write(unsigned char data);
 void ax12writeB(unsigned char data);
 
+int ax12Ping(int id);
 int ax12ReadPacket(int length);
 int ax12GetRegister(int id, int regstart, int length);
 void ax12SetRegister(int id, int regstart, int data);

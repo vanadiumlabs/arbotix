@@ -258,6 +258,16 @@ void loop(){
                             Serial.write(2);
                             Serial.write((unsigned char)0);
                             Serial.write(255-((2+id)%256));
+                        } else if(ins == AX_PING) {
+                            int status = ax12Ping(id);
+                            if(status >= 0) {
+                                Serial.write(0xff);
+                                Serial.write(0xff);
+                                Serial.write(id);
+                                Serial.write(2);
+                                Serial.write(status);
+                                Serial.write(255-((2+id+status)%256));
+                            }
                         }
                     }
                 }
