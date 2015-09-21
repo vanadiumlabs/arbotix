@@ -187,6 +187,26 @@ void ax12Init(long baud){
  * Packet Level
  */
 
+/** Ping to see if device is present */
+int ax12Ping(int id){
+    setTX(id);
+    // 0xFF 0xFF ID LENGTH INSTRUCTION PARAM... CHECKSUM    
+    int checksum = ~((id + 2 + AX_PING)%256);
+    ax12writeB(0xFF);
+    ax12writeB(0xFF);
+    ax12writeB(id);
+    ax12writeB(2);    // length
+    ax12writeB(AX_PING);
+    ax12writeB(checksum);  
+    setRX(id);    
+    if(ax12ReadPacket(6) > 0){
+        ax12Error = ax_rx_buffer[4];
+        return ax12Error;
+    }else{
+        return -1;
+    }
+}
+
 /** Read register value(s) */
 int ax12GetRegister(int id, int regstart, int length){  
     setTX(id);
