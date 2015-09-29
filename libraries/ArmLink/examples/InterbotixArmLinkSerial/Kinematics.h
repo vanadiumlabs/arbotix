@@ -79,7 +79,7 @@ uint8_t doArmIK(boolean fCartesian, int sIKX, int sIKY, int sIKZ, int sIKGA)
 
   if (fCartesian) {
     // first, make this a 2DOF problem... by solving baseAngle, converting to servo pos
-#ifdef WIDOWX
+#if ARMTYPE == WIDOWX
     sol0 = radToMXServo(atan2(sIKX,sIKY));
 #else
     sol0 = radToAXServo(atan2(sIKX,sIKY));
@@ -112,7 +112,7 @@ uint8_t doArmIK(boolean fCartesian, int sIKX, int sIKY, int sIKZ, int sIKGA)
   d2 = 2*ElbowLength*ShoulderLength;
   q2 = acos((float)d1/(float)d2);
 
-#ifdef WIDOWX  //Use different radians equation for MX servos
+#if ARMTYPE == WIDOWX  //Use different radians equation for MX servos
   int sol1 = radToMXServo(q1-1.57);
   int sol2 = radToMXServo(3.14-q2);
   // solve for wrist rotate
@@ -126,7 +126,7 @@ uint8_t doArmIK(boolean fCartesian, int sIKX, int sIKY, int sIKZ, int sIKGA)
 #endif  
 
 
-#ifdef PINCHER 
+#if ARMTYPE == PINCHER 
   // Lets calculate the actual servo values.
   if (fCartesian) {
     sBase = min(max(BASE_N - sol0, BASE_MIN), BASE_MAX);
@@ -215,7 +215,7 @@ void MoveArmTo(int sBase, int sShoulder, int sElbow, int sWrist, int sWristRot, 
   // Also lets limit how fast the servos will move as to not get whiplash.
   bioloid.setNextPose(SID_BASE, sBase);  
 
-#ifdef REACTOR  //double joints on reactor are handled differently
+#if ARMTYPE == REACTOR  //double joints on reactor are handled differently
   sMaxDelta = abs(bioloid.getCurPose(SID_RSHOULDER) - sShoulder);
   bioloid.setNextPose(SID_RSHOULDER, sShoulder);
   bioloid.setNextPose(SID_LSHOULDER, 1024-sShoulder);
@@ -313,13 +313,13 @@ void MoveArmTo90Home(void) {
 void PutArmToSleep(void) {
   g_fArmActive = false;
   
-#ifdef PINCHER  
+#if ARMTYPE == PINCHER  
   MoveArmTo(512, 400, 1000, 430, 512, 256, 2000, true);
-#endif  
-#ifdef REACTOR
+
+#elif ARMTYPE == REACTOR
   MoveArmTo(512, 212, 212, 512, 512, 256, 2000, true);
-#endif  
-#ifdef WIDOWX
+
+#elif ARMTYPE == WIDOWX
   MoveArmTo(2048, 1024, 1024, 1700, 512, 256, 2000, true);
 #endif
 

@@ -15,19 +15,23 @@ extern void ReportAnalog(unsigned char, unsigned int);
 //=============================================================================
 boolean  g_fArmActive = false;   // Is the arm logically on?
 byte  g_bIKMode = IKM_IK3D_CARTESIAN;   // Which mode of operation are we in...
-uint8_t  g_bIKStatus = IKS_SUCCESS;   // Status of last call to DoArmIK;
+uint8_t  g_bIKStatus = IKS_SUCCESS;   // Status of last call to DoArmIK;;
+boolean         g_fServosFree = true;
 
 //===================================================================================================
 // Check EXT packet to determine action
 //===================================================================================================
    void ExtArmState(){
-       if(armlink.ext < 0x10){
-        // no action
+     g_fArmActive = false;  //start with g_fArmActive being false, so that only movement commands will activate the arm movement in the main loop
+        
+     if(armlink.ext  == 0){
+        // no special action, '0' indicates that a movement command has come through
         g_fArmActive = true;
      }
+     
       else if(armlink.ext == 0x20){  //32
         g_bIKMode = IKM_IK3D_CARTESIAN;
-//        MoveArmToHome(); 
+        MoveArmToHome(); 
         doArmIK(true, 0, 150, 150, 0); // this is a 'MoveArmToHome()' substitute
         g_fArmActive = false;
         IDPacket();
@@ -38,12 +42,19 @@ uint8_t  g_bIKStatus = IKS_SUCCESS;   // Status of last call to DoArmIK;
       }        
       else if(armlink.ext == 0x30){  //48
         g_bIKMode = IKM_CYLINDRICAL;
-//        MoveArmToHome(); 
+        MoveArmToHome(); 
         IDPacket();        
       }
       else if(armlink.ext == 0x38){  //56
     
       }        
+       
+      else if(armlink.ext == 0x40){  //64
+        g_bIKMode = IKM_BACKHOE;
+        MoveArmToHome(); 
+        IDPacket();        
+      }
+      
       else if(armlink.ext == 0x48){  //72
       // do something
       }
@@ -187,74 +198,111 @@ boolean ProcessUserInput3D(void) {
     sIKY = min(max(armlink.Yaxis, IK_MIN_Y), IK_MAX_Y);    
     sIKZ = min(max(armlink.Zaxis, IK_MIN_Z), IK_MAX_Z);
     sIKGA = min(max((armlink.W_ang-GA_OFFSET), IK_MIN_GA), IK_MAX_GA);  // Currently in Servo coords..
-    Gripper = min(max((GRIPWM_OFFSET-armlink.Grip), GRIPPER_MIN), GRIPPER_MAX);
+    sGrip = min(max(armlink.Grip, GRIPPER_MIN), GRIPPER_MAX);
+
+
+    //Gripper = map(armlink.Grip, 0, 512, GRIPPER_MIN, GRIPPER_MAX);
+    //Gripper = min(max((1-armlink.Grip), GRIPPER_MIN), GRIPPER_MAX);
     sDeltaTime = armlink.dtime*16;
     
 //  }
 
-//  fChanged = (sIKX != g_sIKX) || (sIKY != g_sIKY) || (sIKZ != g_sIKZ) || (sIKGA != g_sIKGA) || (sGrip != g_sGrip);  
+  fChanged = (sIKX != g_sIKX) || (sIKY != g_sIKY) || (sIKZ != g_sIKZ) || (sIKGA != g_sIKGA) || (sGrip != g_sGrip);  
   
-//  if (fChanged) {
+  if (fChanged) {
     // report
   doArmIK(true, sIKX, sIKY, sIKZ, sIKGA); 
-//  }
-//  return fChanged;
+  }
+  return fChanged;
 
 }
 
 
 
-////===================================================================================================
-//// ProcessUserInputCylindrical: Process the Userinput when we are in 3d Mode
-////===================================================================================================
-//boolean ProcessUserInputCylindrical() {
-//  // We Are in IK mode, so figure out what position we would like the Arm to move to.
-//  // We have the Coordinates system like:
-//  //
-//  //                y   Z
-//  //                |  /
-//  //                |/
-//  //            ----+----X (X and Y are flat on ground, Z is up in air...
-//  //                |
-//  //                |
-//  //
-//  boolean fChanged = false;
+//===================================================================================================
+// ProcessUserInputCylindrical: Process the Userinput when we are in 3d Mode
+//===================================================================================================
+boolean ProcessUserInputCylindrical() {
+  // We Are in IK mode, so figure out what position we would like the Arm to move to.
+  // We have the Coordinates system like:
+  //
+  //                y   Z
+  //                |  /
+  //                |/
+  //            ----+----X (X and Y are flat on ground, Z is up in air...
+  //                |
+  //                |
+  //
+  boolean fChanged = false;
+
+  // Will try combination of the other two modes.  Will see if I need to do the Limits on the IK values
+  // or simply use the information from the Warning/Error from last call to the IK function...
+  sIKY = g_sIKY;
+  sIKZ = g_sIKZ;
+  sIKGA = g_sIKGA;
+
+  // The base rotate is real simple, just allow it to rotate in the min/max range...
+  sBase = min(max(armlink.Xaxis, BASE_MIN), BASE_MAX);
+
+  // Limit how far we can go by checking the status of the last move.  If we are in a warning or error
+  // condition, don't allow the arm to move farther away...
+  // Use Y for 2d distance from base
+  if ((g_bIKStatus == IKS_SUCCESS) || ((g_sIKY > 0) && (armlink.Yaxis < 0)) || ((g_sIKY < 0) && (armlink.Yaxis > 0)))
+    sIKY = min(max(armlink.Yaxis, IK_MIN_Y), IK_MAX_Y);
+
+  // Now Z coordinate...
+  if ((g_bIKStatus == IKS_SUCCESS) || ((g_sIKZ > 0) && (armlink.Zaxis < 0)) || ((g_sIKZ < 0) && (armlink.Zaxis > 0)))
+    sIKZ = min(max(armlink.Zaxis, IK_MIN_Z), IK_MAX_Z);
+
+  // And gripper angle.  May leave in Min/Max here for other reasons...   
+
+  if ((g_bIKStatus == IKS_SUCCESS) || ((g_sIKGA > 0) && (armlink.W_ang < 0)) || ((g_sIKGA < 0) && (armlink.W_ang > 0)))
+    sIKGA = min(max((armlink.W_ang-GA_OFFSET), IK_MIN_GA), IK_MAX_GA);  // Currently in Servo coords...
+
+    sGrip = min(max(armlink.Grip, GRIPPER_MIN), GRIPPER_MAX);
+//    sDeltaTime = armlink.dtime*16;
+   
+  fChanged = (sBase != g_sBase) || (sIKY != g_sIKY) || (sIKZ != g_sIKZ) || (sIKGA != g_sIKGA) || (sGrip != g_sGrip);
+
+
+  if (fChanged) {
+    g_bIKStatus = doArmIK(false, sBase, sIKY, sIKZ, sIKGA);
+  }
+  return fChanged;
+}
+
+
+//===================================================================================================
+// ProcessUserInputBackHoe: Process the Userinput when we are in 3d Mode
+//===================================================================================================
+boolean ProcessUserInputBackHoe() {
+
+  // First the base
+  boolean fChanged = false;  
+  sBase = min(max(armlink.Xaxis, BASE_MIN), BASE_MAX);
+  // Now the Boom
+  sShoulder = min(max(armlink.Yaxis, SHOULDER_MIN), SHOULDER_MAX);
+  // Now the Dipper 
+  sElbow = min(max(armlink.Zaxis, ELBOW_MIN), ELBOW_MAX);
+  // Bucket Curl
+  sWrist = min(max(armlink.W_ang, WRIST_MIN), WRIST_MAX);
+    //sWristRot = min(max(armlink.W_rot, WROT_MIN), WROT_MAX);
+    sGrip = min(max(armlink.Grip, GRIPPER_MIN), GRIPPER_MAX);
+    sDeltaTime = armlink.dtime*16;
 //
-//  // Will try combination of the other two modes.  Will see if I need to do the Limits on the IK values
-//  // or simply use the information from the Warning/Error from last call to the IK function...
-//  sIKY = g_sIKY;
-//  sIKZ = g_sIKZ;
-//  sIKGA = g_sIKGA;
-//
-//  // The base rotate is real simple, just allow it to rotate in the min/max range...
-//  Base = min(max(armlink.Xaxis, BASE_MIN), BASE_MAX);
-//
-//  // Limit how far we can go by checking the status of the last move.  If we are in a warning or error
-//  // condition, don't allow the arm to move farther away...
-//  // Use Y for 2d distance from base
-//  if ((g_bIKStatus == IKS_SUCCESS) || ((g_sIKY > 0) && (armlink.Yaxis < 0)) || ((g_sIKY < 0) && (armlink.Yaxis > 0)))
-//    sIKY = min(max(armlink.Yaxis, IK_MIN_Y), IK_MAX_Y);
-//
-//  // Now Z coordinate...
-//  if ((g_bIKStatus == IKS_SUCCESS) || ((g_sIKZ > 0) && (armlink.Zaxis < 0)) || ((g_sIKZ < 0) && (armlink.Zaxis > 0)))
-//    sIKZ = min(max(armlink.Zaxis, IK_MIN_Z), IK_MAX_Z);
-//
-//  // And gripper angle.  May leave in Min/Max here for other reasons...   
-//
-//  if ((g_bIKStatus == IKS_SUCCESS) || ((g_sIKGA > 0) && (armlink.W_ang < 0)) || ((g_sIKGA < 0) && (armlink.W_ang > 0)))
-//    sIKGA = min(max((armlink.W_ang-GA_OFFSET), IK_MIN_GA), IK_MAX_GA);  // Currently in Servo coords...
-//
-//    Gripper = min(max(armlink.Grip, GRIPPER_MIN), GRIPPER_MAX);
-////    sDeltaTime = armlink.dtime*16;
-//   
-//  fChanged = (sBase != g_sBase) || (sIKY != g_sIKY) || (sIKZ != g_sIKZ) || (sIKGA != g_sIKGA) || (sGrip != g_sGrip);
-//
-//
-//  if (fChanged) {
-//    g_bIKStatus = doArmIK(false, sBase, sIKY, sIKZ, sIKGA, sGrip);
-//  }
-//  return fChanged;
-//}
+//  sBase = sBase;
+//  sShoulder = sShoulder;
+//  sElbow = sElbow;
+//  sWrist = sWrist;
+//  sGripper = sGrip;
+
+
+  fChanged = (sBase != g_sBase) || (sShoulder != g_sShoulder) || (sElbow != g_sElbow) || (sWrist != g_sWrist) || (sWristRot != g_sWristRot) || (sGrip != g_sGrip);  
+  return fChanged;
+}
+
+
+
 
 
 //===================================================================================================

@@ -1,4 +1,4 @@
-//=============================================================================
+//=============================1================================================
 // Based upon Kurt's PX Reactor arm code.
 // https://github.com/KurtE
 // This code provides serial control of the Interbotix line of robotic arms, which are sold by Trossen
@@ -53,10 +53,19 @@
 // Define Options
 //=============================================================================
 
-#define NOPE
-//#define PINCHER
-//#define REACTOR
-//#define WIDOWX
+#define PINCHER 1
+#define REACTOR 2
+#define WIDOWX 3
+
+//#define ARMTYPE PINCHER
+//#define ARMTYPE REACTOR
+//#define ARMTYPE WIDOWX
+
+#if !defined(ARMTYPE) 
+   #error YOU HAVE TO SELECT THE ARM YOU ARE USING! Uncomment the correct line above for your arm
+#endif
+
+
 
 
 #define SOUND_PIN    7      // Tell system we have added speaker to IO pin 1
@@ -93,9 +102,12 @@ void setup() {
   pinMode(0,OUTPUT);  
   // Lets initialize the Serial Port
   Serial.begin(38400);
+
+
   delay(50);
   IDPacket();
   Serial.println("Interbotix Robot Arm Online.");
+  
 
   // Next initialize the Bioloid
   bioloid.poseSize = CNT_SERVOS;
@@ -120,12 +132,13 @@ void setup() {
 // loop: Our main Loop!
 //===================================================================================================
 void loop() {
+
   boolean fChanged = false;
-   
+
   if (armlink.ReadMsgs()) {
-  
+
     digitalWrite(0,HIGH-digitalRead(0));    
-    
+
     // Check EXT packet to determine action. Found in InputControl.h
     ExtArmState();  
     DigitalOutputs();
@@ -142,23 +155,23 @@ void loop() {
 
       // Set InputControl function based on which IKMode we're in
 
-        switch (g_bIKMode) {
-        case IKM_IK3D_CARTESIAN:
-          fChanged |= ProcessUserInput3D();
-          break;
-        case IKM_IK3D_CARTESIAN_90:
-          fChanged |= ProcessUserInput3D90();
-          break;          
-        case IKM_CYLINDRICAL:
-          fChanged |= ProcessUserInputCylindrical();       
-          break;
-        case IKM_CYLINDRICAL_90:
-          fChanged |= ProcessUserInputCylindrical90();       
-          break;
-        case IKM_BACKHOE:
-          fChanged |= ProcessUserInputBackHoe();
-          break;
-        }
+      switch (g_bIKMode) {
+      case IKM_IK3D_CARTESIAN:
+        fChanged |= ProcessUserInput3D();
+        break;
+      case IKM_IK3D_CARTESIAN_90:
+        fChanged |= ProcessUserInput3D90();
+        break;          
+      case IKM_CYLINDRICAL:
+        fChanged |= ProcessUserInputCylindrical();       
+        break;
+      case IKM_CYLINDRICAL_90:
+        fChanged |= ProcessUserInputCylindrical90();       
+        break;
+      case IKM_BACKHOE:
+        fChanged |= ProcessUserInputBackHoe();
+        break;
+      }
       // If something changed and we are not in an error condition
       if (fChanged && (g_bIKStatus != IKS_ERROR)) {
         MoveArmTo(sBase, sShoulder, sElbow, sWrist, sWristRot, sGrip, sDeltaTime, true);
@@ -167,7 +180,7 @@ void loop() {
         bioloid.interpolateStep();
       }
     }
-//    buttonsPrev = armlink.buttons;
+    //    buttonsPrev = armlink.buttons;
 
   }
   else {
@@ -241,6 +254,7 @@ void MSound(byte cNotes, ...)
 {
 };
 #endif
+
 
 
 

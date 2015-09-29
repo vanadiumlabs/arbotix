@@ -11,15 +11,22 @@ extern void MoveArmTo90Home(void);
 extern void IDPacket(void);
 extern void PutArmToSleep(void);
 extern void ReportAnalog(unsigned char, unsigned int);
+extern void ReportServoRegister(unsigned char,  int,  int,  int);
+extern void SetServoRegister(unsigned char,  int,  int,  int, int);
 
 //===================================================================================================
 // Check EXT packet to determine action
 //===================================================================================================
    void ExtArmState(){
-       if(armlink.ext < 0x10){
-        // no action
+       
+     
+      g_fArmActive = false;  //start with g_fArmActive being false, so that only movement commands will activate the arm movement in the main loop
+        
+     if(armlink.ext  == 0){
+        // no special action, '0' indicates that a movement command has come through
         g_fArmActive = true;
      }
+      
       
       else if(armlink.ext == 0x11){  //96
         EmergencyStop();
@@ -72,6 +79,14 @@ extern void ReportAnalog(unsigned char, unsigned int);
       else if(armlink.ext == 0x80){  //128
         //IK value response
       }
+      else if(armlink.ext == 0x81){  //129
+         ReportServoRegister(armlink.ext,  armlink.Xaxis,  armlink.Yaxis,  armlink.Zaxis);
+      }
+      else if(armlink.ext == 0x82){  //130
+         SetServoRegister(armlink.ext,  armlink.Xaxis,  armlink.Yaxis,  armlink.Zaxis, armlink.W_ang);
+      }
+      
+      
       else if(armlink.ext >= 0xC8){  //200
         // read analogs
         ReportAnalog(armlink.ext, analogRead(armlink.ext - 0xC8));
@@ -326,12 +341,61 @@ void ReportAnalog(unsigned char command, unsigned int value){
 }
 
 
+void ReportServoRegister(unsigned char command, int id, int registerNumber, int length)
+{
+
+  int registerValue = ax12GetRegister(id, registerNumber, length);
+
+
+  unsigned char registerHigh;
+  unsigned char registerLow;
+  registerHigh = ((registerValue & 0xFF00) >> 8);
+  registerLow = (registerValue & 0x00FF);
+  Serial.write(0xff);
+  Serial.write(command);
+  Serial.write(registerHigh);
+  Serial.write(registerLow);
+  Serial.write((unsigned char)(255 - (command+registerHigh+registerLow)%256));
+
+}
+void SetServoRegister(unsigned char command, int id, int registerNumber, int length, int data)
+{
+
+  unsigned char registerHigh;
+  unsigned char registerLow;
+  
+  if(length == 1)
+  {
+    ax12SetRegister(id, registerNumber, data);
+  }
+  else if (length == 2)
+  {
+    ax12SetRegister2(id, registerNumber, data);
+  }
+  
+
+
+  registerHigh = ((data & 0xFF00) >> 8);
+  registerLow = (data & 0x00FF);
+  Serial.write(0xff);
+  Serial.write(command); // should this be an error bit?
+  Serial.write(registerHigh);
+  Serial.write(registerLow);
+  Serial.write((unsigned char)(255 - (command+registerHigh+registerLow)%256));
+
+}
+
+
+
+
+
 void IDPacket()  {
   Serial.write(0xFF);
   Serial.write((unsigned char) ARMID);
   Serial.write((unsigned char) g_bIKMode);
   Serial.write((unsigned char) 0);
   Serial.write((unsigned char)(255 - (ARMID+g_bIKMode+0)%256));
+  
 }
 
 

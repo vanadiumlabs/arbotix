@@ -6,6 +6,8 @@
 //=============================================================================
 
 #define ARMID       5
+
+
 //=============================================================================
 //=============================================================================
 // Normal Work Area
@@ -42,7 +44,7 @@
 // offsets 
 #define GA_OFFSET  90 //subtract this from GA to give us -90 - +90 angle
 #define X_OFFSET  512 //offset value for 3D Cart mode on X axis
-#define GRIPWM_OFFSET 1756
+
 //////////////////////////////////////////////////////////////////////////////
 // SERVO CONFIG  //
 //////////////////////////////////////////////////////////////////////////////
@@ -64,14 +66,23 @@ enum {
 #define ELBOW_MAX     2400
 #define WRIST_MIN     600
 #define WRIST_MAX     2400 
-#define GRIPPER_MIN   900    //full counterclockwise for 9g servo
-#define GRIPPER_MAX   2100   //full clockwise for 9g servo
+//mins and maxes depending on gripper type
+#if GRIPPER_TYPE == ROBOT_GEEK_9G_GRIPPER
+  #define GRIPPER_MIN   900    //full counterclockwise for 9g servo
+  #define GRIPPER_MAX   2100   //full clockwise for 9g servo
+#elif GRIPPER_TYPE == ROBOT_GEEK_PARALLEL_GRIPPER
+  #define GRIPPER_MIN   750    //fully closed
+  #define GRIPPER_MAX   2400   //fully open
+#endif
+
+
+
 
 // Define servo offsets in +/- uS. Adjust if your arm is not centering properly.
 #define BAS_SERVO_ERROR 0 //(+ is CW, - is CCW)
-#define SHL_SERVO_ERROR -50 //(+ is forward, - is backward)
+#define SHL_SERVO_ERROR 0 //(+ is forward, - is backward)
 #define ELB_SERVO_ERROR 0 //(+ is up, - is down)
-#define WRI_SERVO_ERROR -150 //(+ is up, - is down)
+#define WRI_SERVO_ERROR 0 //(+ is up, - is down)
 #define GRI_SERVO_ERROR 0 //(+ is tighten grip, - is loosen grip) 
 
  //present positions of the servos 
@@ -82,7 +93,7 @@ float Wrist    =1500;    //holds the present position of the wrist servo, starts
 int   Gripper  =1500;    //holds the present position of the gripper servo, starts at 1500 (centered)
 
  //present positions of the servos 
-float sBase     =1500;    //holds the present position of the Base servo, starts at 1500 (centered)
+//float sBase     =1500;    //holds the present position of the Base servo, starts at 1500 (centered)
 
 unsigned int sDeltaTime = 3000;
 

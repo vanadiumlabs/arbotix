@@ -40,14 +40,16 @@ class ArmLink
     void begin(int baud);
     int ReadMsgs();         // must be called regularly to clean out Serial buffer
 	
-    int Xaxis;      // 
-    int Yaxis;      // 
-    int Zaxis;      // 
-    int W_ang;		//
-	int W_rot;      // 
-	int Grip;		//
+    int Xaxis;     // 
+    int Yaxis;     // 
+    int Zaxis;     // 
+    int W_ang;		 //
+	  int W_rot;     // 
+  	int Grip;		   //
+  
+  
 	
-    
+
     // buttons are 0 or 1 (PRESSED), and bitmapped
     unsigned char buttons;  // 
     unsigned char ext;      // Extended function set
@@ -59,10 +61,10 @@ class ArmLink
         
   private:
     // internal variables used for reading messages
-    unsigned char vals[16];  // temporary values, moved after we confirm checksum
-    int index;              // -1 = waiting for new packet
     int checksum;
     unsigned char status; 
+    unsigned char vals[16];  // temporary values, moved after we confirm checksum
+    int index;              // -1 = waiting for new packet
 };
 
 #endif

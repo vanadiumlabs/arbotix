@@ -26,6 +26,8 @@
 ArmLink::ArmLink(){
     index = -1;
     status = 0;
+
+
 }
 
 void ArmLink::begin(int baud){
@@ -36,9 +38,13 @@ void ArmLink::begin(int baud){
 /* process messages coming from ArmLink 
  *  format = 0xFF Xaxis Yaxis Zaxis W_angle W_rot Gripper BUTTONS EXT CHECKSUM */
 int ArmLink::ReadMsgs(){
-    while(Serial.available() > 0){
+
+   while(Serial.available() > 0){
+
+
         if(index == -1){         // looking for new packet
             if(Serial.read() == 0xff){
+
                 index = 0;
                 checksum = 0;
             }
@@ -56,6 +62,12 @@ int ArmLink::ReadMsgs(){
                 if(checksum%256 != 255){
                     // packet error!
                     index = -1;
+
+                //flush serial
+                while(Serial.available())
+                {
+                  Serial.read();
+                }
                     return 0;
                 }else{
                     Xaxis = ((vals[0]<<8) + vals[1]);
@@ -69,7 +81,14 @@ int ArmLink::ReadMsgs(){
                     ext = vals[14];
                 }
                 index = -1;
-                Serial.flush();
+                //flush serial
+                while(Serial.available())
+                {
+                  Serial.read();
+                }
+               // Serial.flush();
+
+
                 return 1;
             }
         }

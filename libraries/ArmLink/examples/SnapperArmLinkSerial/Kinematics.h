@@ -4,17 +4,25 @@
 #include "GlobalArm.h"
 #include <Arduino.h>
 
-
+extern boolean g_fServosFree;
+extern boolean  g_fArmActive;
 //////////////////////////////////////////////////////////////////////////////
 // KINEMATICS CONFIG  //
 //////////////////////////////////////////////////////////////////////////////
   
 //=============================================================================
 //=============================================================================
-// IK Modes defined, 0-3
+//// IK Modes defined, 0-3
+//
+//#define  IKM_IK3D_CARTESIAN 0
+//#define  IKM_CYLINDRICAL 2
 
-#define  IKM_IK3D_CARTESIAN 0
-#define  IKM_CYLINDRICAL 2
+//=============================================================================
+//=============================================================================
+// IK Modes defined, 0-4
+enum {
+  IKM_IK3D_CARTESIAN, IKM_IK3D_CARTESIAN_90, IKM_CYLINDRICAL, IKM_CYLINDRICAL_90, IKM_BACKHOE};
+
 
 // status messages for IK return codes..
 enum {
@@ -41,6 +49,18 @@ float            sIKY  =0.00;                  //
 float            sIKZ  =0.00;
 float            sIKGA =0.00;                  // IK Gripper angle..
 
+// Values for current servo values for the different joints
+int             g_sBase ;                // Current Base servo value
+int             g_sShoulder;            // Current shoulder target 
+int             g_sElbow;               // Current
+int             g_sWrist;               // Current Wrist value
+int             g_sWristRot;            // Current Wrist rotation
+int             g_sGrip;                // Current Grip position
+
+int sBase, sShoulder, sElbow, sWrist, sWristRot, sGrip = 1500;
+
+
+
 ////////////////////////////////////////////////////////////////////////////// 
 
 //===================================================================================================
@@ -50,12 +70,29 @@ float            sIKGA =0.00;                  // IK Gripper angle..
 /* z is height, y is distance from base center out, x is side to side. y,z can only be positive */
 boolean doArmIK(boolean fCartesian, float x, float y, float z, float grip_angle_d)
 {
+  
+   
+
   float grip_angle_r = radians( grip_angle_d );    //grip angle in radians for use in calculations
   /* Base angle and radial distance from x,y coordinates */
   float bas_angle_r = atan2( x, y );
   float rdist = sqrt(( x * x ) + ( y * y ));
-  /* rdist is y coordinate for the arm */
-  y = rdist;
+
+  
+  if (fCartesian) 
+  {
+    /* rdist is y coordinate for the arm */
+    y = rdist;
+  }
+  else 
+  {
+    // We are in cylindrical mode, probably simply set y` to the y we passed in...
+    y = y;
+  }
+
+
+
+
   /* Grip offsets calculated based on grip angle */
   float grip_off_z = ( sin( grip_angle_r )) * GRIPPER;
   float grip_off_y = ( cos( grip_angle_r )) * GRIPPER;
@@ -81,10 +118,14 @@ boolean doArmIK(boolean fCartesian, float x, float y, float z, float grip_angle_
   float wri_angle_d = ( grip_angle_d - elb_angle_dn ) - shl_angle_d;
  
   /* Servo pulses */
-  Base = (ftl(1500.0 - (( degrees( bas_angle_r )) * 10.55 )));
-  Shoulder = (ftl(1500.0 - (( shl_angle_d - 90) * 10.55 )));
-  Elbow = (ftl(1500.0 + (( elb_angle_d - 90.0 ) * 10.55 )));
-  Wrist = (ftl(1500 + ( wri_angle_d  * 10.55 )));
+  if (fCartesian) 
+  {
+    sBase = (ftl(1500.0 - (( degrees( bas_angle_r )) * 10.55 )));//only set base if we are n cartesian mode
+  }
+  
+  sShoulder = (ftl(1500.0 - (( shl_angle_d - 90) * 10.55 )));
+  sElbow = (ftl(1500.0 + (( elb_angle_d - 90.0 ) * 10.55 )));
+  sWrist = (ftl(1500 + ( wri_angle_d  * 10.55 )));
   
   //assume success
 //  return = g_bIKStatus = IKS_SUCCESS;
@@ -92,6 +133,67 @@ boolean doArmIK(boolean fCartesian, float x, float y, float z, float grip_angle_
 
 //=============================================================================
 //=============================================================================
+
+
+
+//===================================================================================================
+// MoveArmTo
+//===================================================================================================
+void MoveArmTo(int sBase, int sShoulder, int sElbow, int sWrist, int sWristRot, int sGrip, int wTime, boolean fWait) {
+
+  
+  // First make sure servos are not free...
+  if (g_fServosFree) {
+    g_fServosFree = false;
+
+  }
+
+
+
+  
+  // Save away the current positions...
+  g_sBase = sBase;
+  g_sShoulder = sShoulder;
+  g_sElbow = sElbow;
+  g_sWrist = sWrist;
+  g_sWristRot = sWristRot;
+  g_sGrip = sGrip;
+
+
+
+  Base = sBase;
+  Shoulder = sShoulder;
+  Elbow = sElbow;
+  Wrist = sWrist;
+  
+  Gripper = sGrip;
+
+
+
+}
+
+//===================================================================================================
+// MoveArmToHome
+//===================================================================================================
+void MoveArmToHome(void) {
+//  if (g_bIKMode != IKM_BACKHOE) {
+    sBase = 1500;
+    sShoulder = 1500;
+    sElbow = 1500;
+    sWrist = 1500;
+    
+    MoveArmTo(sBase, sShoulder, sElbow, sWrist, 512, 256, 2000, true);
+     g_fArmActive = false;
+//  }
+//  else {
+//    g_bIKStatus = IKS_SUCCESS;  // assume sucess soe we will continue to move...
+//    MoveArmTo(2048, 2048, 2048, 2048, 512, 256, 2000, true);
+//  }
+}
+
+
+
+
 #endif
 
 
