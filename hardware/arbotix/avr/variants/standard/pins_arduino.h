@@ -33,23 +33,23 @@
 
 #define digitalPinHasPWM(p)         ((p) == 3 || (p) == 4 || (p) == 12 || (p) == 13 || (p) == 14 || (p) == 15)
 
-const static uint8_t SS   = 4;
-const static uint8_t MOSI = 5;
-const static uint8_t MISO = 6;
-const static uint8_t SCK  = 7;
+static const uint8_t SS   = 4;
+static const uint8_t MOSI = 5;
+static const uint8_t MISO = 6;
+static const uint8_t SCK  = 7;
 
-const static uint8_t SDA = 17;
-const static uint8_t SCL = 16;
-const static uint8_t LED_BUILTIN = 0;
+static const uint8_t SDA = 17;
+static const uint8_t SCL = 16;
+static const uint8_t LED_BUILTIN = 0;
 
-const static uint8_t A0 = 24;
-const static uint8_t A1 = 25;
-const static uint8_t A2 = 26;
-const static uint8_t A3 = 27;
-const static uint8_t A4 = 28;
-const static uint8_t A5 = 29;
-const static uint8_t A6 = 30;
-const static uint8_t A7 = 31;
+static const uint8_t A0 = 24;
+static const uint8_t A1 = 25;
+static const uint8_t A2 = 26;
+static const uint8_t A3 = 27;
+static const uint8_t A4 = 28;
+static const uint8_t A5 = 29;
+static const uint8_t A6 = 30;
+static const uint8_t A7 = 31;
 
 #define digitalPinToPCICR(p)    (((p) >= 0 && (p) <= 31) ? (&PCICR) : ((uint8_t *)0))
 #define digitalPinToPCICRbit(p) (((p) <= 7) ? 1 : \
