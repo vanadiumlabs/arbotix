@@ -18,170 +18,218 @@
 */
 
 #include "ax12.h"
-
-/******************************************************************************
- * Hardware Serial Level, this uses the same stuff as Serial1, therefore 
- *  you should not use the Arduino Serial1 library.
- */
+#ifndef __ARDUINO_X86__
+#include <avr/io.h>
+#endif 
 
 unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
-unsigned char ax_tx_buffer[AX12_BUFFER_SIZE];
-unsigned char ax_rx_int_buffer[AX12_BUFFER_SIZE];
 
-// making these volatile keeps the compiler from optimizing loops of available()
-volatile int ax_rx_Pointer;
-volatile int ax_tx_Pointer;
-volatile int ax_rx_int_Pointer;
-#if defined(AX_RX_SWITCHED)
-unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
+// Lets have the init setup  
+static Stream* s_paxStream;
+static long    s_baudStreamInit;
+
+// 
+void ax12InitDeferred(long baud, Stream* pstream) {
+    // This gets called by the BioloidController code if the 
+    // constructor contains the Serial stream information
+    // On some processors it may not be valid to initialize the
+    // Serial stream on the contructor as this may be done before 
+    // the Arduino code has properly initialized the underlying hardware. 
+    // Need to enable the PU resistor on the TX pin
+    s_paxStream = pstream;      // remember the stream
+    s_baudStreamInit = baud;    // remember what baud they asked for
+}
+
+
+/** initializes serial1 transmit at baud, 8-N-1 */
+void ax12Init(long baud, Stream* pstream ){
+    // Need to enable the PU resistor on the TX pin
+    s_paxStream = pstream; 
+    s_baudStreamInit = 0;   // sort of a hack to know that we have properly initialized the the serial stream
+    
+    // Lets do some init here
+    if (s_paxStream == &Serial) {
+        Serial.begin(baud);
+    }  
+  
+    if (s_paxStream == (Stream*)&Serial1) {
+        Serial1.begin(baud);
+#if defined(__MK20DX256__) || defined(__MKL26Z64__)
+        UART0_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
+//        CORE_PIN1_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
 #endif
+    }    
+#ifdef SERIAL_PORT_HARDWARE1
+    if (s_paxStream == &Serial2) {
+        Serial2.begin(baud);
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+
+        UART1_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
+//        CORE_PIN10_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
+#endif
+    }    
+#endif
+#ifdef SERIAL_PORT_HARDWARE2
+    if (s_paxStream == &Serial3) {
+        Serial3.begin(baud);
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+        UART2_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
+//        CORE_PIN8_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
+#endif
+    }    
+#endif
+    setRX(0);    
+}
 
 /** helper functions to switch direction of comms */
-void setTX(int id){
-    bitClear(UCSR1B, RXEN1); 
-  #if defined(AX_RX_SWITCHED)
-    if(dynamixel_bus_config[id-1] > 0)
-        SET_RX_WR;
-    else
-        SET_AX_WR;   
-  #else
-    // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
-    #ifdef ARBOTIX_WITH_RX
-      PORTD |= 0x10;
-    #endif   
-    bitSet(UCSR1B, TXEN1);
-    bitClear(UCSR1B, RXCIE1);
-  #endif
-    ax_tx_Pointer = 0;
+void setTX(int id  __attribute__((unused))){
+    setTXall();
 }
-void setRX(int id){ 
-  #if defined(AX_RX_SWITCHED)
-    int i;
-    // Need to wait for last byte to be sent before turning the bus around.
-    // Check the Transmit complete flag
-    while (bit_is_clear(UCSR1A, UDRE1));
-    for(i=0; i<UBRR1L*15; i++)    
-        asm("nop");
-    if(dynamixel_bus_config[id-1] > 0)
-        SET_RX_RD;
-    else
-        SET_AX_RD;
-  #else
-    // emulate half-duplex on ArbotiX, ArbotiX w/ RX Bridge
-    #ifdef ARBOTIX_WITH_RX
-      int i;
-      // Need to wait for last byte to be sent before turning the bus around.
-      // Check the Transmit complete flag
-      while (bit_is_clear(UCSR1A, UDRE1));
-      for(i=0; i<25; i++)    
-          asm("nop");
-      PORTD &= 0xEF;
-    #endif 
-    bitClear(UCSR1B, TXEN1);
-    bitSet(UCSR1B, RXCIE1);
-  #endif  
-    bitSet(UCSR1B, RXEN1);
-    ax_rx_int_Pointer = 0;
-    ax_rx_Pointer = 0;
-}
-// for sync write
+
 void setTXall(){
-    bitClear(UCSR1B, RXEN1);    
-  #if defined(AX_RX_SWITCHED)
-    SET_RX_WR;
-    SET_AX_WR;   
-  #else
-    #ifdef ARBOTIX_WITH_RX
-      PORTD |= 0x10;
-    #endif
-    bitSet(UCSR1B, TXEN1);
-    bitClear(UCSR1B, RXCIE1);
-  #endif
-    ax_tx_Pointer = 0;
+    // Check to see if we are doing deferred init
+    if (s_baudStreamInit)
+        ax12Init(s_baudStreamInit, s_paxStream);
+
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+    // Teensy 3.1
+    if (s_paxStream == (Stream*)&Serial1) {
+        UART0_C3 |= UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial2) {
+        UART1_C3 |= UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial3) {
+        UART2_C3 |= UART_C3_TXDIR;
+    }    
+
+#elif defined(__ARDUINO_X86__)
+    // Currently assume using USB2AX or the like
+    
+#else    
+    if (s_paxStream == (Stream*)&Serial1)
+        UCSR1B = /*(1 << UDRIE1) |*/ (1 << TXEN1);
+#ifdef SERIAL_PORT_HARDWARE1
+    if (s_paxStream == (Stream*)&Serial2) 
+        UCSR2B = /*(1 << UDRIE3) |*/ (1 << TXEN2);
+#endif        
+#ifdef SERIAL_PORT_HARDWARE2
+    if (s_paxStream == (Stream*)&Serial3)
+        UCSR3B =  /*(1 << UDRIE3) |*/ (1 << TXEN3);
+#endif
+#endif
 }
+
+void flushAX12InputBuffer(void)  {
+    // First lets clear out any RX bytes that may be lingering in our queue
+    while (s_paxStream->available()) {
+        s_paxStream->read();   
+    }
+}
+
+void setRX(int id  __attribute__((unused))){ 
+  
+    // First clear our input buffer
+	flushAX12InputBuffer();
+    s_paxStream->flush();
+    // Now setup to enable the RX and disable the TX
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+    // Teensy 3.1
+    if (s_paxStream == (Stream*)&Serial1) {
+        UART0_C3 &= ~UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial2) {
+        UART1_C3 &= ~UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial3) {
+        UART2_C3 &= ~UART_C3_TXDIR;
+    }    
+
+#elif defined(__ARDUINO_X86__)
+    // Currently assume using USB2AX or the like
+    
+#else    
+    if (s_paxStream == (Stream*)&Serial1)
+        UCSR1B = ((1 << RXCIE1) | (1 << RXEN1));
+#ifdef SERIAL_PORT_HARDWARE1
+    if (s_paxStream == (Stream*)&Serial2) 
+        UCSR2B = ((1 << RXCIE2) | (1 << RXEN2);
+#endif        
+#ifdef SERIAL_PORT_HARDWARE2
+    if (s_paxStream == (Stream*)&Serial3)
+        UCSR3B = ((1 << RXCIE3) | (1 << RXEN3));
+#endif
+#endif
+}
+
 
 /** Sends a character out the serial port. */
 void ax12write(unsigned char data){
-    while (bit_is_clear(UCSR1A, UDRE1));
-    UDR1 = data;
+    s_paxStream->write(data);
 }
+
 /** Sends a character out the serial port, and puts it in the tx_buffer */
 void ax12writeB(unsigned char data){
-    ax_tx_buffer[(ax_tx_Pointer++)] = data; 
-    while (bit_is_clear(UCSR1A, UDRE1));
-    UDR1 = data;
+    s_paxStream->write(data);
 }
 /** We have a one-way recieve buffer, which is reset after each packet is receieved.
     A wrap-around buffer does not appear to be fast enough to catch all bytes at 1Mbps. */
-ISR(USART1_RX_vect){
-    ax_rx_int_buffer[(ax_rx_int_Pointer++)] = UDR1;
-}
 
 /** read back the error code for our latest packet read */
 int ax12Error;
 int ax12GetLastError(){ return ax12Error; }
 /** > 0 = success */
+
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+#define COUNTER_TIMEOUT 12000
+#else
+#define COUNTER_TIMEOUT 3000
+#endif
+
 int ax12ReadPacket(int length){
     unsigned long ulCounter;
-    unsigned char offset, blength, checksum, timeout;
-    unsigned char volatile bcount; 
+    unsigned char offset, checksum;
+	unsigned char *psz; 
+	unsigned char *pszEnd;
+    int ch;
+    
 
     offset = 0;
-    timeout = 0;
-    bcount = 0;
-    while(bcount < length){
-        ulCounter = 0;
-        while((bcount + offset) == ax_rx_int_Pointer){
-            if(ulCounter++ > 1000L){ // was 3000
-                timeout = 1;
-                break;
-            }
-        }
-        if(timeout) break;
-        ax_rx_buffer[bcount] = ax_rx_int_buffer[bcount + offset];
-        if((bcount == 0) && (ax_rx_buffer[0] != 0xff))
-            offset++;
-        else if((bcount == 2) && (ax_rx_buffer[2] == 0xff))
-            offset++;
-        else
-            bcount++;
-    }
-
-    blength = bcount;
+	
+	psz = ax_rx_buffer;
+	pszEnd = &ax_rx_buffer[length];
+	
+    flushAX12InputBuffer();
+	
+	// Need to wait for a character or a timeout...
+	do {
+		ulCounter = COUNTER_TIMEOUT;
+        while ((ch = s_paxStream->read()) == -1) {
+			if (!--ulCounter) {
+				return 0;		// Timeout
+			}
+		}
+	} while (ch != 0xff) ;
+	*psz++ = 0xff;
+	while (psz != pszEnd) {
+		ulCounter = COUNTER_TIMEOUT;
+        while ((ch = s_paxStream->read()) == -1) {
+			if (!--ulCounter)  {
+				return 0;		// Timeout
+			}
+		}
+		*psz++ = (unsigned char)ch;
+	}
     checksum = 0;
-    for(offset=2;offset<bcount;offset++)
+    for(offset=2;offset<length;offset++)
         checksum += ax_rx_buffer[offset];
-    if((checksum%256) != 255){
+    if(checksum != 255){
         return 0;
     }else{
         return 1;
     }
 }
 
-/** initializes serial1 transmit at baud, 8-N-1 */
-void ax12Init(long baud){
-    UBRR1H = (F_CPU / (8 * baud) - 1 ) >> 8;
-    UBRR1L = (F_CPU / (8 * baud) - 1 );
-    bitSet(UCSR1A, U2X1);
-    ax_rx_int_Pointer = 0;
-    ax_rx_Pointer = 0;
-    ax_tx_Pointer = 0;
-#if defined(AX_RX_SWITCHED)
-    INIT_AX_RX;
-    bitSet(UCSR1B, TXEN1);
-    bitSet(UCSR1B, RXEN1);
-    bitSet(UCSR1B, RXCIE1);
-#else
-  #ifdef ARBOTIX_WITH_RX
-    DDRD |= 0x10;   // Servo B = output
-    PORTD &= 0xEF;  // Servo B low
-  #endif
-    // set RX as pull up to hold bus to a known level
-    PORTD |= (1<<2);
-    // enable rx
-    setRX(0);
-#endif
-}
 
 /******************************************************************************
  * Packet Level
@@ -200,6 +248,7 @@ int ax12GetRegister(int id, int regstart, int length){
     ax12writeB(regstart);
     ax12writeB(length);
     ax12writeB(checksum);  
+	
     setRX(id);    
     if(ax12ReadPacket(length + 6) > 0){
         ax12Error = ax_rx_buffer[4];
@@ -245,7 +294,4 @@ void ax12SetRegister2(int id, int regstart, int data){
     setRX(id);
     //ax12ReadPacket();
 }
-
-// general write?
-// general sync write?
 

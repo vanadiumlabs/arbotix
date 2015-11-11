@@ -24,24 +24,14 @@
 
 #define AX12_MAX_SERVOS             30
 #define AX12_BUFFER_SIZE            32
-
 /** Configuration **/
-#if defined(ARBOTIX)
-  // no config needed
-#elif defined(SERVO_STIK) || defined(ARBOTIX2)
-  #define AX_RX_SWITCHED
-  #define SET_RX_WR (PORTC |= 0x40)
-  #define SET_AX_WR (PORTC |= 0x80)
-  #define SET_RX_RD (PORTC = (PORTC & 0xBF) | 0x80)
-  #define SET_AX_RD (PORTC = (PORTC & 0x7F) | 0x40)
-  #define INIT_AX_RX DDRC |= 0xC0; PORTC |= 0xC0
-#elif defined(ARBOTIX_1280)
-  #define AX_RX_SWITCHED
-  #define SET_RX_WR (PORTG |= 0x08)
-  #define SET_AX_WR (PORTG |= 0x10)
-  #define SET_RX_RD (PORTG = (PORTG&0xE7) | 0x10 )
-  #define SET_AX_RD (PORTG = (PORTG&0xE7) | 0x08 )
-  #define INIT_AX_RX DDRG |= 0x18; PORTG |= 0x18
+
+#ifndef PAX12Serial
+#if defined(UBRR3H)
+#define PAX12Serial &Serial3
+#else
+#define PAX12Serial &Serial1
+#endif
 #endif
 
 /** EEPROM AREA **/
@@ -131,7 +121,8 @@
 #define AX_OBSTACLE_DETECTION       32
 #define AX_BUZZER_INDEX             40
 
-void ax12Init(long baud);
+void ax12Init(long baud, Stream* pStream=PAX12Serial);
+void ax12InitDeferred(long baud, Stream* pStream=PAX12Serial);
 
 void setTXall();     // for sync write
 void setTX(int id);
