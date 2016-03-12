@@ -1,3 +1,0 @@
-avrispmkii.name=AVRISP mkII (serial)
-avrispmkii.communication=serial
-avrispmkii.protocol=stk500v2

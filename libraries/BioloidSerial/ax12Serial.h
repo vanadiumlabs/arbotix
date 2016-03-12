@@ -17,14 +17,24 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <Arduino.h>
+// This version hacked up by Kurt Eckhardt...
+
+#include <Arduino.h> 
 
 #ifndef ax12_h
 #define ax12_h
 
 #define AX12_MAX_SERVOS             30
 #define AX12_BUFFER_SIZE            32
+//#define ARBOTIX_1280
 /** Configuration **/
+
+#if defined(__ARDUINO_X86__)
+    // Currently assume using USB2AX or the like
+#define PAX12Serial (void*)0   // no default yet... 
+#else    
+#define PAX12Serial &Serial1
+#endif
 
 #ifndef PAX12Serial
 #if defined(UBRR3H)
@@ -121,8 +131,7 @@
 #define AX_OBSTACLE_DETECTION       32
 #define AX_BUZZER_INDEX             40
 
-void ax12Init(long baud, Stream* pStream=PAX12Serial);
-void ax12InitDeferred(long baud, Stream* pStream=PAX12Serial);
+void ax12Init(long baud, Stream* pStream);
 
 void setTXall();     // for sync write
 void setTX(int id);

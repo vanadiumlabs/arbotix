@@ -1,0 +1,25 @@
+#####################################################################
+
+arbotixAd.name=ArbotiX Std
+
+arbotixAd.upload.tool=avrdude
+arbotixAd.upload.protocol=arduino
+arbotixAd.upload.maximum_size=65536
+arbotixAd.upload.maximum_data_size=4096
+arbotixAd.upload.speed=38400
+
+arbotixAd.bootloader.tool=avrdude
+arbotixAd.bootloader.low_fuses=0xFF
+arbotixAd.bootloader.high_fuses=0xDC
+arbotixAd.bootloader.extended_fuses=0xFD
+arbotixAd.bootloader.file=atmega644p/ATmegaBOOT_644P.hex
+arbotixAd.bootloader.unlock_bits=0x3F
+arbotixAd.bootloader.lock_bits=0x0F
+
+arbotixAd.build.mcu=atmega644p
+arbotixAd.build.f_cpu=16000000L
+arbotixAd.build.core=arduino:arduino
+arbotixAd.build.variant=standard
+#arbotixAd.build.variant=serial1
+arbotixAd.build.board=AVR_ARBOTIXAD
+#####################################################################

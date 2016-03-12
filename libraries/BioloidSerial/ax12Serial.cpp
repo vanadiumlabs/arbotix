@@ -17,7 +17,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "ax12.h"
+#include "ax12Serial.h"
 #ifndef __ARDUINO_X86__
 #include <avr/io.h>
 #endif 
@@ -26,27 +26,12 @@ unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
 
 // Lets have the init setup  
 static Stream* s_paxStream;
-static long    s_baudStreamInit;
-
-// 
-void ax12InitDeferred(long baud, Stream* pstream) {
-    // This gets called by the BioloidController code if the 
-    // constructor contains the Serial stream information
-    // On some processors it may not be valid to initialize the
-    // Serial stream on the contructor as this may be done before 
-    // the Arduino code has properly initialized the underlying hardware. 
-    // Need to enable the PU resistor on the TX pin
-    s_paxStream = pstream;      // remember the stream
-    s_baudStreamInit = baud;    // remember what baud they asked for
-}
-
 
 /** initializes serial1 transmit at baud, 8-N-1 */
 void ax12Init(long baud, Stream* pstream ){
     // Need to enable the PU resistor on the TX pin
     s_paxStream = pstream; 
-    s_baudStreamInit = 0;   // sort of a hack to know that we have properly initialized the the serial stream
-    
+
     // Lets do some init here
     if (s_paxStream == &Serial) {
         Serial.begin(baud);
@@ -82,15 +67,11 @@ void ax12Init(long baud, Stream* pstream ){
 }
 
 /** helper functions to switch direction of comms */
-void setTX(int id  __attribute__((unused))){
+void setTX(int id){
     setTXall();
 }
 
 void setTXall(){
-    // Check to see if we are doing deferred init
-    if (s_baudStreamInit)
-        ax12Init(s_baudStreamInit, s_paxStream);
-
 #if defined(__MK20DX256__)  || defined(__MKL26Z64__)
     // Teensy 3.1
     if (s_paxStream == (Stream*)&Serial1) {
@@ -127,7 +108,7 @@ void flushAX12InputBuffer(void)  {
     }
 }
 
-void setRX(int id  __attribute__((unused))){ 
+void setRX(int id){ 
   
     // First clear our input buffer
 	flushAX12InputBuffer();

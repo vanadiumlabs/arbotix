@@ -17,8 +17,8 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef BioloidController_h
-#define BioloidController_h
+#ifndef BioloidEx_h
+#define BioloidEx_h
 
 /* poses:
  *  PROGMEM prog_uint16_t name[ ] = {4,512,512,482,542}; // first number is # of servos
@@ -26,11 +26,11 @@
  *  PROGMEM transition_t name[] = {{NULL,count},{pose_name,1000},...} 
  */
 
-#include "ax12.h"
+#include "ax12Serial.h"
 
 /* pose engine runs at 30Hz (33ms between frames) 
    recommended values for interpolateSetup are of the form X*BIOLOID_FRAME_LENGTH - 1 */
-#define BIOLOID_FRAME_LENGTH      33
+#define BIOLOID_FRAME_LENGTH      20
 /* we need some extra resolution, use 13 bits, rather than 10, during interpolation */
 #define BIOLOID_SHIFT             3
 
@@ -41,17 +41,14 @@ typedef struct{
 } transition_t; 
 
 /** Bioloid Controller Class for mega324p/644p clients. **/
-class BioloidController
+class BioloidControllerEx
 {
   public:
     /* For compatibility with legacy code */
-    BioloidController(long baud, Stream* pstream = (Stream*)&Serial1);               // baud usually 1000000
-    
-    /* New-style constructor/setup */ 
-    BioloidController();
+    // Changed to two step init...
+    BioloidControllerEx();               // baud usually 1000000
     void begin(long baud=1000000, Stream* pstream = (Stream*)PAX12Serial);
-
-    void setup(int servo_cnt);
+    
 
     /* Pose Manipulation */
     void loadPose( const unsigned int * addr ); // load a named pose from FLASH  
@@ -71,7 +68,9 @@ class BioloidController
     unsigned char runningSeq;                   // are we running a sequence? 0=No, 1=Yes 
     int poseSize;                               // how many servos are in this pose, used by Sync()
 
+    // Kurt's Hacks
     uint8_t frameLength;                        // Allow variable frame lengths, to test...
+
     /* to interpolate:
      *  bioloid.loadPose(myPose);
      *  bioloid.interpolateSetup(67);
