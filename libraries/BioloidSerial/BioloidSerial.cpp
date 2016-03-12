@@ -38,10 +38,10 @@ void BioloidControllerEx::begin(long baud, Stream* pstream ){
         pose_[i] = 512;
         nextpose_[i] = 512;
     }
-  frameLength = BIOLOID_FRAME_LENGTH;
+    frameLength = BIOLOID_FRAME_LENGTH;
     interpolating = 0;
     playing = 0;
-  nextframe_ = millis();
+    nextframe_ = millis();
     ax12Init(baud, pstream);  
 }
 
@@ -56,9 +56,9 @@ int BioloidControllerEx::getId(int index){
 /* load a named pose from FLASH into nextpose. */
 void BioloidControllerEx::loadPose( const unsigned int * addr ){
     int i;
-    poseSize = pgm_read_word_near(addr); // number of servos in this pose
+    poseSize = (int)(uint16_t)pgm_read_word_near(addr); // number of servos in this pose
     for(i=0; i<poseSize; i++)
-        nextpose_[i] = pgm_read_word_near(addr+1+i) << BIOLOID_SHIFT;
+        nextpose_[i] = (int)(uint16_t)pgm_read_word_near(addr+1+i) << BIOLOID_SHIFT;
 }
 /* read in current servo positions to the pose. */
 void BioloidControllerEx::readPose(){
@@ -187,11 +187,11 @@ void BioloidControllerEx::setNextPoseByIndex(int index, int pos) {  // set a ser
 void BioloidControllerEx::playSeq( const transition_t  * addr ){
     sequence = (transition_t *) addr;
     // number of transitions left to load
-    transitions = pgm_read_word_near(&sequence->time);
+    transitions = (int)(uint16_t)pgm_read_word_near(&sequence->time);
     sequence++;    
     // load a transition
-    loadPose((const unsigned int *)pgm_read_word_near(&sequence->pose));
-    interpolateSetup(pgm_read_word_near(&sequence->time));
+    loadPose((const unsigned int *)(uint16_t)pgm_read_word_near(&sequence->pose));
+    interpolateSetup((uint16_t)pgm_read_word_near(&sequence->time));
     transitions--;
     playing = 1;
 }

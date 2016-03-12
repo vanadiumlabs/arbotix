@@ -21,6 +21,7 @@
 #ifndef __ARDUINO_X86__
 #include <avr/io.h>
 #endif 
+
 unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
 
 // Lets have the init setup  
@@ -31,45 +32,37 @@ void ax12Init(long baud, Stream* pstream ){
     // Need to enable the PU resistor on the TX pin
     s_paxStream = pstream; 
 
-
     // Lets do some init here
-    if (pstream == &Serial) {
+    if (s_paxStream == &Serial) {
         Serial.begin(baud);
-    }    
-#ifdef Serial1
-    if (pstream == &Serial1) {
+    }  
+  
+    if (s_paxStream == (Stream*)&Serial1) {
         Serial1.begin(baud);
-#if defined(__MK20DX256__)
+#if defined(__MK20DX256__) || defined(__MKL26Z64__)
         UART0_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
-        CORE_PIN1_CONFIG |= PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin
+//        CORE_PIN1_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
 #endif
     }    
-#endif
-#ifdef Serial2
-    if (pstream == &Serial2) {
+#ifdef SERIAL_PORT_HARDWARE1
+    if (s_paxStream == &Serial2) {
         Serial2.begin(baud);
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+
         UART1_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
-        CORE_PIN10_CONFIG |= PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin
-#if defined(__MK20DX256__)
+//        CORE_PIN10_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
 #endif
     }    
 #endif
-#ifdef Serial3
-    if (pstream == &Serial3) {
+#ifdef SERIAL_PORT_HARDWARE2
+    if (s_paxStream == &Serial3) {
         Serial3.begin(baud);
-#if defined(__MK20DX256__)
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
         UART2_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
-        CORE_PIN8_CONFIG |= PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin
+//        CORE_PIN8_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
 #endif
     }    
 #endif
-    // DEBUG
-#ifdef DEBUG_PINS
-    pinMode(2, OUTPUT);
-    pinMode(3, OUTPUT);
-    pinMode(4, OUTPUT);
-    pinMode(5, OUTPUT);
-#endif    
     setRX(0);    
 }
 
@@ -79,35 +72,31 @@ void setTX(int id){
 }
 
 void setTXall(){
-#if defined(__MK20DX256__)
-#define UART_C3_TXDIR			(uint8_t)0x20			// Transmitter Interrupt or DMA Transfer Enable.
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
     // Teensy 3.1
-#if AX12Serial == Serial1
-	uint8_t c;
-	c = UART0_C3;
-	c |= UART_C3_TXDIR;
-	UART0_C3 = c;
-#elif AX12Serial == Serial2
-	uint8_t c;
-	c = UART1_C3;
-	c |= UART_C3_TXDIR;
-	UART1_C3 = c;
-#elif AX12Serial == Serial3
-	uint8_t c;
-	c = UART2_C3;
-	c |= UART_C3_TXDIR;
-	UART2_C3 = c;
-#endif
+    if (s_paxStream == (Stream*)&Serial1) {
+        UART0_C3 |= UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial2) {
+        UART1_C3 |= UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial3) {
+        UART2_C3 |= UART_C3_TXDIR;
+    }    
+
 #elif defined(__ARDUINO_X86__)
     // Currently assume using USB2AX or the like
     
 #else    
-#if AX12Serial == Serial1
-    UCSR1B = /*(1 << UDRIE1) |*/ (1 << TXEN1);
-#elif AX12Serial == Serial2
-    UCSR2B = /*(1 << UDRIE3) |*/ (1 << TXEN2);
-#elif AX12Serial == Serial3
-    UCSR3B =  /*(1 << UDRIE3) |*/ (1 << TXEN3);
+    if (s_paxStream == (Stream*)&Serial1)
+        UCSR1B = /*(1 << UDRIE1) |*/ (1 << TXEN1);
+#ifdef SERIAL_PORT_HARDWARE1
+    if (s_paxStream == (Stream*)&Serial2) 
+        UCSR2B = /*(1 << UDRIE3) |*/ (1 << TXEN2);
+#endif        
+#ifdef SERIAL_PORT_HARDWARE2
+    if (s_paxStream == (Stream*)&Serial3)
+        UCSR3B =  /*(1 << UDRIE3) |*/ (1 << TXEN3);
 #endif
 #endif
 }
@@ -121,51 +110,35 @@ void flushAX12InputBuffer(void)  {
 
 void setRX(int id){ 
   
-#ifdef DEBUG_PINS
-    digitalWrite(4, HIGH);
-#endif
     // First clear our input buffer
 	flushAX12InputBuffer();
-#ifdef DEBUG_PINS
-    digitalWrite(4, LOW);
-    // Now wait for any pending outputs to fully transmit
-    digitalWrite(5, HIGH);
-#endif
     s_paxStream->flush();
-#ifdef DEBUG_PINS
-    digitalWrite(5, LOW);
-#endif    
     // Now setup to enable the RX and disable the TX
-#if defined(__MK20DX256__)
-#define UART_C3_TXDIR			(uint8_t)0x20			// Transmitter Interrupt or DMA Transfer Enable.
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
     // Teensy 3.1
-#if AX12Serial == Serial1
-	uint8_t c;
-	c = UART0_C3;
-	c &= ~UART_C3_TXDIR;
-	UART0_C3 = c;
-#elif AX12Serial == Serial2
-	uint8_t c;
-	c = UART1_C3;
-	c &= ~UART_C3_TXDIR;
-	UART1_C3 = c;
-#elif AX12Serial == Serial3
-	uint8_t c;
-	c = UART2_C3;
-	c &= ~UART_C3_TXDIR;
-	UART2_C3 = c;
-#endif
+    if (s_paxStream == (Stream*)&Serial1) {
+        UART0_C3 &= ~UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial2) {
+        UART1_C3 &= ~UART_C3_TXDIR;
+    }
+    if (s_paxStream == (Stream*)&Serial3) {
+        UART2_C3 &= ~UART_C3_TXDIR;
+    }    
 
 #elif defined(__ARDUINO_X86__)
     // Currently assume using USB2AX or the like
     
 #else    
-#if AX12Serial == Serial1 
-    UCSR1B = ((1 << RXCIE1) | (1 << RXEN1));
-#elif AX12Serial == Serial2
-    UCSR2B = ((1 << RXCIE2) | (1 << RXEN2);
-#elif AX12Serial == Serial3
-    UCSR3B = ((1 << RXCIE3) | (1 << RXEN3));
+    if (s_paxStream == (Stream*)&Serial1)
+        UCSR1B = ((1 << RXCIE1) | (1 << RXEN1));
+#ifdef SERIAL_PORT_HARDWARE1
+    if (s_paxStream == (Stream*)&Serial2) 
+        UCSR2B = ((1 << RXCIE2) | (1 << RXEN2);
+#endif        
+#ifdef SERIAL_PORT_HARDWARE2
+    if (s_paxStream == (Stream*)&Serial3)
+        UCSR3B = ((1 << RXCIE3) | (1 << RXEN3));
 #endif
 #endif
 }
@@ -188,7 +161,7 @@ int ax12Error;
 int ax12GetLastError(){ return ax12Error; }
 /** > 0 = success */
 
-#if defined(__MK20DX256__)
+#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
 #define COUNTER_TIMEOUT 12000
 #else
 #define COUNTER_TIMEOUT 3000
@@ -197,23 +170,15 @@ int ax12GetLastError(){ return ax12Error; }
 int ax12ReadPacket(int length){
     unsigned long ulCounter;
     unsigned char offset, checksum;
-    unsigned char volatile bcount; 
 	unsigned char *psz; 
 	unsigned char *pszEnd;
     int ch;
     
 
-#ifdef DEBUG_PINS
-    digitalWrite(2, HIGH);
-#endif
     offset = 0;
-    bcount = 0;
 	
 	psz = ax_rx_buffer;
 	pszEnd = &ax_rx_buffer[length];
-#ifdef DEBUG
-	pinMode(A4, OUTPUT);
-#endif
 	
     flushAX12InputBuffer();
 	
@@ -222,10 +187,6 @@ int ax12ReadPacket(int length){
 		ulCounter = COUNTER_TIMEOUT;
         while ((ch = s_paxStream->read()) == -1) {
 			if (!--ulCounter) {
-#ifdef DEBUG_PINS
-                digitalWrite(3, !digitalRead(3));
-                digitalWrite(2, LOW);
-#endif
 				return 0;		// Timeout
 			}
 		}
@@ -235,33 +196,15 @@ int ax12ReadPacket(int length){
 		ulCounter = COUNTER_TIMEOUT;
         while ((ch = s_paxStream->read()) == -1) {
 			if (!--ulCounter)  {
-#ifdef DEBUG_PINS
-                digitalWrite(3, !digitalRead(3));
-                digitalWrite(2, LOW);
-#endif
 				return 0;		// Timeout
 			}
 		}
 		*psz++ = (unsigned char)ch;
 	}
     checksum = 0;
-#ifdef DEBUG_PINS
-    digitalWrite(2, LOW);
-#endif
     for(offset=2;offset<length;offset++)
         checksum += ax_rx_buffer[offset];
     if(checksum != 255){
-#ifdef DEBUG
-		Serial.println("");
-		for(offset=0;offset<length;offset++) {
-			Serial.print(ax_rx_buffer[offset], HEX);
-			Serial.print(" ");
-		}
-		Serial.println("");
-#endif		
-#ifdef DEBUG_PINS
-        digitalWrite(3, !digitalRead(3));
-#endif
         return 0;
     }else{
         return 1;
