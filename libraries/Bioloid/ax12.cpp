@@ -226,7 +226,7 @@ void ax12SetRegister(int id, int regstart, int data){
     // checksum = 
     ax12writeB(checksum);
     setRX(id);
-    //ax12ReadPacket();
+    ax12ReadPacket(6);
 }
 /* Set the value of a double-byte register. */
 void ax12SetRegister2(int id, int regstart, int data){
@@ -243,7 +243,7 @@ void ax12SetRegister2(int id, int regstart, int data){
     // checksum = 
     ax12writeB(checksum);
     setRX(id);
-    //ax12ReadPacket();
+    ax12ReadPacket(6);
 }
 
 // general write?
