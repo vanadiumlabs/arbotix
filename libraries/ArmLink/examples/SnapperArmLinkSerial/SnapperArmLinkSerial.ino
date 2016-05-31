@@ -70,7 +70,7 @@
 //The Parralle gripper has a full robotgeek servo and paralle rails
 //Uncomment one of the following lines depending on which gripper you are using.
 //#define GRIPPER_TYPE ROBOT_GEEK_9G_GRIPPER
-//#define GRIPPER_TYPE ROBOT_GEEK_PARALLEL_GRIPPER
+#define GRIPPER_TYPE ROBOT_GEEK_PARALLEL_GRIPPER
 
 #ifndef GRIPPER_TYPE
    #error YOU HAVE TO SELECT THE GRIPPER YOU ARE USING! Uncomment the correct line above for your gripper

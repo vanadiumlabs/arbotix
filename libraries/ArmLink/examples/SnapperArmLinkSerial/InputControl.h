@@ -28,7 +28,13 @@ boolean         g_fServosFree = true;
         // no special action, '0' indicates that a movement command has come through
         g_fArmActive = true;
      }
+
      
+      else if(armlink.ext == 0x11){  //17
+        EmergencyStop();
+        IDPacket();        
+      }
+      
       else if(armlink.ext == 0x20){  //32
         g_bIKMode = IKM_IK3D_CARTESIAN;
         MoveArmToHome(); 

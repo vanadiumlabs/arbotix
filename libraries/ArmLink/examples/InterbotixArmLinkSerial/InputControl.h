@@ -28,7 +28,7 @@ extern void SetServoRegister(unsigned char,  int,  int,  int, int);
      }
       
       
-      else if(armlink.ext == 0x11){  //96
+      else if(armlink.ext == 0x11){  //17
         EmergencyStop();
         IDPacket();        
       }

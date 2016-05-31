@@ -1,4 +1,4 @@
-//=============================1================================================
+//=============================================================================
 // Based upon Kurt's PX Reactor arm code.
 // https://github.com/KurtE
 // This code provides serial control of the Interbotix line of robotic arms, which are sold by Trossen
