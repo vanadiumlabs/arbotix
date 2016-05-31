@@ -1,3 +1,6 @@
+/** @file 
+    @brief DYNAMIXEL Library Main file
+   */ 
 /*
   ax12.cpp - ArbotiX library for AX/RX control.
   Copyright (c) 2008-2011 Michael E. Ferguson.  All right reserved.
@@ -22,6 +25,13 @@
 #include <avr/io.h>
 #endif 
 
+/******************************************************************************
+ * Hardware Serial Level, this uses the same stuff as Serial1, therefore 
+ *  you should not use the Arduino Serial1 library.
+ */
+
+
+
 unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
 
 // Lets have the init setup  
@@ -29,7 +39,8 @@ static Stream* s_paxStream;
 static long    s_baudStreamInit;
 
 // 
-void ax12InitDeferred(long baud, Stream* pstream) {
+void dxlInitDeferred(long baud, Stream* pstream) 
+{
     // This gets called by the BioloidController code if the 
     // constructor contains the Serial stream information
     // On some processors it may not be valid to initialize the
@@ -41,8 +52,16 @@ void ax12InitDeferred(long baud, Stream* pstream) {
 }
 
 
+
 /** initializes serial1 transmit at baud, 8-N-1 */
-void ax12Init(long baud, Stream* pstream ){
+void dxlInit(long baud )
+{
+  dxlInit(baud, &Serial1);
+}
+
+/** initializes serial1 transmit at baud, 8-N-1 */
+void dxlInit(long baud, Stream* pstream )
+{
     // Need to enable the PU resistor on the TX pin
     s_paxStream = pstream; 
     s_baudStreamInit = 0;   // sort of a hack to know that we have properly initialized the the serial stream
@@ -52,132 +71,142 @@ void ax12Init(long baud, Stream* pstream ){
         Serial.begin(baud);
     }  
   
-    if (s_paxStream == (Stream*)&Serial1) {
+    if (s_paxStream == (Stream*)&Serial1) 
+    {
         Serial1.begin(baud);
-#if defined(__MK20DX256__) || defined(__MKL26Z64__)
-        UART0_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
-//        CORE_PIN1_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
-#endif
+		#if defined(__MK20DX256__) || defined(__MKL26Z64__)
+        	UART0_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
+			//        CORE_PIN1_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
+		#endif
     }    
-#ifdef SERIAL_PORT_HARDWARE1
-    if (s_paxStream == &Serial2) {
-        Serial2.begin(baud);
-#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+	#ifdef SERIAL_PORT_HARDWARE1
+    	if (s_paxStream == &Serial2) 
+    	{
+        	Serial2.begin(baud);
+			#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+			UART1_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
+			//        CORE_PIN10_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
+			#endif
+ 	   }    
+	#endif
 
-        UART1_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
-//        CORE_PIN10_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
-#endif
-    }    
-#endif
-#ifdef SERIAL_PORT_HARDWARE2
-    if (s_paxStream == &Serial3) {
-        Serial3.begin(baud);
-#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
-        UART2_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
-//        CORE_PIN8_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
-#endif
-    }    
-#endif
+	#ifdef SERIAL_PORT_HARDWARE2
+		if (s_paxStream == &Serial3) 
+		{
+			Serial3.begin(baud);
+			#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+				UART2_C1 |= UART_C1_LOOPS | UART_C1_RSRC;
+			//        CORE_PIN8_CONFIG = PORT_PCR_DSE | PORT_PCR_SRE | PORT_PCR_MUX(3) | PORT_PCR_PE | PORT_PCR_PS; // pullup on output pin;
+			#endif
+		}    
+	#endif
     setRX(0);    
 }
 
 /** helper functions to switch direction of comms */
-void setTX(int id  __attribute__((unused))){
-    setTXall();
+void dxlSetTX(int id  __attribute__((unused)))
+{
+    dxlSetTXall();
 }
 
-void setTXall(){
+void dxlSetTXall()
+{
     // Check to see if we are doing deferred init
     if (s_baudStreamInit)
-        ax12Init(s_baudStreamInit, s_paxStream);
+        dxlInit(s_baudStreamInit, s_paxStream);
 
-#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
-    // Teensy 3.1
-    if (s_paxStream == (Stream*)&Serial1) {
-        UART0_C3 |= UART_C3_TXDIR;
-    }
-    if (s_paxStream == (Stream*)&Serial2) {
-        UART1_C3 |= UART_C3_TXDIR;
-    }
-    if (s_paxStream == (Stream*)&Serial3) {
-        UART2_C3 |= UART_C3_TXDIR;
-    }    
+	#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+		// Teensy 3.1
+		if (s_paxStream == (Stream*)&Serial1) {
+			UART0_C3 |= UART_C3_TXDIR;
+		}
+		if (s_paxStream == (Stream*)&Serial2) {
+			UART1_C3 |= UART_C3_TXDIR;
+		}
+		if (s_paxStream == (Stream*)&Serial3) {
+			UART2_C3 |= UART_C3_TXDIR;
+		}    
 
-#elif defined(__ARDUINO_X86__)
-    // Currently assume using USB2AX or the like
+	#elif defined(__ARDUINO_X86__)
+   	 // Currently assume using USB2AX or the like
     
-#else    
-    if (s_paxStream == (Stream*)&Serial1)
-        UCSR1B = /*(1 << UDRIE1) |*/ (1 << TXEN1);
-#ifdef SERIAL_PORT_HARDWARE1
-    if (s_paxStream == (Stream*)&Serial2) 
-        UCSR2B = /*(1 << UDRIE3) |*/ (1 << TXEN2);
-#endif        
-#ifdef SERIAL_PORT_HARDWARE2
-    if (s_paxStream == (Stream*)&Serial3)
-        UCSR3B =  /*(1 << UDRIE3) |*/ (1 << TXEN3);
-#endif
+	#else    
+    	if (s_paxStream == (Stream*)&Serial1)
+        	UCSR1B = /*(1 << UDRIE1) |*/ (1 << TXEN1);
+	#ifdef SERIAL_PORT_HARDWARE1
+    	if (s_paxStream == (Stream*)&Serial2) 
+        	UCSR2B = /*(1 << UDRIE3) |*/ (1 << TXEN2);
+	#endif        
+	#ifdef SERIAL_PORT_HARDWARE2
+    	if (s_paxStream == (Stream*)&Serial3)
+        	UCSR3B =  /*(1 << UDRIE3) |*/ (1 << TXEN3);
+	#endif
 #endif
 }
 
-void flushAX12InputBuffer(void)  {
+void dxlFlushInputBuffer(void)  
+{
     // First lets clear out any RX bytes that may be lingering in our queue
-    while (s_paxStream->available()) {
+    while (s_paxStream->available()) 
+    {
         s_paxStream->read();   
     }
 }
 
-void setRX(int id  __attribute__((unused))){ 
+void dxlSetRX(int id  __attribute__((unused)))
+{ 
   
     // First clear our input buffer
-	flushAX12InputBuffer();
+	dxlFlushInputBuffer();
     s_paxStream->flush();
     // Now setup to enable the RX and disable the TX
-#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
-    // Teensy 3.1
-    if (s_paxStream == (Stream*)&Serial1) {
-        UART0_C3 &= ~UART_C3_TXDIR;
-    }
-    if (s_paxStream == (Stream*)&Serial2) {
-        UART1_C3 &= ~UART_C3_TXDIR;
-    }
-    if (s_paxStream == (Stream*)&Serial3) {
-        UART2_C3 &= ~UART_C3_TXDIR;
-    }    
+	#if defined(__MK20DX256__)  || defined(__MKL26Z64__)
+		// Teensy 3.1
+		if (s_paxStream == (Stream*)&Serial1) {
+			UART0_C3 &= ~UART_C3_TXDIR;
+		}
+		if (s_paxStream == (Stream*)&Serial2) {
+			UART1_C3 &= ~UART_C3_TXDIR;
+		}
+		if (s_paxStream == (Stream*)&Serial3) {
+			UART2_C3 &= ~UART_C3_TXDIR;
+		}    
 
-#elif defined(__ARDUINO_X86__)
-    // Currently assume using USB2AX or the like
+	#elif defined(__ARDUINO_X86__)
+    	// Currently assume using USB2AX or the like
     
-#else    
-    if (s_paxStream == (Stream*)&Serial1)
-        UCSR1B = ((1 << RXCIE1) | (1 << RXEN1));
-#ifdef SERIAL_PORT_HARDWARE1
-    if (s_paxStream == (Stream*)&Serial2) 
-        UCSR2B = ((1 << RXCIE2) | (1 << RXEN2);
-#endif        
-#ifdef SERIAL_PORT_HARDWARE2
-    if (s_paxStream == (Stream*)&Serial3)
-        UCSR3B = ((1 << RXCIE3) | (1 << RXEN3));
-#endif
+	#else    
+    	if (s_paxStream == (Stream*)&Serial1)
+        	UCSR1B = ((1 << RXCIE1) | (1 << RXEN1));
+	#ifdef SERIAL_PORT_HARDWARE1
+    	if (s_paxStream == (Stream*)&Serial2) 
+        	UCSR2B = ((1 << RXCIE2) | (1 << RXEN2);
+	#endif        
+	#ifdef SERIAL_PORT_HARDWARE2
+    	if (s_paxStream == (Stream*)&Serial3)
+        	UCSR3B = ((1 << RXCIE3) | (1 << RXEN3));
+	#endif
 #endif
 }
 
 
 /** Sends a character out the serial port. */
-void ax12write(unsigned char data){
+void dxlWrite(unsigned char data)
+{
     s_paxStream->write(data);
 }
 
 /** Sends a character out the serial port, and puts it in the tx_buffer */
-void ax12writeB(unsigned char data){
+void dxlWriteB(unsigned char data)
+{
     s_paxStream->write(data);
 }
 /** We have a one-way recieve buffer, which is reset after each packet is receieved.
     A wrap-around buffer does not appear to be fast enough to catch all bytes at 1Mbps. */
 
 /** read back the error code for our latest packet read */
-int ax12Error;
-int ax12GetLastError(){ return ax12Error; }
+int dxlError;
+int dxlGetLastError(){ return dxlError; }
 /** > 0 = success */
 
 #if defined(__MK20DX256__)  || defined(__MKL26Z64__)
@@ -186,7 +215,8 @@ int ax12GetLastError(){ return ax12Error; }
 #define COUNTER_TIMEOUT 3000
 #endif
 
-int ax12ReadPacket(int length){
+int dxlReadPacket(int length)
+{
     unsigned long ulCounter;
     unsigned char offset, checksum;
 	unsigned char *psz; 
@@ -199,7 +229,7 @@ int ax12ReadPacket(int length){
 	psz = ax_rx_buffer;
 	pszEnd = &ax_rx_buffer[length];
 	
-    flushAX12InputBuffer();
+    dxlFlushInputBuffer();
 	
 	// Need to wait for a character or a timeout...
 	do {
@@ -231,27 +261,29 @@ int ax12ReadPacket(int length){
 }
 
 
+
+
+
 /******************************************************************************
  * Packet Level
  */
 
 /** Read register value(s) */
-int ax12GetRegister(int id, int regstart, int length){  
-    setTX(id);
+int dxlGetRegister(int id, int regstart, int length){  
+    dxlSetTX(id);
     // 0xFF 0xFF ID LENGTH INSTRUCTION PARAM... CHECKSUM    
     int checksum = ~((id + 6 + regstart + length)%256);
-    ax12writeB(0xFF);
-    ax12writeB(0xFF);
-    ax12writeB(id);
-    ax12writeB(4);    // length
-    ax12writeB(AX_READ_DATA);
-    ax12writeB(regstart);
-    ax12writeB(length);
-    ax12writeB(checksum);  
-	
-    setRX(id);    
-    if(ax12ReadPacket(length + 6) > 0){
-        ax12Error = ax_rx_buffer[4];
+    dxlWriteB(0xFF);
+    dxlWriteB(0xFF);
+    dxlWriteB(id);
+    dxlWriteB(4);    // length
+    dxlWriteB(AX_READ_DATA);
+    dxlWriteB(regstart);
+    dxlWriteB(length);
+    dxlWriteB(checksum);  
+    dxlSetRX(id);    
+    if(dxlReadPacket(length + 6) > 0){
+        dxlError = ax_rx_buffer[4];
         if(length == 1)
             return ax_rx_buffer[5];
         else
@@ -262,36 +294,1322 @@ int ax12GetRegister(int id, int regstart, int length){
 }
 
 /* Set the value of a single-byte register. */
-void ax12SetRegister(int id, int regstart, int data){
-    setTX(id);    
+void dxlSetRegister(int id, int regstart, int data){
+    dxlSetTX(id);    
     int checksum = ~((id + 4 + AX_WRITE_DATA + regstart + (data&0xff)) % 256);
-    ax12writeB(0xFF);
-    ax12writeB(0xFF);
-    ax12writeB(id);
-    ax12writeB(4);    // length
-    ax12writeB(AX_WRITE_DATA);
-    ax12writeB(regstart);
-    ax12writeB(data&0xff);
+    dxlWriteB(0xFF);
+    dxlWriteB(0xFF);
+    dxlWriteB(id);
+    dxlWriteB(4);    // length
+    dxlWriteB(AX_WRITE_DATA);
+    dxlWriteB(regstart);
+    dxlWriteB(data&0xff);
     // checksum = 
-    ax12writeB(checksum);
-    setRX(id);
-    //ax12ReadPacket();
+    dxlWriteB(checksum);
+    dxlSetRX(id);
+    //dxlReadPacket();
 }
 /* Set the value of a double-byte register. */
-void ax12SetRegister2(int id, int regstart, int data){
-    setTX(id);    
+void dxlSetRegister2(int id, int regstart, int data){
+    dxlSetTX(id);    
     int checksum = ~((id + 5 + AX_WRITE_DATA + regstart + (data&0xFF) + ((data&0xFF00)>>8)) % 256);
-    ax12writeB(0xFF);
-    ax12writeB(0xFF);
-    ax12writeB(id);
-    ax12writeB(5);    // length
-    ax12writeB(AX_WRITE_DATA);
-    ax12writeB(regstart);
-    ax12writeB(data&0xff);
-    ax12writeB((data&0xff00)>>8);
+    dxlWriteB(0xFF);
+    dxlWriteB(0xFF);
+    dxlWriteB(id);
+    dxlWriteB(5);    // length
+    dxlWriteB(AX_WRITE_DATA);
+    dxlWriteB(regstart);
+    dxlWriteB(data&0xff);
+    dxlWriteB((data&0xff00)>>8);
     // checksum = 
-    ax12writeB(checksum);
-    setRX(id);
-    //ax12ReadPacket();
+    dxlWriteB(checksum);
+    dxlSetRX(id);
+    //dxlReadPacket();
+}
+
+
+void dxlRegWrite(int id, int regstart, int data)
+{
+    dxlSetTX(id);                  //
+    int length = 4;             //parameter low byte + register # + id + inst
+    int checksum = ~((id + length + AX_REG_WRITE + regstart + (data&0xff)) % 256);
+    dxlWriteB(0xFF);           //header 1  
+    dxlWriteB(0xFF);           //header 2
+    dxlWriteB(id);             //id for command 
+    dxlWriteB(length);         //packet length
+    dxlWriteB(AX_REG_WRITE);   //instruction
+    dxlWriteB(regstart);       //register to write byte at
+    dxlWriteB(data&0xff);      //paramater data to set
+    dxlWriteB(checksum);       //checksum byte of all non-header bytes
+    dxlSetRX(id);                  //get ready to read return packet
+
+}
+void dxlRegWrite2(int id, int regstart, int data)
+{
+
+    dxlSetTX(id);    
+    int length = 4;                 //parameter low byte + parameter high byte + register # + id + inst
+    int checksum = ~((id + length + AX_REG_WRITE + regstart + (data&0xFF) + ((data&0xFF00)>>8)) % 256);
+    dxlWriteB(0xFF);               //header 1
+    dxlWriteB(0xFF);               //header 2
+    dxlWriteB(id);                 //id for command
+    dxlWriteB(length);             //packet length
+    dxlWriteB(AX_REG_WRITE);       //instruction
+    dxlWriteB(regstart);           //register to write byte at
+    dxlWriteB(data&0xff);          //paramater to set (Low byte)       
+    dxlWriteB((data&0xff00)>>8);   //parameter data (high byte)
+    dxlWriteB(checksum);           //checksum byte of all non-header bytes
+    dxlSetRX(id);                      //get ready to read return packet
+
+}
+
+
+
+void dxlAction(int id)
+{
+    dxlSetTX(id);    
+    int length = 2;         //  id + inst
+    int checksum = ~((id + length + AX_ACTION)  % 256);  //checksum is the inverse of all non header bytes
+    dxlWriteB(0xFF);               //header 1
+    dxlWriteB(0xFF);               //header 2
+    dxlWriteB(id);                 //id for command
+    dxlWriteB(length);             //packet length
+    dxlWriteB(AX_ACTION);          //instruction
+    dxlWriteB(checksum);           //checksum byte 
+    dxlSetRX(0);     //don't need this, no return packet right?                 //get ready to read return packet
+}
+
+
+
+
+void dxlPing(int id)
+{
+    dxlSetTX(id);    
+    int length = 2;                 //  id + inst
+    int checksum = ~((id + length + AX_PING)  % 256);    //checksum is the inverse of all non header bytes
+    dxlWriteB(0xFF);               //header 1
+    dxlWriteB(0xFF);               //header 2
+    dxlWriteB(id);                 //id for command
+    dxlWriteB(length);             //packet length
+    dxlWriteB(AX_PING);            //instruction
+    dxlWriteB(checksum);           //checksum byte of all non-header bytes  
+    dxlSetRX(id);             //get ready to read return packet
+}
+
+
+
+void dxlReset(int id)
+{
+    dxlSetTX(id);    
+    int length = 2;                 //  id + inst
+    int checksum = ~((id + length + AX_RESET)  % 256);    //checksum is the inverse of all non header bytes
+    dxlWriteB(0xFF);               //header 1
+    dxlWriteB(0xFF);               //header 2
+    dxlWriteB(id);                 //id for command
+    dxlWriteB(length);             //packet length
+    dxlWriteB(AX_RESET);            //instruction
+    dxlWriteB(checksum);           //checksum byte of all non-header bytes  
+    dxlSetRX(id);             //get ready to read return packet
+}
+
+
+
+
+void dxlSycWrite()
+{
+    // int numServos;
+
+
+    // int regData[];
+    // int servoIds[];
+    // int regStart;
+
+
+    // dxlSetTXall();
+    // int length = 4 + (2 * sizeof(regData[]));                 //  id + inst
+    // int checksum = ~((id + length + AX_SYNC_WRITE  % 256);    //checksum is the inverse of all non header bytes
+    // dxlWriteB(0xFF);               //header 1
+    // dxlWriteB(0xFF);               //header 2
+    // dxlWriteB(DXL_BROADCAST);      //id for command
+    // dxlWriteB(length);             //packet length
+    // dxlWriteB(AX_SYNC_WRITE);            //instruction
+    // dxlWrite(AX_GOAL_POSITION_L);
+    // dxlWrite(servoIds);
+    // for(int i=0; i<sizeof(regData[]); i++)
+    // {
+
+    //     checksum += (regData[i]&0xff) + (regData[i]>>8) + servoIds[i];
+    //     dxlWrite(servoIds[i]);
+    //     dxlWrite(regData[i]&0xff);
+    //     dxlWrite(regData[i]>>8);
+    // } 
+    // dxlWriteB(checksum);           //checksum byte of all non-header bytes  
+    // //dxlSetRX(id);     //don't need this, no return packet right?                 //get ready to read return packet
+//}
+
+
+}
+
+
+void mxBulkRead()
+{
+
+}
+
+
+//writes with no read?
+
+
+// general write?
+// general sync write?
+
+
+
+void centerServos()
+{
+
+}
+
+
+
+
+float dxlGetSystemVoltage(int numberOfServos)
+{
+
+    int  servoList[numberOfServos];
+
+
+    for(int i = 0; i < numberOfServos; i++)
+    {
+        servoList[i] = i + 1; //starting with servo number one in array slot 0, so everything is offset by 1
+    }
+    return(dxlGetSystemVoltage(numberOfServos, servoList));
+}
+
+
+
+float dxlGetSystemVoltage(int numberOfServos, int servoList[])
+{
+   int voltageSum = 0;  //temporary sum of all voltage readings for average
+   int servosFound = 0;    //assume that we find all of the servos
+   int tempVoltage = 0;                //temporary holder for the voltage
+   int finalVoltage;
+
+   for (int i = 0; i < numberOfServos; i++)
+   {
+
+
+      tempVoltage = dxlGetRegister (servoList[i], AX_PRESENT_VOLTAGE, 1);
+      //if the voltage is greater or equal to zero, add it to the sum
+      if(tempVoltage > -1)
+      {  
+         voltageSum = tempVoltage + voltageSum;
+         servosFound = servosFound + 1;
+      //Serial.println(voltageSum);
+      }
+      //anything below zero indicates a missing servo
+      else
+      {
+        
+      }
+      delay(33);
+   }
+
+
+   if(servosFound < 1)
+   {
+     return(-1);
+
+   }
+
+   finalVoltage = (float(voltageSum) /float(servosFound)) / 10.0; //divide the voltage sum by the number of servos to get the raw average voltage. Divide by 10 to get votlage in volts
+   
+
+
+   return(finalVoltage);
+
+
+}
+
+
+void dxlVoltageReport(int numberOfServos)
+{
+
+    int  servoList[numberOfServos];
+
+    for(int i = 0; i < numberOfServos; i++)
+    {
+        servoList[i] = i + 1; //starting with servo number one in array slot 0, so everything is offset by 1
+    }
+    dxlVoltageReport(numberOfServos, servoList);
+
+    
+}
+
+void dxlVoltageReport(int numberOfServos, int servoList[])
+{
+   float voltage = dxlGetSystemVoltage(numberOfServos, servoList); //Check Power Supply Voltage
+  
+   Serial.print("Average System Voltage:");  
+   Serial.println(voltage);   
+   
+   if( voltage < 10)
+   {
+     
+     if (voltage < 0)
+     {
+       Serial.println("No Servos detected - voltage cannot be obtained");
+     }
+     else
+     {
+       Serial.println("System Voltage is under 10.0v, check your battery or power supply");
+     }
+   
+     Serial.println("We reccomend you fix your problem before proceededing. Send any character to continue anyway");
+     
+     while(Serial.available() < 1)
+     {
+       //do nothing while no characters are detected
+     }
+     while(Serial.available() > 0)
+     {
+       Serial.read();//clear serial input
+     }
+     
+   }
+   
+}
+
+
+//future? return an array?
+void dxlServoReport(int numberOfServos)
+{
+
+    int  servoList[numberOfServos];
+
+    for(int i = 0; i < numberOfServos; i++)
+    {
+        servoList[i] = i + 1; //starting with servo number one in array slot 0, so everything is offset by 1
+    }
+    dxlServoReport(numberOfServos, servoList);
+
+    
+}
+
+
+void dxlServoReport(int numberOfServos, int servoList[])
+{
+    int pos;            //holds the positional value of the servo
+    int missingServos = 0;    //number of servos that could not be contacted
+
+    Serial.println("######################################################");
+    Serial.println("Starting Servo Scanning Test.");
+    Serial.println("######################################################");
+
+    for(int i = 0; i < numberOfServos ; i++)
+    {
+        pos =  dxlGetRegister(servoList[i], 36, 2);
+
+        int errorBit = dxlGetLastError();
+
+
+        //if there is no data, retry once
+        if (pos <= 0)
+        {
+           Serial.println("###########################");
+           Serial.print("Cannot connect to servo #");
+           Serial.print(servoList[i]);
+           Serial.println(", retrying");
+           delay(500);  //short delay to clear the bus
+           pos =  dxlGetRegister(servoList[i], 36, 2);
+           int errorBit = dxlGetLastError();
+        }
+
+        //if there is still no data, print an error.
+        if (pos <= 0)
+        {
+            Serial.print("ERROR! Servo ID: ");
+            Serial.print(servoList[i]);
+            Serial.println(" not found. Please check connection and verify correct ID is set.");
+            Serial.println("###########################"); 
+            missingServos = missingServos + 1;
+        }
+
+        else
+        {
+
+            Serial.print("Servo ID: ");
+            Serial.println(servoList[i]);
+            Serial.print("Servo Position: ");
+            Serial.println(pos);
+
+            if(ERR_NONE & errorBit)
+            {
+                Serial.println("          No Errors Found");
+            }
+            if(ERR_VOLTAGE & errorBit)
+            {
+                Serial.println("          Voltage Error");
+            }
+            if(ERR_ANGLE_LIMIT & errorBit)
+            {
+                Serial.println("          Angle Limit Error");
+            }
+            if(ERR_OVERHEATING & errorBit)
+            {
+                Serial.println("          Overheating Error");
+            }
+            if(ERR_RANGE & errorBit)
+            {
+                Serial.println("          Range Error");
+            }
+            if(ERR_CHECKSUM & errorBit)
+            {
+                Serial.println("          Checksum Error");
+            }
+            if(ERR_OVERLOAD & errorBit)
+            {
+                Serial.println("          Overload Error");
+            }
+            if(ERR_INSTRUCTION & errorBit)
+            {
+                Serial.println("          Instruction Error");
+            }
+      
+
+            delay(100);
+            
+        }
+
+    }
+      
+
+    if (missingServos > 0)
+    {
+        Serial.println("###########################");
+        Serial.print("ERROR! ");
+        Serial.print(missingServos);
+        Serial.println(" servos ID(s) are missing from Scan. Please check connection and verify correct ID is set.");
+
+        Serial.println("###########################");  
+    }
+    else
+    {
+        Serial.println("All servo IDs present.");
+    }   
+    Serial.println("######################################################");  
+
+}
+
+
+
+void dxlServoReport()
+{
+    int pos;            //holds the positional value of the servo
+   
+    Serial.println("######################################################");
+    Serial.println("Starting Full Servo Scan.");
+    Serial.println("######################################################");
+
+    for(int i = 0; i < 255 ; i++)
+    {
+        pos =  dxlGetRegister(i, 36, 2);
+
+        int errorBit = dxlGetLastError();
+
+
+        //if there is no data, retry once
+        if (pos <= 0)
+        {
+           delay(10);  //short delay to clear the bus
+           pos =  dxlGetRegister(i, 36, 2);
+           int errorBit = dxlGetLastError();
+        }
+
+        if (pos > -1)
+        {
+
+
+            Serial.print("Servo ID: ");
+            Serial.println(i);
+            Serial.print("Servo Position: ");
+            Serial.println(pos);
+
+            if(ERR_NONE & errorBit)
+            {
+                Serial.println("          No Errors Found");
+            }
+            if(ERR_VOLTAGE & errorBit)
+            {
+                Serial.println("          Voltage Error");
+            }
+            if(ERR_ANGLE_LIMIT & errorBit)
+            {
+                Serial.println("          Angle Limit Error");
+            }
+            if(ERR_OVERHEATING & errorBit)
+            {
+                Serial.println("          Overheating Error");
+            }
+            if(ERR_RANGE & errorBit)
+            {
+                Serial.println("          Range Error");
+            }
+            if(ERR_CHECKSUM & errorBit)
+            {
+                Serial.println("          Checksum Error");
+            }
+            if(ERR_OVERLOAD & errorBit)
+            {
+                Serial.println("          Overload Error");
+            }
+            if(ERR_INSTRUCTION & errorBit)
+            {
+                Serial.println("          Instruction Error");
+            }
+            delay(10);   
+        }
+
+    }
+      
+
+    Serial.println("Scan Finished");  
+    Serial.println("######################################################");  
+
+}
+
+
+
+
+
+
+
+int dxlScanServos(int numberOfServos, int returnList[])
+{
+
+    int  servoList[numberOfServos];
+
+    for(int i = 0; i < numberOfServos; i++)
+    {
+        servoList[i] = i + 1; //starting with servo number one in array slot 0, so everything is offset by 1
+    }
+    return(dxlScanServos(numberOfServos, servoList, returnList));
+
+    
+}
+
+
+int dxlScanServos(int numberOfServos, int servoList[], int returnList[])
+{
+
+    int pos;            //holds the positional value of the servo. This is arbitrary as we'll be discarding this value - we're just using it to check if the servo is present
+
+    int missingServos = 0;    //number of servos that could not be contacted
+    int foundServos = 0;    //number of servos that could not be contacted
+
+    for(int i = 0; i < numberOfServos ; i++)
+    {
+        pos =  dxlGetRegister(servoList[i], 36, 2);
+        int errorBit = dxlGetLastError();
+
+
+        //if there is no data, retry once
+        if (pos <= 0)
+        {
+           delay(10);  //short delay to clear the bus
+           pos =  dxlGetRegister(servoList[i], 36, 2);
+           int errorBit = dxlGetLastError();
+        }
+
+        //if there is still no data add one to the missing servos.
+        if (pos <= 0)
+        {
+            missingServos = missingServos + 1;
+            returnList[i] = -1;
+        }
+        else
+        {
+            foundServos = foundServos + 1;
+            returnList[i] = errorBit;
+        }
+    }
+    
+    return(foundServos);
+}
+
+
+void dxlRegisterReportSingle(int servoID)
+{
+    Serial.print("Register Table for Servo #");
+    Serial.println(servoID);
+    int regData;
+
+    for(int i = 0; i< MAX_REGISTERS; i++)
+    {
+        regData = dxlGetRegister(servoID, i, 1); 
+        Serial.print(i);
+        Serial.print(",");
+        delay(33);
+        Serial.println(regData);
+        delay(33);
+    }
+}
+
+
+
+
+
+
+
+void axRegisterDump(int servoNumber)
+{
+
+}
+
+void mxRegisterDump(int servoNumber)
+{
+
+}
+
+void dxlLedTest(int numberOfServos, int ledTime)
+{
+ 
+
+    int  servoList[numberOfServos];
+
+    for(int i = 0; i < numberOfServos; i++)
+    {
+        servoList[i] = i + 1; //starting with servo number one in array slot 0, so everything is offset by 1
+    }
+
+    dxlLedTest(numberOfServos, servoList, ledTime);
+
+}
+
+void dxlLedTest(int numberOfServos, int servoList[], int ledTime)
+{
+
+    for(int i = 0; i< numberOfServos; i++) 
+    {
+        dxlSetRegister(servoList[i], 25, 1);
+
+
+        delay(ledTime);
+        dxlSetRegister(servoList[i], 25, 0);  
+
+
+        //delay(ledTime); //do we want time that the servo is off? I don't think so   
+
+    }
+
+}
+   
+
+    
+//}
+
+void dxlRegisterReportMultiple(int numberOfServos)
+{
+
+ 
+
+    int  servoList[numberOfServos];
+
+    for(int i = 0; i < numberOfServos; i++)
+    {
+        servoList[i] = i + 1; //starting with servo number one in array slot 0, so everything is offset by 1
+    }
+
+    dxlRegisterReportMultiple( numberOfServos, servoList);
+}
+
+
+
+int dxlIsModelMX(int modelNumber)
+{
+  if((modelNumber == MX_12W_MODEL_NUMBER) || (modelNumber == MX_28_MODEL_NUMBER) || (modelNumber == MX_64_MODEL_NUMBER) || (modelNumber == MX_106_MODEL_NUMBER) )
+  {
+    return(1);
+  }
+  else
+  {
+    return(0);
+  }
+}
+
+int dxlIsModelAX(int modelNumber)
+{
+  if((modelNumber == AX_12_MODEL_NUMBER) || (modelNumber == AX_18_MODEL_NUMBER) || (modelNumber == AX_12W_MODEL_NUMBER) )
+  {
+    return(1);
+  }
+  else
+  {
+    return(0);
+  }
+}
+
+
+
+void mxSetMultiTurnMode(int servoId)
+{
+  dxlSetJointMode(servoId, MX_MAX_POSITION_VALUE, MX_MAX_POSITION_VALUE);
+}
+
+
+void mxSetJointMode(int servoId)
+{
+  dxlSetJointMode(servoId, 0, MX_MAX_POSITION_VALUE);
+}
+
+
+void axSetJointMode(int servoId)
+{
+  dxlSetJointMode(servoId, 0, AX_MAX_POSITION_VALUE);
+}
+
+
+
+void dxlSetJointMode(int servoId, int CWAngleLimit, int CCWAngleLimit)
+{
+  dxlSetCWAngleLimit(servoId, CWAngleLimit);
+  dxlSetCCWAngleLimit(servoId, CCWAngleLimit);
+
+}
+
+void dxlSetWheelMode(int servoId)
+{
+  dxlSetCWAngleLimit(servoId, 0);
+  dxlSetCCWAngleLimit(servoId, 0);
+
+}
+
+
+
+
+
+
+void dxlRegisterReportMultiple(int numberOfServos, int servoList[])
+{
+  int regData;
+  int modelData[numberOfServos];
+
+  Serial.println("Register Table for All Servos #");
+
+
+
+  
+
+    Serial.print("SERVO #,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+        Serial.print(servoList[i]);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("MODEL,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetModel(servoList[i]); 
+
+        modelData[i] = regData; //store register data forr later printout
+
+
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+
+
+    Serial.print("FIRMWARE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetFirmware(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("ID,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetRegister(i, 3, 1); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("BAUD RATE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetBaud(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("RETURN DELAY TIME,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetReturnDelayTime(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("CW ANGLE LIMIT,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetCWAngleLimit(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("CCW ANGLE LIMIT,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetCCWAngleLimit(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("TEMPERATURE LIMIT,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetTempLimit(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("LOW VOLTAGE LIMIT,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetLowVoltage(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("HIGH VOLTAGE LIMIT,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetHighVoltage(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("MAX TORQUE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetStartupMaxTorque(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("STATUS RETURN LEVEL,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetStatusReturnLevel(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("ALARM LED,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetAlarmLED(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("ALARM SHUTDOWN,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetAlarmShutdown(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+
+
+    Serial.print("Multi Turn Offset,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetMultiTurnOffset(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+    Serial.print("Resolution Divider,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetResolutionDivider(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+
+
+
+
+
+
+    Serial.print("TORQUE ENABLE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetTorqueEnable(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("LED,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetLed(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+
+    Serial.print("CW COMPLIANCE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelAX(modelData[i]) == true)
+      {
+        regData = axGetCWComplianceMargin(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+
+    Serial.print("CCW COMPLIANCE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelAX(modelData[i]) == true)
+      {
+        regData = axGetCCWComplianceMargin(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+
+
+    Serial.print("CW COMPLAINCE SLOPE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelAX(modelData[i]) == true)
+      {
+        regData = axGetCWComplianceSlope(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+    Serial.print("CCW COMPLAINCE SLOPE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelAX(modelData[i]) == true)
+      {
+        regData = axGetCCWComplianceSlope(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+
+    Serial.print("D,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetD(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+    Serial.print("I,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetI(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+    Serial.print("P,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetP(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+
+
+
+
+    Serial.print("GOAL POSITION,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetGoalPosition(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("MOVING SPEED,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetGoalSpeed(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("TORQUE LIMIT,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetTorqueLimit(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("PRESENT POSITION,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetPosition(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("PRESENT SPEED,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetSpeed(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("PRESENT LOAD,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetTorque(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("PRESENT VOLTAGE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetVoltage(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("PRESENT TEMPERATURE,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetTemperature(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("REGISTERED,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetRegistered(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("MOVING,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetMoving(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("LOCK,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetLock(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+    Serial.print("PUNCH,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+
+        regData = dxlGetPunch(servoList[i]);
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+    }
+    Serial.println("");
+
+
+
+
+    Serial.print("Current (MX 64/106 only),");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetCurrent(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+    Serial.print("Torque Mode (MX 64/106 only),");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetTorqueMode(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+    Serial.print("Goal Torque (MX 64/106 only),");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetGoalTorque(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+    Serial.print("Goal acceleration,");
+    for(int i = 0; i< numberOfServos; i++)
+    {
+      if(dxlIsModelMX(modelData[i]) == true)
+      {
+        regData = mxGetGoalAcceleration(servoList[i]); 
+        Serial.print(regData);
+        Serial.print(",");
+        delay(33);
+      }
+      else
+      {
+
+        Serial.print("N/A");
+        Serial.print(",");
+      }
+    }
+    Serial.println("");
+
+
+
+
+
 }
 
