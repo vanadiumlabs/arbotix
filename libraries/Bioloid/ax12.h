@@ -131,8 +131,6 @@
 #define MX_GOAL_TORQUE_H 72
 #define MX_GOAL_ACCELERATION 73
 
-
-
 /* Status Return Levels */
 #define AX_RETURN_NONE              0
 #define AX_RETURN_READ              1
@@ -140,12 +138,14 @@
 
 
 /* Instruction Set */
+//AX_ is usable for AX/MX. MX_ is MX only
 #define AX_PING                     1
 #define AX_READ_DATA                2
 #define AX_WRITE_DATA               3
 #define AX_REG_WRITE                4
 #define AX_ACTION                   5
 #define AX_RESET                    6
+#define MX_BULK_READ                146
 #define AX_SYNC_WRITE               131
 
 /* Error Levels */
@@ -169,10 +169,7 @@
 #define AX_BUZZER_INDEX             40
 
 
-
-
-
-/** Model Numbers **/
+/* Model Numbers */
 #define AX_12_MODEL_NUMBER 12
 #define AX_18_MODEL_NUMBER 18
 #define AX_12W_MODEL_NUMBER 44
@@ -184,17 +181,26 @@
 /** Broadcast address to send command to all servos **/
 #define DXL_BROADCAST 254
 
+#define USER_LED 0
 
+
+
+extern unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
+extern unsigned char ax_tx_buffer[AX12_BUFFER_SIZE];
+extern unsigned char ax_rx_int_buffer[AX12_BUFFER_SIZE];
+#if defined(AX_RX_SWITCHED)
+// Need to stow type of servo (which bus it's on)
+extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
+#endif
 
 
 /************************//**
- * @brief Macro to initialize servo library
+ * @brief function to initialize servo library, defualts to Serial1 for the ArbotiX
  *
  * @param baud speed to start the DYNAMIXEL chain at
  *
  * @return none
  *
- * 
  * Compatible Servos:  All AX / MX servos
  *
  * EXAMPLE: start library at 1mbps (1000000 bps)
@@ -203,14 +209,31 @@
  ******************************************/
 void dxlInit(long baud);
 
+
+/************************//**
+ * @brief Function to initialize servo library
+ *
+ * @param baud speed to start the DYNAMIXEL chain at
+ * @param pstream serial stream to start the bus on
+ *
+ * @return none
+ *
+ * 
+ * Compatible Servos:  All AX / MX servos
+ *
+ * EXAMPLE: start library at 1mbps (1000000 bps) on Serial1
+ * 
+ * dxlInit(1000000, &Serial1);
+ ******************************************/
 void dxlInit(long baud, Stream* pstream);
 
  /************************//**
- * @brief helper functions to switch direction of comms
+ * @brief helper functions to switch direction of comms for sync write
  *
  * @param id target servo id 
  * @todo (is id this actually needed?)
  * @return none
+ * @detailed  usually only used by the library 
  *
  * 
  * Compatible Servos:  All AX / MX servos
@@ -219,22 +242,39 @@ void dxlInit(long baud, Stream* pstream);
  * 
  * setTX();
  ******************************************/
-void dxlSetTXall();     // for sync write
+void dxlSetTXall();     
 
-void dxlSetTX(int id);
+
  /************************//**
  * @brief helper functions to switch direction of comms
  *
  * @param id target servo id 
  * @todo (is id this actually needed?)
  * @return none
+ * @detailed  usually only used by the library 
+ * 
+ * Compatible Servos:  All AX / MX servos
+ *
+ * EXAMPLE: 
+ * 
+ * dxlSetTX();
+ ******************************************/
+void dxlSetTX(int id);
+
+ /************************//**
+ * @brief helper functions to switch direction of comms
+ *
+ * @param id target servo id 
+ * @todo (is id this actually needed?)
+ * @return none
+ * @detailed  usually only used by the library 
  *
  * 
  * Compatible Servos:  All AX / MX servos
  *
  * EXAMPLE: 
  * 
- * setRX();
+ * dxlSetRX();
  ******************************************/
 void dxlSetRX(int id);
 
@@ -244,28 +284,30 @@ void dxlSetRX(int id);
  *
  * @param data data to send
  * @return none
+ * @detailed  usually only used by the library 
  *
  * 
  * Compatible Servos:  All AX / MX servos
  *
  * EXAMPLE: 
  * 
- * ax12write();
+ * dxlWrite();
  ******************************************/
-
 void dxlWrite(unsigned char data);
+
  /************************//**
  * @brief Sends a character out the serial port, and puts it in the tx_buffer
  *
  * @param data data to send
  * @return none
+ * @detailed  usually only used by the library 
  *
  * 
  * Compatible Servos:  All AX / MX servos
  *
  * EXAMPLE: 
  * 
- * ax12writeB();
+ * dxlWriteB();
  ******************************************/
 void dxlWriteB(unsigned char data);
 
@@ -277,12 +319,13 @@ void dxlWriteB(unsigned char data);
  * @param delayTime time (in milliseconds) that the servo should wait before returning data
  *
  * @return none  
+ * @detailed  usually only used by the library 
  *
  * Compatible Servos: All AX/MX Servos
  *
  * EXAMPLE: set servo # 1 return delay time on servo # 1 to 100ms
  *
- *  dxlSetReturnDelayTime(1,100);
+ *  dxlReadPacket();
  *******************************************/
 int dxlReadPacket(int length);
 
@@ -315,9 +358,9 @@ int dxlGetRegister(int id, int regstart, int length);
  *
  * Compatible Servos: All AX/MX Servos
  *
- * EXAMPLE: set servo # 1's register #30 (goal position) to 512
+ * EXAMPLE: set servo # 1's register #25 (led /AX_LED) to 1
  *
- *  dxlSetRegister(1,25, 1);
+ *  dxlSetRegister(1, AX_LED, 1);
  *******************************************/
 void dxlSetRegister(int id, int regstart, int data);
 
@@ -335,11 +378,173 @@ void dxlSetRegister(int id, int regstart, int data);
  * This function will do the necessary  conversions to conevert the 'data' value into 2 single bytes , and then write the bytes to the corresponding registers.
  * This function is usually used to write data for values that span 2 registers like goal position, goal speed, etc
  *
- * EXAMPLE: set servo # 1's register #30 (goal position) to 512
+ * EXAMPLE: set servo # 1's register #30 (goal position / AX_GOAL_POSITION) to 512
  *
- *  dxlSetRegister2(1,30, 512);
+ *  dxlSetRegister2(1,AX_GOAL_POSITION, 512);
  *******************************************/
 void dxlSetRegister2(int id, int regstart, int data);
+
+
+
+
+
+/************************//**
+ * @brief set an MX servo to multi turn mode
+ * @detailed This function does not check if the servo is already in wheel mode. To preserve EEPROM, you should check mode beforehand so that you only set multi turn mode when needed
+ * @param id target servo id 
+ *
+ * @return none
+ *
+ * Compatible Servos: All MX Servos
+ *
+ * EXAMPLE: request positional data from servos 1, 2, 3, 4
+ *     int mxServoData[3];
+ *     int requestParameters[4][3] ={
+ *                                                    {2,1,36},
+ *                                                    {2,2,36},
+ *                                                    {2,3,36},
+ *                                                    {2,4,36},
+ *                                                   } ; //{register length,servo id, register number}
+ *  mxBulkRead(requestParameters, 4, mxServoData);
+ *******************************************/
+void mxBulkRead(int readRequestData[][3], int numberOfRequests, int returnData[]);
+
+
+
+/************************//**
+ * @brief reset the target servo
+ * @detailed This function sets the servo back to factory defaults. This includes mode, baud rate and ID
+ * @param id target servo id 
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: reset servo ID # 1 
+ *  dxlReset(1);
+ *******************************************/
+void dxlReset(int id);
+
+/************************//**
+ * @brief check for the presence of a servo
+ * @param id target servo id 
+ *
+ * @return 1 for servo found, -1 if no servo is found
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: check is servo 1 is present
+ *  int dxlCheck = dxlPing(1);
+ *******************************************/
+int dxlPing(int id);
+
+/************************//**
+ * @brief standalone check for an error on the servo
+ * @detailed uses the 'ping' command to minimize packet size and returns the error byte
+ * @param id target servo id 
+ *
+ * @return  -1 if no servo is found, otherewise returns the error byte. 0 = no error, greater than 0 = an error that can be deciphered
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: check is servo 1 has an error
+ *  int dxlError = dxlGetError(1);
+ *******************************************/
+int dxlGetError(int id);
+
+
+/************************//**
+ * @brief Function to set a single register on the servo's buffer
+ * @detailed register writes sent with this function are not executed / loaded into the servo until the dxlAction() function is called
+ * @param id the ID number for target servo
+ * @param register the target register to set the data in
+ * @param data  data for the register, values 0-255 (anything larger will be truncated)
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: set servo # 1's buffered register #25 (LED / AX_LED) to 512
+ *
+ *  dxlSetRegister(1,AX_LED, 1);
+ *******************************************/
+void dxlRegWrite(int id, int regstart, int data);
+
+/************************//**
+ * @brief Function to write a single value to 2 registers
+ * @detailed register writes sent with this function are not executed / loaded into the servo until the dxlAction() function is called
+ * @param id the ID number for target servo
+ * @param regstart starting/lower register. Data will be written accross regstart and regstart+1
+ * @param data  data for the registers, values 0-65535
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * This function will do the necessary  conversions to conevert the 'data' value into 2 single bytes , and then write the bytes to the corresponding registers.
+ * This function is usually used to write data for values that span 2 registers like goal position, goal speed, etc
+ *
+ * EXAMPLE: set servo # 1's buffered register #30 (goal position) to 512
+ *
+ *  dxlSetRegister2(1,AX_GOAL_POSITION, 512);
+ *******************************************/
+void dxlRegWrite2(int id, int regstart, int data);
+
+/************************//**
+ * @brief Function to execute the registered command for all servo
+ * @detailed this version of the function assumes broadcast address and sends a write to all servos. This can be used to simultaneously  execute all registered servo data 
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: execute all servos buffered register data
+ *
+ *  dxlAction()
+ *******************************************/
+void dxlAction();
+
+/************************//**
+ * @brief Function to execute the registered command for a servo
+ * @detailed this function follows dxlRegWrite() or dxlRegWrite2() to execute the registered data. 
+ * @param id the ID number for target servo
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: execute servo # 1's buffered register data
+ *
+ *  dxlAction(1)
+ *******************************************/
+void dxlAction(int id);
+
+
+/************************//**
+ * @brief Function to write register data to multiple servos simultaneously
+ * @detailed a single packet can send all the data to write register data to up to 26 servos at the same time
+ * @param servoData the ID number for target servo
+ * @param numberOfServos number of servos to write data to 
+ * @param registerStart  starting/lower register. 
+ * @param registerLength  how many registers to write across - usually 1 or 2
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * This function will do the necessary  conversions to convert the 'data' value into 2 single bytes , and then write the bytes to the corresponding registers.
+ * EXAMPLE: set servo # 1 2 and 3 position to 0, 512, and 1023
+ * int servoData[3][2] ={
+ *                       {1,0},
+ *                       {2,512},
+ *                       {3,1023},
+ *                      }; 
+ *
+ *  dxlSycWrite(servoData, 3, AX_GOAL_POSITION_L,2);
+ *******************************************/
+void dxlSycWrite(int servoData[][2], int numberOfServos, int registerStart, int registerLength);
+
+
 
 
 /************************//**
@@ -351,7 +556,7 @@ void dxlSetRegister2(int id, int regstart, int data);
  *
  * Compatible Servos: All AX/MX Servos
  *
- * By defualt, a DYNAMIXEL servo will return data after a read or write operation. 
+ * By defualt, a DYNAMIXEL servo will return data after a read  operation. 
  * Included in this data is an 'error' byte. Each bit of the byte indicates a different 
  * error. If all the bits are '0', the whole byte is 'zero' and there is no error.
  * Otherwise an error is present.
@@ -372,7 +577,7 @@ void dxlSetRegister2(int id, int regstart, int data);
  *
  * Bit 0 -  Input Voltage Error (ERR_VOLTAGE)
  *
- *  EXAMPLE: get servo # 1's error byte
+ *  EXAMPLE: get servo # 1's error byte after a positional read
  *
  *  int position = dxlGetPosition(id);
  *  
@@ -380,79 +585,348 @@ void dxlSetRegister2(int id, int regstart, int data);
  *******************************************/  
 int dxlGetLastError();
 
-void axRegisterDump();
-void mxRegisterDump();
 
 
-
-
+/************************//**
+ * @brief Gets the average system voltage of sequental servos
+ * @detailed This function requests the voltage from each servo and then averages them all into a single voltage. This function assumes that the first servo is #1 and the last one is numberOfServos
+ *
+ * @param numberOfServos the number of servos in the system
+ *
+ * @return present avereged voltage of the system as a float  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: return the voltage for a system with servos 1,2 and 3
+ *
+ *  float systemVoltage = dxlGetSystemVoltage(3);
+ *******************************************/
 float dxlGetSystemVoltage(int numberOfServos);
+
+
+/************************//**
+ * @brief Gets the average system voltage of non-sequential servos
+ * @detailed This function requests the voltage from each servo and then averages them all into a single voltage. This function will scan the ids passed in the servoList[] array
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param servoList an array with the IDs of each servo in the system
+ *
+ * @return present avereged voltage of the system as a float  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: return the voltage for a system with servos 4,5 and 6
+ *  int servoList[3] = {4,5,6};
+ *  float systemVoltage = dxlGetSystemVoltage(3, servoList);
+ *******************************************/
 float dxlGetSystemVoltage(int numberOfServos, int servoList[]);
+
+
+/************************//**
+ * @brief Function to display all of the register data for a series of servos to the Serial port
+ *
+ * @param numberOfServos the number of servos in the system
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: display all the register data for a system with servos 1,2 and 3
+ *
+ *  dxlRegisterReportMultiple(3);
+ *******************************************/
+void dxlRegisterReportMultiple(int numberOfServos);
+
+/************************//**
+ * @brief Function to display all of the register data for a series of servos to the Serial port
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param servoList an array with the IDs of each servo in the system
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: display all the register data  for a system with servos 4,5 and 6
+ *
+ *  int servoList[3] = {4,5,6};
+ *  dxlRegisterReportMultiple(3, servoList);
+ *******************************************/
+void dxlRegisterReportMultiple(int numberOfServos, int servoList[]);
+
+
+
+
+/************************//**
+ * @brief sequentially lights up each servo in the chain
+ * @detailed This function lights up each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param ledTime time in miliseconds that each servo turns its LED on
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: light up the servos in a system with servos 1,2 and 3
+ *
+ *  dxlLedTest(3, 1000);
+ *******************************************/
 void dxlLedTest(int numberOfServos, int ledTime);
+
+/************************//**
+ * @brief sequentially lights up each servo in the chain
+ * @detailed This function lights up each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param servoList an array with the IDs of each servo in the system
+ * @param ledTime time in miliseconds that each servo turns its LED on
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: light up the servos in a system with servos 1,2 and 3
+ *
+ *  int servoList[3] = {4,5,6};
+ *  dxlLedTest(3, servoList, 1000);
+ *******************************************/
 void dxlLedTest(int numberOfServos, int servoList[], int ledTime);
 
 
 
-int dxlScanServos(int numberOfServos, int servoList[], int returnList[]);
+/************************//**
+ * @brief scans for a certain number of servos and returns the number of servos found
+ * @detailed This function scans each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos. This function returns a number of found servos, as well as modifies the returnList[] array with each servos error bit
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param returnList[] an array , numberOfServos long. The function will modify this array with the error bit for each servo
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: light up the servos in a system with servos 1,2 and 3
+ *  int returnList[3];
+ *  int foundServos = dxlScanServos(3, returnList);
+ *******************************************/
 int dxlScanServos(int numberOfServos, int returnList[]);
-// int dxlScanServos(int servoList[]);
-// int dxlScanServos(int numberOfServos);
 
 
+/************************//**
+ * @brief scans for a certain number of servos and returns the number of servos found
+ * @detailed This function scans each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos. This function returns a number of found servos, as well as modifies the returnList[] array with each servos error bit
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param servoList an array with the IDs of each servo in the system
+ * @param returnList[] an array , numberOfServos long. The function will modify this array with the error bit for each servo
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: scan a system with servos 4,5,6
+ *  int returnList[3];
+ *  int servoList[3] = {4,5,6};
+ *  int foundServos = dxlScanServos(3, servoList, returnList);
+ *******************************************/
+int dxlScanServos(int numberOfServos, int servoList[], int returnList[]);
+
+
+/************************//**
+ * @brief scans every servo possible and displays data on the Serial port
+ *
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: scan 
+ *   dxlScanServos();
+ *******************************************/
 void dxlServoReport();
+
+/************************//**
+ * @brief scans for a certain number of servos and displays data on the Serial port
+ * @detailed This function scans each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos.
+ *
+ * @param numberOfServos the number of servos in the system
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: scan a system with servos 1,2 and 3
+ *  dxlServoReport(3);
+ *******************************************/
 void dxlServoReport(int numberOfServos);
+
+/************************//**
+ * @brief scans for servos from a list and displays data on the Serial port
+ * @detailed This function scans each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos.
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param servoList an array with the IDs of each servo in the system
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: scan a system with servos 4,5,6
+ *  int servoList[3] = {4,5,6};
+ *  dxlServoReport(3,servoList);
+ *******************************************/
 void dxlServoReport(int numberOfServos, int servoList[]);
 
+
+/************************//**
+ * @brief prints data voltage data based on dxlGetSystemVoltage()
+ * @detailed This function scans each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos.
+ *
+ * @param numberOfServos the number of servos in the system
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: get voltage report for system with servos 1,2 and 3
+ *  dxlVoltageReport(3);
+ *******************************************/
 void dxlVoltageReport(int numberOfServos);
+
+/************************//**
+ * @brief prints data voltage data based on dxlGetSystemVoltage()
+ * @detailed This function scans each sequential servo in the chain This function assumes that the first servo is #1 and the last one is numberOfServos.
+ *
+ * @param numberOfServos the number of servos in the system
+ * @param servoList an array with the IDs of each servo in the system
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: get voltage report for system with servos 4,5,6
+ *  int servoList[3] = {4,5,6};
+ *  dxlVoltageReport(3,servoList);
+ *******************************************/
 void dxlVoltageReport(int numberOfServos, int servoList[]);
-void dxlRegisterReport(int servoNumber);
 
-void dxlRegisterReportMultiple(int numberOfServos);
-void dxlRegisterReportMultiple(int numberOfServos, int servoList[]);
 
+
+
+
+/************************//**
+ * @brief sets an MX servo to joint mode
+ * @detailed This function does not check if the servo is already in joint mode. To preserve EEPROM, you should check mode beforehand so that you only set joint mode when needed
+ * @param id target servo id 
+ *
+ * @return none
+ *
+ * Compatible Servos: MX Servos
+ *
+ * EXAMPLE: set MX servo ID # 1 to joint mode
+ *  mxSetJointMode(1);
+ *******************************************/
 void mxSetJointMode(int servoId);
+
+
+/************************//**
+ * @brief sets an AX servo to joint mode
+ * @detailed This function does not check if the servo is already in joint mode. To preserve EEPROM, you should check mode beforehand so that you only set joint mode when needed
+ * @param id target servo id 
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX Servos
+ *
+ * EXAMPLE: set AX servo ID # 1 to joint mode
+ *  mxSetJointMode(1);
+ *******************************************/
 void axSetJointMode(int servoId);
+
+
+/************************//**
+ * @brief generic function to set servo to joint mode
+ * @detailed This function does not check if the servo is already in joint mode. To preserve EEPROM, you should check mode beforehand so that you only set joint mode when needed
+ * @param id target servo id 
+ * @param CWAngleLimit Clockwise angle limit
+ * @param CCWAngleLimit Counter Clockwise angle limit
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: set  servo ID # 1 to joint mode
+ *  mxSetJointMode(1, 0, 1023);
+ *******************************************/
 void dxlSetJointMode(int servoId, int CWAngleLimit, int CCWAngleLimit);
+
+
+/************************//**
+ * @brief set a servo to wheel mode
+ * @detailed This function does not check if the servo is already in wheel mode. To preserve EEPROM, you should check mode beforehand so that you only set wheel mode when needed
+ * @param id target servo id 
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: set  servo ID # 1 to wheel mode
+ *  dxlSetWheelMode(1);
+ *******************************************/
 void dxlSetWheelMode(int servoId);
+
+
+
+
+/************************//**
+ * @brief set an MX servo to multi turn mode
+ * @detailed This function does not check if the servo is already in wheel mode. To preserve EEPROM, you should check mode beforehand so that you only set multi turn mode when needed
+ * @param id target servo id 
+ *
+ * @return none
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE: set  servo ID # 1 to wheel mode
+ *  mxSetMultiTurnMode(1);
+ *******************************************/
 void mxSetMultiTurnMode(int servoId);
 
 
-
-void mxBulkRead();
-
-void dxlSycWrite();
-
-void dxlReset(int id);
-
-void dxlPing(int id);
-
-void dxlAction(int id);
-
-void dxlRegWrite2(int id, int regstart, int data);
-
-void dxlRegWrite(int id, int regstart, int data);
+int dxlGetMode(int servoId);
 
 
 
+/************************//**
+ * @brief Macro to turn set wheel mode for AX
+ * @detailed here to mirror ax/mx joint mode
+ * @param id the ID number for target servo
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE:  set servo 1 to wheel mode
+ *
+ *  axSetWheelMode(1);
+ *******************************************/
+#define axSetWheelMode(id) (dxlSetWheelMode(id))
 
-//actual functions
-// #define dxlSetJointMode()
-// #define dxlSetWheeltMode()
-// #define dxlSetMultiTurnMode()
-// #define dxlGettMode()
-
-
-
-extern unsigned char ax_rx_buffer[AX12_BUFFER_SIZE];
-extern unsigned char ax_tx_buffer[AX12_BUFFER_SIZE];
-extern unsigned char ax_rx_int_buffer[AX12_BUFFER_SIZE];
-#if defined(AX_RX_SWITCHED)
-// Need to stow type of servo (which bus it's on)
-extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
-#endif
-
-
-
+/************************//**
+ * @brief Macro to turn set wheel mode for AX
+ * @detailed here to mirror ax/mx joint mode
+ * @param id the ID number for target servo
+ *
+ * @return none  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * EXAMPLE:  set servo 1 to wheel mode
+ *
+ *  mxSetWheelMode(1);
+ *******************************************/
+#define mxSetWheelMode(id) (dxlSetWheelMode(id))
 
 /************************//**
  * @brief Macro to turn a single servo's LED on
@@ -1342,7 +1816,7 @@ extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
  *
  *  EXAMPLE: get servo # 1's model number
  *
- *  int modelNumber = dxlSetLowVoltage(id);
+ *  int modelNumber = dxlGetModel(1);
  *******************************************/                                                                                                                                                                                                                                                                                                          
 #define dxlGetModel(id) (dxlGetRegister(id, AX_MODEL_NUMBER_L, 2))
 
@@ -1359,9 +1833,26 @@ extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
  *
  *  EXAMPLE: get servo # 1's firmwre version
  *
- *  int firmwareVersion = dxlGetFirmware(id);
+ *  int firmwareVersion = dxlGetFirmwareVersion(1);
  *******************************************/   
-#define dxlGetFirmware(id) (dxlGetRegister(id, AX_VERSION, 1))
+#define dxlGetFirmwareVersion(id) (dxlGetRegister(id, AX_VERSION, 1))
+
+/************************//**
+ * @brief Macro to get the ID for the servo
+ *
+ * @param id the ID number for target servo
+ *
+ * @return id of the servo.  
+ *
+ * Compatible Servos: All AX/MX Servos
+ *
+ * @detailed This function is here for completness sake, but can also be used as a 'ping' / sanity check
+ *
+ *  EXAMPLE: get servo # 1's id
+ *
+ *  int id1 = dxlGetFirmwareVersion(1);
+ *******************************************/   
+#define dxlGetId(id) (dxlGetRegister(id, AX_ID, 1))
 
 /************************//**
  * @brief Macro to get the baud rate register for the servo
@@ -1384,7 +1875,7 @@ extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
  *
  *  EXAMPLE: get servo # 1's baud register data
  *
- *  int baud = dxlGetBaud(id);
+ *  int baud = dxlGetBaud(1);
  *******************************************/  
 #define dxlGetBaud(id) (dxlGetRegister(id, AX_BAUD_RATE, 1))
 
@@ -2275,6 +2766,11 @@ extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
 
 
 
+int axToMxPosition(int axPosition);
+int mxToAxPosition(int mxPosition);
+
+
+
 
 
 /************************//**
@@ -2362,9 +2858,6 @@ extern unsigned char dynamixel_bus_config[AX12_MAX_SERVOS];
 
 
 
-
-//isax
-//ismx
 //realAngle
 //speed direction                                                                                                                                                                                                                                                                           
 //baud overload

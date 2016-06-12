@@ -45,12 +45,10 @@ class BioloidController
 {
   public:
     /* For compatibility with legacy code */
-    BioloidController(long baud, Stream* pstream = (Stream*)&Serial1);               // baud usually 1000000
+    BioloidController(long baud);               // baud usually 1000000
     
     /* New-style constructor/setup */ 
-    BioloidController();
-    void begin(long baud=1000000, Stream* pstream = (Stream*)PAX12Serial);
-
+    BioloidController() {};
     void setup(int servo_cnt);
 
     /* Pose Manipulation */
@@ -60,18 +58,16 @@ class BioloidController
     int getCurPose(int id);                     // get a servo value in the current pose
     int getNextPose(int id);                    // get a servo value in the next pose
     void setNextPose(int id, int pos);          // set a servo value in the next pose
-    void setNextPoseByIndex(int index, int pos);  // set a servo value by index for next pose
     void setId(int index, int id);              // set the id of a particular storage index
     int getId(int index);                       // get the id of a particular storage index
     
     /* Pose Engine */
     void interpolateSetup(int time);            // calculate speeds for smooth transition
-    int interpolateStep(boolean fWait=true);                     // move forward one step in current interpolation  
+    void interpolateStep();                     // move forward one step in current interpolation  
     unsigned char interpolating;                // are we in an interpolation? 0=No, 1=Yes
     unsigned char runningSeq;                   // are we running a sequence? 0=No, 1=Yes 
     int poseSize;                               // how many servos are in this pose, used by Sync()
 
-    uint8_t frameLength;                        // Allow variable frame lengths, to test...
     /* to interpolate:
      *  bioloid.loadPose(myPose);
      *  bioloid.interpolateSetup(67);
@@ -99,8 +95,8 @@ class BioloidController
     int * speed_;                               // speeds for interpolation 
     unsigned char * id_;                        // servo id for this index
 
-//    unsigned long lastframe_;                   // time last frame was sent out  
-    unsigned long nextframe_;                   //    
+    unsigned long lastframe_;                   // time last frame was sent out  
+    
     transition_t * sequence;                    // sequence we are running
     int transitions;                            // how many transitions we have left to load
    

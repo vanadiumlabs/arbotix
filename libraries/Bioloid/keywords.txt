@@ -1,9 +1,6 @@
 Bioloid	KEYWORD1
 BioloidController	KEYWORD1
 BioloidIK	KEYWORD1
-
-begin	KEYWORD2
-
 ax12GetRegister	KEYWORD2
 ax12SetRegister	KEYWORD2
 ax12SetRegister2	KEYWORD2
@@ -11,19 +8,11 @@ ax12SetPosition	KEYWORD2
 loadPose	KEYWORD2   
 readPose	KEYWORD2
 writePose	KEYWORD2   
-getCurPose	KEYWORD2
-getNextPose	KEYWORD2
-setNextPose	KEYWORD2
-setNextPoseByIndex	KEYWORD2
-setId	KEYWORD2
-getId	KEYWORD2
 interpolateSetup	KEYWORD2
 interpolateStep	KEYWORD2
 interpolating	KEYWORD2
-poseSize	KEYWORD2
-frameLength	KEYWORD2
-playSeq	KEYWORD2
-play	KEYWORD2
-playing	KEYWORD2
-
-
+dxlSetRegister2 KEYWORD2
+dxlSetRegister KEYWORD2
+dxlGetRegister KEYWORD2
+dxlGetPosition	KEYWORD2
+dxlSetPosition	KEYWORD2
