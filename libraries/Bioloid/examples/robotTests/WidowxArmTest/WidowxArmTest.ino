@@ -33,7 +33,6 @@
  *
  ***********************************************************************************/
 
-
 #include <ax12.h>
 #include <BioloidController.h>
 #include "poses.h"
@@ -116,7 +115,9 @@ void loop(){
       break;
 
     case '7':
+      Serial.println("Start LED Test");
       dxlLedTest(SERVOCOUNT, 3000);
+      Serial.println("End LED Test");
       MenuOptions();
       break;
 
@@ -169,7 +170,8 @@ void MoveHome(){
 
 
 
-void MoveTest(){
+void MoveTest()
+{
   Serial.println("###########################");
   Serial.println("Initializing Movement Sign Test");  
   Serial.println("###########################");
@@ -178,36 +180,38 @@ void MoveTest(){
   pos = 2048;
  
 // Base Servo Test
-
   Serial.println("Moving Servo ID: 1");
   
-  while(pos >= 1500){  
-  SetPosition(1, pos);
-  pos = pos--;
-  delay(10);
+  while(pos >= 1500)
+  {  
+    dxlSetGoalPosition(1, pos);
+    pos = pos - 1;
+    delay(10);
   }
 
-  while(pos <= 2048){  
-  SetPosition(1, pos);
-  pos = pos++;
-  delay(10);
+  while(pos <= 2048)
+  {  
+    dxlSetGoalPosition(1, pos);
+    pos = pos + 1;
+    delay(10);
   }
   
   delay(500);
 
 // Shoulder Servo Test  
-  
   Serial.println("Moving Servo IDs: 2 "); 
-  while(pos >= 1500){  
-  SetPosition(2, pos);
-  pos = pos--;
-  delay(10);
+  while(pos >= 1500)
+  {  
+    dxlSetGoalPosition(2, pos);
+    pos = pos - 1;
+    delay(10);
   }
 
-  while(pos <= 2048){  
-  SetPosition(2, pos);
-  pos = pos++;
-  delay(10);
+  while(pos <= 2048)
+  {  
+    dxlSetGoalPosition(2, pos);
+    pos = pos + 1;
+    delay(10);
   }
 
   delay(500);
@@ -215,16 +219,18 @@ void MoveTest(){
 // Elbow Servo Test  
 
   Serial.println("Moving Servo IDs: 3 "); 
-  while(pos <= 2400){  
-  SetPosition(3, pos);
-  pos = pos++;
-  delay(10);
+  while(pos <= 2400)
+  {  
+    dxlSetGoalPosition(3, pos);
+    pos = pos + 1;
+    delay(10);
   }
 
-  while(pos >= 2048){  
-  SetPosition(3, pos);
-  pos = pos--;
-  delay(10);
+  while(pos >= 2048)
+  {  
+    dxlSetGoalPosition(3, pos);
+    pos = pos - 1;
+    delay(10);
   }
 
   delay(500);
@@ -234,16 +240,18 @@ void MoveTest(){
   
   Serial.println("Moving Servo ID: 4");
   
-  while(pos <= 2500){  
-  SetPosition(4, pos);
-  pos = pos++;
-  delay(10);
+  while(pos <= 2500)
+  {  
+    dxlSetGoalPosition(4, pos);
+    pos = pos + 1;
+    delay(10);
   }
 
-  while(pos >= 2048){  
-  SetPosition(4, pos);
-  pos = pos--;
-  delay(10);
+  while(pos >= 2048)
+  {  
+    dxlSetGoalPosition(4, pos);
+    pos = pos - 1;
+    delay(10);
   }
   
   delay(500);  
@@ -254,16 +262,18 @@ void MoveTest(){
 
   Serial.println("Moving Servo ID: 5");
   
-  while(pos >= 312){  
-  SetPosition(5, pos);
-  pos = pos--;
-  delay(10);
+  while(pos >= 312)
+  {  
+    dxlSetGoalPosition(5, pos);
+    pos = pos - 1;
+    delay(10);
   }
 
-  while(pos <= 512){  
-  SetPosition(5, pos);
-  pos = pos++;
-  delay(10);
+  while(pos <= 512)
+  {  
+    dxlSetGoalPosition(5, pos);
+    pos = pos + 1;
+    delay(10);
   }
   
   delay(500);   
@@ -272,16 +282,18 @@ void MoveTest(){
   
     Serial.println("Moving Servo ID: 6");
   
-  while(pos >= 312){  
-  SetPosition(6, pos);
-  pos = pos--;
-  delay(10);
+  while(pos >= 312)
+  {  
+    dxlSetGoalPosition(6, pos);
+    pos = pos - 1;
+    delay(10);
   }
 
-  while(pos <= 512){  
-  SetPosition(6, pos);
-  pos = pos++;
-  delay(10);
+  while(pos <= 512)
+  {  
+    dxlSetGoalPosition(6, pos);
+    pos = pos + 1;
+    delay(10);
   }
   
   delay(500);   
@@ -294,7 +306,8 @@ void MoveTest(){
 
 
 
-void MenuOptions(){
+void MenuOptions()
+{
   
     Serial.println("###########################"); 
     Serial.println("Please enter option 1-5 to run individual tests again.");     
@@ -316,7 +329,7 @@ void RelaxServos(){
   Serial.println("###########################");    
   while(id <= SERVOCOUNT){
     Relax(id);
-    id = (id++)%SERVOCOUNT;
+    id = (id + 1)%SERVOCOUNT;
     delay(50);
   }
    if (RunCheck == 1){
@@ -324,25 +337,4 @@ void RelaxServos(){
   }
 }
 
-void LEDTest(){
-    id = 1;
-  Serial.println("###########################");
-  Serial.println("Running LED Test");
-  Serial.println("###########################");    
-  while(id <= SERVOCOUNT){
-    ax12SetRegister(id, 25, 1);
-    Serial.print("LED ON - Servo ID: ");
-    Serial.println(id);
-    delay(3000);
-    ax12SetRegister(id, 25, 0);  
-    Serial.print("LED OFF - Servo ID: ");
-    Serial.println(id);    
-    delay(3000);    
-    id = id++;
-  }
-  
-   if (RunCheck == 1){
-      MenuOptions();
-  }
-}
-    
+

@@ -40,7 +40,7 @@ int servoData[SERVO_NUMBER][2] ={
 void setup()
 {
   dxlInit(1000000);    //start dynamixel library at 1mbps to communicate with the servos
-  dxlSycWrite(servoData, SERVO_NUMBER, AX_GOAL_POSITION_L, 2); //syn write servoData array to   AX_GOAL_POSITION_L
+  dxlSyncWrite(servoData, SERVO_NUMBER, AX_GOAL_POSITION_L, 2); //syn write servoData array to   AX_GOAL_POSITION_L
 
 }
 void loop()
