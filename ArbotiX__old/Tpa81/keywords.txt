@@ -1,2 +1,0 @@
-Tpa81	KEYWORD1
-getData	KEYWORD2

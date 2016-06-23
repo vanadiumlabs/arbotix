@@ -88,8 +88,8 @@ void scan(){
 }
 
 void setup(){
-  Serial.begin(57142);
-  ax12Init(57142);
+  Serial.begin(115200);
+  ax12Init(1000000);
 
 #ifdef USE_BASE
   drive.init();
@@ -321,16 +321,7 @@ void loop(){
           // return an error packet: FF FF id Len Err=bad checksum, params=None check
           statusPacket(id, ERR_CHECKSUM);
         }else if(id == 253){  // ID = 253, ArbotiX instruction
-          switch(ins){ 
-        
-         
-            case AX_PING:
-              // send return packet
-              statusPacket(1,0);
-              break;
-             
-             
-                 
+          switch(ins){     
             case AX_WRITE_DATA:
               // send return packet
               statusPacket(id,handleWrite());
@@ -520,15 +511,6 @@ void loop(){
         }else{ // ID != 253, pass thru 
           switch(ins){
             // TODO: streamline this
-            
-            
-            case AX_PING:
-              // send return packet
-              statusPacket(1,0);
-              break;
-             
-             
-             
             case AX_READ_DATA:
               ax12GetRegister(id, params[0], params[1]);
               // return a packet: FF FF id Len Err params check

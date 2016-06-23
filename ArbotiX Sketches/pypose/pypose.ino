@@ -19,10 +19,10 @@
  
 #include <ax12.h>
 #include <BioloidController.h>
-#include <Motors2.h>
+
 
 BioloidController bioloid = BioloidController(1000000);
-Motors2 drive = Motors2();
+
 
 #define ARB_SIZE_POSE   7  // also initializes
 #define ARB_LOAD_POSE   8
@@ -54,7 +54,7 @@ int seqPos;                     // step in current sequence
 
 void setup(){
     Serial.begin(38400); 
-    drive.init();   
+
     pinMode(0,OUTPUT);          // status LED
 }
 
@@ -209,15 +209,7 @@ void loop(){
                                 SetPosition(1,i);
                                 delay(200);
                             }
-                            // Test Motors
-                            drive.set(-255,-255);
-                            delay(500);
-                            drive.set(0,0);
-                            delay(1500);
-                            drive.set(255,255);
-                            delay(500);
-                            drive.set(0,0);
-                            delay(1500);
+
                             // Test Analog I/O
                             for(i=0;i<8;i++){
                                 // test digital

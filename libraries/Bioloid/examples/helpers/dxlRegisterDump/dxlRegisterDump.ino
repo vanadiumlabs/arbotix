@@ -28,12 +28,12 @@
  ********************************************************************************/
 #include <ax12.h> //include the ArbotiX DYNAMIXEL library
 
-const int NUMBER_OF_SERVOS = 6;
+const int NUMBER_OF_SERVOS = 5;
 
 void setup()
 {
   dxlInit(1000000);    //start dynamixel library at 1mbps to communicate with the servos
-  Serial.begin(9600); //start serial at 38400bps for reporting data
+  Serial.begin(38400); //start serial at 38400bps for reporting data
   dxlRegisterReportMultiple(NUMBER_OF_SERVOS); 
 }
 void loop()

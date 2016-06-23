@@ -1,4 +1,0 @@
-Srf08	KEYWORD1
-getData	KEYWORD2
-getVersion	KEYWORD2
-ping	KEYWORD2
