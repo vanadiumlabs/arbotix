@@ -1,8 +1,10 @@
-This is a fork of the Vanadium Labs ArbotiX libraries
-https://github.com/vanadiumlabs/arbotix
+Latest development fork of the ArbotiX Libaries for Arduino 1.6
 
-This fork is avialable as a convience for InterbotiX kits users. Itincludes several sketches to help users get started and testing their robots.
+Setup
 
-This is NOT a development fork. For the newest releases of the ArbotiX Libraries, see the link above.
+http://learn.trossenrobotics.com/projects/182-arbotix-getting-started-guide-arduino-ide-1-6-x-setup.html
 
-See docs at http://vanadiumlabs.github.io/arbotix/
+
+Documentation
+
+http://learn.trossenrobotics.com/projects/181-arbotix-1-6-documentation.html
