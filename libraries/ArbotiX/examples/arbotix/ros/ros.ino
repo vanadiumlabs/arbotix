@@ -27,7 +27,7 @@
 */ 
 
 /* Build Configuration */
-#define USE_BASE            // Enable support for a mobile base
+
 #define USE_HW_SERVOS       // Enable only 2/8 servos, but using hardware control
 
 #define CONTROLLER_COUNT    5
@@ -48,12 +48,6 @@ BioloidController controllers[CONTROLLER_COUNT];
   int servo_vals[10];           // in millis
 #endif
 
-#ifdef USE_BASE
-  #include <Motors2.h>
-  Motors2 drive = Motors2();
-  #include <EncodersAB.h>
-  #include "diff_controller.h"
-#endif
 
 /* Register Storage */
 unsigned char baud = 7;         // ?
@@ -88,14 +82,9 @@ void scan(){
 }
 
 void setup(){
-  Serial.begin(57142);
-  ax12Init(57142);
+  Serial.begin(115200);
+  ax12Init(1000000);
 
-#ifdef USE_BASE
-  drive.init();
-  Encoders.Begin();
-  setupPID();
-#endif
 
 #if defined(AX_RX_SWITCHED)
   delay(1000);
@@ -321,16 +310,7 @@ void loop(){
           // return an error packet: FF FF id Len Err=bad checksum, params=None check
           statusPacket(id, ERR_CHECKSUM);
         }else if(id == 253){  // ID = 253, ArbotiX instruction
-          switch(ins){ 
-        
-         
-            case AX_PING:
-              // send return packet
-              statusPacket(1,0);
-              break;
-             
-             
-                 
+          switch(ins){     
             case AX_WRITE_DATA:
               // send return packet
               statusPacket(id,handleWrite());
@@ -389,13 +369,8 @@ void loop(){
                 for(int i=0; i<length-3; i++){
                   controllers[params[0]].setId(i, params[i+1]);
                 }
-#ifdef USE_BASE
-              }else if(params[0] == 10){
-                Kp = params[1];
-                Kd = params[2];
-                Ki = params[3];
-                Ko = params[4];
-#endif
+
+
               }
               break;
 
@@ -407,25 +382,8 @@ void loop(){
                 }
                 controllers[params[0]].readPose();
                 controllers[params[0]].interpolateSetup(params[length-3]*33);
-#ifdef USE_BASE
-              }else if(params[0] == 10){
-                left_speed = params[1];
-                left_speed += (params[2]<<8);
-                right_speed = params[3];
-                right_speed += (params[4]<<8); 
-                if((left_speed == 0) && (right_speed == 0)){
-                  drive.set(0,0);
-                  ClearPID();
-                }else{
-                  if((left.Velocity == 0) && (right.Velocity == 0)){
-                    PIDmode = 1; moving = 1;
-                    left.PrevEnc = Encoders.left;
-                    right.PrevEnc = Encoders.right;
-                  }
-                }   
-                left.Velocity = left_speed;
-                right.Velocity = right_speed; 
-#endif
+
+
               }
               break;
 
@@ -440,40 +398,8 @@ void loop(){
                 Serial.write((unsigned char)checksum);
                 checksum += id + 3;
                 Serial.write((unsigned char)255-((checksum)%256));
-#ifdef USE_BASE
-              }else if(params[0] == 10){
-                checksum = id + 2 + 8;                            
-                Serial.write((unsigned char)0xff);
-                Serial.write((unsigned char)0xff);
-                Serial.write((unsigned char)id);
-                Serial.write((unsigned char)2+8);
-                Serial.write((unsigned char)0);   // error level
-                int v = ((unsigned long)Encoders.left>>0)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.left>>8)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.left>>16)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.left>>24)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.right>>0)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.right>>8)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.right>>16)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                v = ((unsigned long)Encoders.right>>24)%256;
-                Serial.write((unsigned char)v);
-                checksum += v;
-                Serial.write((unsigned char)255-((checksum)%256));
-#endif
+
+
               }
               break;
           }
@@ -520,15 +446,6 @@ void loop(){
         }else{ // ID != 253, pass thru 
           switch(ins){
             // TODO: streamline this
-            
-            
-            case AX_PING:
-              // send return packet
-              statusPacket(1,0);
-              break;
-             
-             
-             
             case AX_READ_DATA:
               ax12GetRegister(id, params[0], params[1]);
               // return a packet: FF FF id Len Err params check
