@@ -73,12 +73,64 @@ void BioloidController::loadPose( const unsigned int * addr ){
         nextpose_[i] = pgm_read_word_near(addr+1+i) << BIOLOID_SHIFT;
 }
 /* read in current servo positions to the pose. */
-void BioloidController::readPose(){
-    for(int i=0;i<poseSize;i++){
-        pose_[i] = ax12GetRegister(id_[i],AX_PRESENT_POSITION_L,2)<<BIOLOID_SHIFT;
-        delay(25);   
+/* read in current servo positions to the pose. */
+bool BioloidController::readPose(){
+    bool errorFound = false;
+    Serial.print("Pose Reads:");
+    Serial.print(poseSize);
+    for(int i=0;i<poseSize;i++)
+    {
+        
+        int temp = ax12GetRegister(id_[i],AX_PRESENT_POSITION_L,2);
+        if(temp < 0 || temp > 4096)
+        {
+            Serial.print("BAD 1:");
+            Serial.print(temp);
+            delay(33);
+            temp = ax12GetRegister(id_[i],AX_PRESENT_POSITION_L,2); 
+            
+            if(temp < 0 || temp > 4096)
+            {   
+                Serial.print("BAD 2:");
+                Serial.print(temp);
+                delay(33);
+                temp = ax12GetRegister(id_[i],AX_PRESENT_POSITION_L,2);
+            } 
+        }
+
+        if(temp >= 0 && temp <= 4096)
+        {
+            pose_[i] = temp << BIOLOID_SHIFT;
+            Serial.print(" ");
+            Serial.print(temp);
+
+
+        }
+        else
+        {
+
+            Serial.print("BAD 3:");
+            Serial.print(temp);
+
+            Serial.print(" ");
+            Serial.print(temp);
+            
+            errorFound = true;
+        }
+
     }
+
+            delay(25);   
+            Serial.println(" ");
+
+    return(!errorFound);
+
+
+
+
+
 }
+
 /* write pose out to servos using sync write. */
 void BioloidController::writePose(){
     int temp;

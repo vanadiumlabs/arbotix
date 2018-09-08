@@ -11,4 +11,8 @@ writePose	KEYWORD2
 interpolateSetup	KEYWORD2
 interpolateStep	KEYWORD2
 interpolating	KEYWORD2
-
+dxlSetRegister2 KEYWORD2
+dxlSetRegister KEYWORD2
+dxlGetRegister KEYWORD2
+dxlGetPosition	KEYWORD2
+dxlSetPosition	KEYWORD2

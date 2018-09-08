@@ -1,3 +1,0 @@
-SharpIR	KEYWORD1
-getData	KEYWORD2
-

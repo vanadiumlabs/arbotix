@@ -1,0 +1,6 @@
+avrispmkii.name=AVRISP mkII (serial)
+avrispmkii.communication=serial
+avrispmkii.protocol=stk500v2
+avrispmkii.program.tool=avrdude
+avrispmkii.program.extra_params=-P{serial.port}
+
